@@ -1,0 +1,534 @@
+/*
+* Skeleton V2.0.4
+* Copyright 2014, Dave Gamache
+* www.getskeleton.com
+* Free to use under the MIT license.
+* http://www.opensource.org/licenses/mit-license.php
+* 12/29/2014
+*/
+
+
+/* Table of contents
+––––––––––––––––––––––––––––––––––––––––––––––––––
+- Grid
+- Base Styles
+- Typography
+- Links
+- Buttons
+- Forms
+- Lists
+- Code
+- Tables
+- Spacing
+- Utilities
+- Clearing
+- Media Queries
+*/
+
+*{
+  box-sizing: border-box;
+
+}
+/* Grid
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+
+.container {
+  display:grid;
+  margin:0 auto;    
+  grid-template-columns: repeat(12,1fr);
+  grid-auto-rows: minmax(100px ,auto);
+  grid-gap: 10;
+}
+header
+{
+  position:fixed;
+  top:0;
+  z-index: 1;
+  grid-column: span 12;
+  grid-row: 1/1;
+  grid: "Header";
+  background: white;
+  box-shadow: 0px 3px 5px rgba(100, 100, 100, 0.49);;
+  height: 50px;
+  width:100%;
+}
+section
+{
+  grid-column: span 12;
+  grid-area: "Section";
+  justify-self:center;
+  padding: 1.5rem 1rem;
+  width: 90%;
+  box-shadow: 0px 3px 5px rgba(100, 100, 100, 0.49);;
+  margin-bottom: 2%;
+
+}
+footer
+{
+  grid-column:span 12;
+  grid-area: "Footer";
+  grid-row: span 4;
+}
+
+
+
+
+/* For devices larger than 400px */
+
+/* Nav */
+nav
+{  
+  height: 100%;
+  display: flex;
+  flex-grow: 1;
+  padding: 0 5px;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 auto;
+}
+.nav-menu
+{
+  width: 40px; 
+  height: 40px;
+}
+.nav-title
+{
+  font-size: 1.2em; /* currently ems cause chrome bug misinterpreting rems on body element */
+
+}
+/* Section */
+
+section
+{
+  background: white;
+
+}
+
+
+/* Base Styles
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/* NOTE
+html is set to 62.5% so that all the REM measurements throughout Skeleton
+are based on 10px sizing. So basically 1.5rem = 15px :) */
+html {
+  font-size: 62.5% }
+body{
+  padding-top: 20px;
+  font-size: 1.5em; /* currently ems cause chrome bug misinterpreting rems on body element */
+  line-height: 1.2;
+  font-weight: 300;
+  font-family: "Roboto", sans-serif;
+  color: #222;
+  box-sizing: border-box;
+  background: #f6f6f6;
+   }
+
+
+/* Typography
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  font-weight: 300; }
+h1 { font-size: 4.0rem; line-height: 1.2;  letter-spacing: -.1rem; }
+h2 { font-size: 3.6rem; line-height: 1.25; letter-spacing: -.1rem; }
+h3 { font-size: 3.0rem; line-height: 1.3;  letter-spacing: -.1rem; }
+h4 { font-size: 2.4rem; line-height: 1.35; letter-spacing: -.08rem; }
+h5 { font-size: 1.8rem; line-height: 1.5;  letter-spacing: -.05rem; }
+h6 { font-size: 1.5rem; line-height: 1.6;  letter-spacing: 0; }
+
+/* Larger than phablet */
+@media (min-width: 550px) {
+  h1 { font-size: 5.0rem; }
+  h2 { font-size: 4.2rem; }
+  h3 { font-size: 3.6rem; }
+  h4 { font-size: 3.0rem; }
+  h5 { font-size: 2.4rem; }
+  h6 { font-size: 1.5rem; }
+}
+
+p {
+  margin-top: 0; }
+
+
+/* Links
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+a {
+  color: #1EAEDB; }
+a:hover {
+  color: #0FA0CE; }
+
+
+/* Buttons
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.button,
+button,
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+  display: inline-block;
+  height: 38px;
+  padding: 0 30px;
+  color: #555;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 38px;
+  letter-spacing: .1rem;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  background-color: transparent;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  cursor: pointer;
+  box-sizing: border-box; }
+.button:hover,
+button:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+input[type="button"]:hover,
+.button:focus,
+button:focus,
+input[type="submit"]:focus,
+input[type="reset"]:focus,
+input[type="button"]:focus {
+  color: #333;
+  border-color: #888;
+  outline: 0; }
+.button.button-primary,
+button.button-primary,
+input[type="submit"].button-primary,
+input[type="reset"].button-primary,
+input[type="button"].button-primary {
+  color: #FFF;
+  background-color: #33C3F0;
+  border-color: #33C3F0; }
+.button.button-primary:hover,
+button.button-primary:hover,
+input[type="submit"].button-primary:hover,
+input[type="reset"].button-primary:hover,
+input[type="button"].button-primary:hover,
+.button.button-primary:focus,
+button.button-primary:focus,
+input[type="submit"].button-primary:focus,
+input[type="reset"].button-primary:focus,
+input[type="button"].button-primary:focus {
+  color: #FFF;
+  background-color: #1EAEDB;
+  border-color: #1EAEDB; }
+/* Search Box
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.location{
+  overflow: visible;
+}
+.search-form
+{
+  position: relative;
+  height: 100px;
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  margin: 0px -15px 10px -15px;
+  background: #dcdcdc66;
+}
+.search-form > *
+{
+  margin: 0;
+  
+}
+.search-form .search-input
+{
+  margin: 0;
+  width:80%;
+  border-right: none;
+  border-radius: 4px 0px 0px 4px;  
+}
+.search-form .search-button
+{
+  position:relative;
+  background:#1EAEDB;
+  width: 40px;
+  padding:10px;
+  border:none ;
+  border-left: none !important;
+  border-radius: 0px 4px 4px 0px;
+}
+ .icon
+{
+  position: absolute;
+  align-content: center;
+  content: url(../images/search-icon.svg);
+  top:50%;
+  left:50%;
+  width: 50%;
+  height: 50%;
+  transform:translate(-50%, -50%);
+
+  color: white;
+}
+/* Forms
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+input::placeholder
+{
+  color: #bbb;
+}
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea,
+select {
+  height: 38px;
+  padding: 6px 10px; /* The 6px vertically centers text on FF, ignored by Webkit */
+  background-color: #fff;
+  border: 1px solid #D1D1D1;
+  border-radius: 4px;
+  box-shadow: none;
+  box-sizing: border-box; }
+/* Removes awkward default styles on some inputs for iOS */
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="text"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+textarea {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none; }
+textarea {
+  min-height: 65px;
+  padding-top: 6px;
+  padding-bottom: 6px; }
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  border: 1px solid #33C3F0;
+  outline: 0; }
+label,
+legend {
+  display: block;
+  margin-bottom: .5rem;
+  font-weight: 400; }
+fieldset
+{
+  padding: 0;
+  border-width: 0;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  display: inline; }
+label > .label-body {
+  display: inline-block;
+  margin-left: .5rem;
+
+}
+.prayers-time-form-container
+{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px,1fr));
+  grid-auto-flow: row;
+  align-items: start;
+  margin-bottom:10px;; 
+  grid-auto-rows: auto;
+}
+.calcuation-form-container,.location-form-container
+{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
+  grid-gap: 0px 10px;
+  grid-auto-flow: row;
+  align-items: start;
+  grid-auto-rows: auto;
+}
+
+
+.short-input
+{
+  width: 100px;
+}
+.prayers-time-form-container .button-layout{
+  grid-row: 4/auto;
+}
+.header-title{
+  position: relative;
+  display: inline-block;
+}
+.help-icon
+{
+  display: inline-block;
+  position: absolute;
+  top:50%;
+  left:100%;
+  padding-left: 22px;
+  width: 50%;
+  height: 50%;
+  transform:translate(-50%, -50%);
+  content: url(../images/help-icon.svg);
+}
+/* Lists
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+ul {
+  list-style: circle inside; }
+ol {
+  list-style: decimal inside; }
+ol, ul {
+  padding-left: 0;
+  margin-top: 0; }
+ul ul,
+ul ol,
+ol ol,
+ol ul {
+  margin: 1.5rem 0 1.5rem 3rem;
+  font-size: 90%; }
+li {
+  margin-bottom: 1rem; }
+
+
+/* Code
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+code {
+  padding: .2rem .5rem;
+  margin: 0 .2rem;
+  font-size: 90%;
+  white-space: nowrap;
+  background: #F1F1F1;
+  border: 1px solid #E1E1E1;
+  border-radius: 4px; }
+pre > code {
+  display: block;
+  padding: 1rem 1.5rem;
+  white-space: pre; }
+
+
+/* Tables
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+th,
+td {
+  text-align: left;
+  max-width: 100%;
+  border-bottom: 1px solid #E1E1E1; 
+  }
+
+th:first-child,
+td:first-child {
+ } 
+th:last-child,
+td:last-child {
+}
+td[colspan]
+{
+   background: #eee;
+}
+.th:first{
+  font-weight: 500;
+}
+.th:first{
+  
+  font-weight: 500;
+}
+
+/* Spacing
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+button,
+.button {
+  margin-bottom: 1rem; }
+input,
+textarea,
+select,
+fieldset {
+  margin-bottom: 1.5rem; }
+pre,
+blockquote,
+dl,
+figure,
+table,
+p,
+ul,
+ol,
+form {
+  margin-bottom: 1 rem; }
+
+/* Notification
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.noty_layout > .noty_bar {
+  min-height: 3em;
+  max-width: 1150px;
+
+}
+/* Utilities
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.u-full-width {
+  width: 100%;
+ }
+.u-max-full-width {
+  max-width: 100%;
+   }
+.u-pull-right {
+  float: right; }
+.u-pull-left {
+  float: left; }
+
+
+/* Misc
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+hr {
+  margin-top: 3rem;
+  margin-bottom: 3.5rem;
+  border-width: 0;
+  border-top: 1px solid #E1E1E1; }
+
+
+/* Clearing
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+
+/* Self Clearing Goodness */
+.container:after,
+.row:after,
+.u-cf {
+  content: "";
+  display: table;
+  clear: both; }
+
+
+/* Media Queries
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/*
+near the relevant code. For example, if you wanted to change the styles for buttons
+on small devices, paste the mobile query code up in the buttons section and style it
+there.
+*/
+
+/* Larger than mobile */
+@media (min-width: 400px) {}
+
+/* Larger than phablet (also point when grid becomes active) */
+@media (min-width: 600px) {
+  .search-form .search-input
+  {
+    min-width: initial;
+    max-width: initial;
+    width:400px;
+  }
+
+}
+
+@media (min-width: 950px) {
+  nav,section
+  {
+    max-width: 960px;
+    width:100%;
+  }
+  }
