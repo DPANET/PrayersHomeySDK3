@@ -42,6 +42,7 @@ export class PrayersAppManager {
     }
     public static set prayerAppManger(value: PrayersAppManager) {
         PrayersAppManager._prayerAppManger = value;
+        
     }
     private _prayerManager: prayerlib.IPrayerManager;
     public get prayerManager(): prayerlib.IPrayerManager {

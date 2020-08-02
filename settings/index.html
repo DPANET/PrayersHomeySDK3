@@ -1,13 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Prayers Settings</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Roboto:400,300,500" rel="stylesheet" type="text/css">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="public/css/normalize.css">
+  <link rel="stylesheet" href="public/css/skeleton.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noty@3.2.0-beta/lib/noty.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noty@3.2.0-beta/lib/themes/bootstrap-v4.css">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" />
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="public/images/favicon.png">
+
 </head>
+
 <body>
-<script type="text/javascript">
-  function onHomeyReady( Homey ){
-    // ...
-   // buidObject();
-   window.location.replace(`${location.origin}/app/com.prayerssapp/settings/settings.html`);
-    Homey.ready();
-  }
-  </script>
-  </body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+  <div class="container">
+    <!-- <header>
+      <nav>
+
+        <div class="nav-title">
+          Prayers Settings
+        </div>
+        <div class="nav-menu">
+          <img src='/images/menu.svg' />
+        </div>
+
+      </nav>
+
+    </header> -->
+    <section>
+      <h5 class="header-title"> Location:
+        <span class="help-icon"></span>
+      </h5>
+          <form class="location">
+            <fieldset>
+              <div class="search-form">
+                <input class="search-input" onClick="this.setSelectionRange(0, this.value.length)" autocomplete="nope" id="search-input" type="search" placeholder="Enter city name" />   
+                  <button class="search-button" id="search-button" type="button" value="" >
+                  <span class="icon"></span>
+                  </button>
+               
+              </div>
+              <div class="location-form-container">
+                
+                <div>
+                  <label for="city">City/Country:</label>
+                  <input class="u-full-width id" id="city" type="text" placeholder="City/Country" readonly="true" />
+                </div>
+                <div>
+                  <label for="coordinates">Coordinates:</label>
+                  <input class="u-full-width id" id="coordinates" type="text" placeholder="Longtitue,Latitude"
+                    readonly="true" />
+                </div>
+            </fieldset>
+          </form>
+      <h5 class="header-title"> Calculations: <span class="help-icon"></span> </h5>
+
+      <form>
+        <fieldset>
+          <div class="calcuation-form-container">
+            <div>
+              <label for="method">Prayer Method:
+              </label>
+              <select class="u-full-width" id="method" name="prayer_method">
+                <option value="4">Mecca</option>
+                <option value="3">Muslim League</option>
+                <option value="8">Gulf</option>
+                <option value="5">Egypt</option>
+                <option value="9">Kuwait</option>
+                <option value="10">Qatar</option>
+                <option value="11">Singapore</option>
+                <option value="12">France</option>
+                <option value="13">Turkey</option>
+                <option value="99">Custom</option>
+              </select>
+            </div>
+            <div>
+              <label for="school">School:</label>
+              <select class="u-full-width id" id="school" name="school_method">
+                <option value="0">Shafi</option>
+                <option value="1">Hanafi</option>
+              </select>
+            </div>
+            <div>
+              <label for="latitude">Latitude:</label>
+              <select class="u-full-width id" id="latitude" name="latitude_method">
+                <option value="1">Midnight</option>
+                <option value="2">Seventh</option>
+                <option value="3">Angle</option>
+              </select>
+            </div>
+            <div>
+              <label for="midnight">Midnight Mode:</label>
+              <select class="u-full-width id" id="midnight" name="midnight_method">
+                <option value="0">Standard</option>
+                <option value="1">Jafari</option>
+              </select>
+            </div>
+            <div>
+              <label for="period">Period:</label>
+              <input id="prayer-time-period" class="u-full-width id" type="text" name="daterangepicker" />
+
+              </select>
+            </div>
+            <!-- <div class="button-layout">
+              <input class="button-primary" type="submit" value="Submit">
+            </div> -->
+          </div>
+        </fieldset>
+      </form>
+      <h5 class="header-title"> Adjust Prayers: <span class="help-icon"></span></h5>
+
+      <form>
+        <fieldset>
+          <div class="prayers-time-form-container">
+            <div>
+              <label for="fajr-time">Fajr:</label>
+
+              <input class="short-input" id='fajr-time' name='fajr' type='number' value="0" />
+            </div>
+            <div>
+              <label for="dhur-time">Dhur:</label>
+              <input class="short-input" id='dhur-time' name='dhur' type='number' value="0" />
+            </div>
+            <div>
+              <label for="asr-time">Asr:</label>
+              <input class="short-input" id='asr-time' name='asr' type='number' value="0" />
+            </div>
+            <div>
+              <label for="maghrib-time">Maghrib:</label>
+              <input class="short-input" id='maghrib-time' name='maghrib' type='number' value="0" />
+            </div>
+            <div>
+              <label for="isha-time">Isha:</label>
+              <input class="short-input" id='isha-time' name='isha' type='number' value="0" />
+            </div>
+          </div>
+          <div class="button-layout">
+            <input id="load-button" type="button" value="Load">
+            <input id="view-button" type="button" value="View">
+            <input id="submit-button" class="button-primary" type="button" value="Save">
+          </div>
+
+
+        </fieldset>
+      </form>
+
+      <h5 class="header-title"> Prayers Timings: <span class="help-icon"></span> </h5>
+      <div id="prayers-section ">
+
+        <table id="prayers-table" class="u-full-width id stripe" hidden="true">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Fajr</th>
+              <th>Sunrise</th>
+              <th>Dhuhr</th>
+              <th>Asr</th>
+              <th>Sunset</th>
+              <th>Maghrib</th>
+              <th>Isha</th>
+              <th>Midnight</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+            </tr>
+          </tbody>
+          <tfoot>
+
+          </tfoot>
+        </table>
+        <table id="prayers-table-mobile" class="u-full-width id stripe compact" hidden="true">
+          <thead>
+            <tr>
+              <th>Prayer</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+
+          </tbody>
+          <tfoot>
+
+          </tfoot>
+        </table>
+      </div>
+
+
+    </section>
+
+    <footer>
+
+    </footer>
+  </div>
+
+  <!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+  <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/rowgroup/1.1.0/js/dataTables.rowGroup.min.js"></script>
+  <script type="text/javascript" src="public/js/bundle.js"></script>
+  <script type="text/javascript" src="public/js/googleapi.js"></script>
+</body> 
+
+</html>

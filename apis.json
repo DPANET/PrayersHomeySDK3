@@ -1,0 +1,8 @@
+{
+    "api": {
+        "getSomething": {
+            "method": "get",
+            "path": "/"
+        }
+    }
+}
