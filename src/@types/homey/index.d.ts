@@ -30,6 +30,15 @@ declare module 'homey'
     public ledring: ManagerLedring;
     public notifications: ManagerNotifications;
     public settings: ManagerSettings;
+    public speechOutput:ManagerSpeechOutput;
+    public version:string;
+    public zigbee:ManagerZigBee;
+    public __(key:string|any):void;
+    public clearInterval(timeoutId:any):void;
+    public clearTimeout(timeoutId:any):void;
+    public setInterval(callback:Function,ms:number,args:any):void;
+    public setTimeout(callback:Function,ms:number,args:any):void;
+
   }
   export class ManagerFlow {
     public _registerCard<T>(cardInstance: FlowCard<T>): FlowCard<T>;
@@ -106,16 +115,26 @@ declare module 'homey'
   }
   export class App extends SimpleClass {
     constructor(uri: string);
+    public homey:Homey;
+    public id:string;
+    public manifest:any;
+    public sdk:number;
     protected onInit(): void;
   }
   export type genericCallbackFunction = (err?: Error, store?: any) => void;
 
   export class Device<T>
   {
+    public driver:Driver<T>;
+    public homey:Homey;
+    public addCapability(capabilityId:string):void;
+
     public getAvailable(): boolean;
     public getCapabilities(): Array<ICapabilities>;
+    public getCapabilityOptions(capabilityId:ICapabilities):void;
     public getCapabilityValue(capabilityId: string): ICapabilities;
     public getClass(): string;
+    public getEnergy():any;
     public getData(): any;
     public getDriver(): Driver<T>;
     public getName(): string;
@@ -129,30 +148,41 @@ declare module 'homey'
     public onAdded(): void;
     public onDeleted(): void;
     public onInit(): void;
+    public onDiscoveryAddressChanged(discoveryResult:DiscoveryResult):void;
+    public onDiscoveryAvailable(discoveryResult:DiscoveryResult):void;
+    public onDiscoveryLastSeenChanged(discoveryResult:DiscoveryResult):void;
+    public onDiscoveryResult(discoveryResult:DiscoveryResult):void;
     public onRenamed(name: string): void;
-    public onSettings(oldSettings: any, newSettings: any, changedKeys: Array<any>, callback: genericCallbackFunction): void;
-    public ready(callback: () => void): void;
-    public registerCapabilityListener(capabilityId: string, fn: (value: any, opt: any, callback: genericCallbackFunction) => void): void;
-    public registerMultipleCapabilityListener(capabilityIds: Array<string>, fn: (valueObj: any, optsObj: any, callback: genericCallbackFunction) => void, timeout: number): void;
-    public setAlbumArtImage(image: Image, callback?: (err: Error) => void): Promise<T>;
-    public setAvailable(callback?: genericCallbackFunction): Promise<T>;
-    public setCapabilityValue(capabilityId: string, value: any, callback?: genericCallbackFunction): Promise<T>;
-    public setSettings(settings: any, callback?: genericCallbackFunction): Promise<T>;
-    public setStoreValue(key: string, value: any, callback?: genericCallbackFunction): Promise<T>;
-    public setUnavailable(message: string, callback?: genericCallbackFunction): Promise<T>;
-    public setWarning(message: string, callback?: genericCallbackFunction): Promise<T>;
-    public triggerCapabilityListener(capabilityId: string, value: any, opts: any, callback?: genericCallbackFunction): Promise<T>;
-    public unsetStoreValue(key: string, callback?: genericCallbackFunction): Promise<T>;
-    public usetWarning(callback?: genericCallbackFunction): Promise<T>;
+    public onSettings(oldSettings: any, newSettings: any, changedKeys: Array<any>): void;
+    public ready(): void;
+    public registerCapabilityListener(capabilityId: string, fn: (value: any, opt: any) => void): void;
+    public registerMultipleCapabilityListener(capabilityIds: Array<string>, fn: (valueObj: any, optsObj: any) => void, timeout: number): void;
+    public removeCapability(capabilityId:ICapabilities):Promise<void>;
+    public setAlbumArtImage(image: Image): Promise<T>;
+    public setAvailable(): Promise<T>;
+    public setCapabilityOptions(capabilityId:string,options:any):Promise<void>;
+    public setCapabilityValue(capabilityId: string, value: any): Promise<void>;
+    public setClass(deviceClass:string):Promise<void>;
+    public setEnergy(energy:any):Promise<void>;
+    public setSettings(settings: any): Promise<T>;
+    public setStoreValue(key: string, value: any): Promise<T>;
+    public setUnavailable(message?: string): Promise<T>;
+    public setWarning(message?: string): Promise<T>;
+    public triggerCapabilityListener(capabilityId: string, value: any, opts: any): Promise<T>;
+    public unsetStoreValue(key: string): Promise<T>;
+    public usetWarning(): Promise<T>;
   }
   export class Driver<T>{
+    public homey:Homey;
+    public manifest:any;
     public getDevice(deviceData: any): Device<T>;
     public getDevices(): Array<Device<T>>;
-    public onInit(): void;
+    public getDiscoveryStrategy():DiscoveryResult
+    public onInit(): Promise<void>;
     public onMapDeviceClass(device: Device<T>): Device<T>;
-    public onPair(socket: EventEmitter): void;
-    public onPairListDevices(data: any, callback: (err: Error, result: Array<Device<T>>) => void): void;
-    public ready(callback: () => void): void;
+    public onPair(session: any): void;
+    public onPairListDevices(): Promise<Array<any>>;
+    public ready(): Promise<void>;
   }
   export class Image {
 
@@ -161,31 +191,26 @@ declare module 'homey'
     public registerAutocompleteListener(fn: (query: string, args: any) => Promise<any>): FlowArgument;
   }
   export class FlowCard<T> extends EventEmitter {
-    constructor(id: string);
+    constructor(id?: string);
     public getArgument(): FlowArgument;
     public getArgumentValues(): Promise<Array<any>>;
     public registerRunListener(listener: (args: any, state: any) => Promise<any>): FlowCard<T>;
   }
   export class FlowCardCondition<T> extends FlowCard<T>
   {
-    constructor(id: string);
+    
   }
   export class FlowCardTrigger<T> extends FlowCard<T>
   {
-    constructor(id: string);
     trigger(tokens: any, state: any): Promise<T>;
 
   }
   export class FlowCardAction<T> extends FlowCard<T>
   {
-    constructor(id: string);
 
   }
-  export class FlowCardTriggerDevice<T> extends FlowCard<T>
+  export class FlowCardTriggerDevice<T> extends FlowCardTrigger<T>
   {
-    constructor(id: string);
-    trigger(device: Device<T>, tokens: any, state: any, callback: genericCallbackFunction): Promise<T>;
-
   }
 
   export interface IFlowToken {
@@ -205,15 +230,15 @@ declare module 'homey'
   export class ManagerNotifications {
     createNotification(options: INotification): Promise<void>;
   }
-  export class Speaker<T>
-  {
-    constructor(isActive: boolean, isRegistered: boolean);
-    register(speakerState: string, callback?: genericCallbackFunction): Promise<T>;
-    sendCommand(command: string, args: Array<T>, callback?: genericCallbackFunction): Promise<T>;
-    setInactive(message: string, callback?: genericCallbackFunction): Promise<T>;
-    unregister(callback?: genericCallbackFunction): Promise<T>;
-    updateState(state: string, callback?: genericCallbackFunction): Promise<T>;
-  }
+  // export class Speaker<T>
+  // {
+  //   constructor(isActive: boolean, isRegistered: boolean);
+  //   register(speakerState: string, callback?: genericCallbackFunction): Promise<T>;
+  //   sendCommand(command: string, args: Array<T>, callback?: genericCallbackFunction): Promise<T>;
+  //   setInactive(message: string, callback?: genericCallbackFunction): Promise<T>;
+  //   unregister(callback?: genericCallbackFunction): Promise<T>;
+  //   updateState(state: string, callback?: genericCallbackFunction): Promise<T>;
+  // }
   export type AudioType = Buffer | string
   export class ManagerAudio {
     static playMp3<T>(sampleId: string, sample?: AudioType): Promise<T>;
@@ -227,18 +252,17 @@ declare module 'homey'
   export class Api<T>
   {
     constructor(uri: string);
-    delete(path: string, callback?: genericCallbackFunction): Promise<T>;
-    get(path: string, callback?: genericCallbackFunction): Promise<T>;
-    post(path: string, body: any, callback?: genericCallbackFunction): Promise<T>;
-    put(path: string, body: any, callback?: genericCallbackFunction): Promise<T>;
-    register(): Api<T>;
+    delete(path: string): Promise<T>;
+    get(path: string): Promise<T>;
+    post(path: string, body: any): Promise<T>;
+    put(path: string, body: any): Promise<T>;
     unregister(): void;
   }
   export class ApiApp<T> extends Api<T>
   {
     constructor(appId: string);
-    getInstalled(callback?: (err: Error, installed: boolean) => void): Promise<T>;
-    getVersion(callback?: (err: Error, version: string) => void): Promise<T>;
+    getInstalled(): Promise<boolean>;
+    getVersion(): Promise<T>;
   }
 
   export class ManagerGeolocation extends EventEmitter {
@@ -254,13 +278,13 @@ declare module 'homey'
 
   }
   export type CronWhenType = string | Date;
-  export class ManagerCron {
-    static getTask<T>(name: string, callback?: (err: Error, task: CronTask) => void): Promise<T>;
-    static getTasks<T>(callback?: (err: Error, logs: Array<CronTask>) => void): Promise<T>;
-    static registerTask<T>(name: string, when: CronWhenType, data: any, callback?: (err: Error, task: CronTask) => void): Promise<T>;
-    static unregisterAllTasks<T>(callback?: (err: Error) => void): Promise<T>;
-    static unregisterTask<T>(name: string, callback?: (err: Error) => void): Promise<T>;
-  }
+  // export class ManagerCron {
+  //   static getTask<T>(name: string, callback?: (err: Error, task: CronTask) => void): Promise<T>;
+  //   static getTasks<T>(callback?: (err: Error, logs: Array<CronTask>) => void): Promise<T>;
+  //   static registerTask<T>(name: string, when: CronWhenType, data: any, callback?: (err: Error, task: CronTask) => void): Promise<T>;
+  //   static unregisterAllTasks<T>(callback?: (err: Error) => void): Promise<T>;
+  //   static unregisterTask<T>(name: string, callback?: (err: Error) => void): Promise<T>;
+  // }
   export class ManagerI18n {
     /**
      * Translate a string, as defined in the app's `/locales/<language>.json` file.
@@ -451,5 +475,32 @@ declare module 'homey'
      */
     unset(key: string): void;
   }
+  export class ManagerZigBee
+  {
+    public getNode():Promise<ZigbeeNode>
+  }
+ export class ZigbeeNode
+ {
+    public manufacturerName:string;
+    public productionId:string;
+    public recieveWhenIdle:boolean;
+    public handleFrame(endpointId:number,clusterId:number,frame:Buffer,meta:any):Promise<void>;
+    public sendFrame(endpointId:number,clusterId:number,frame:Buffer):Promise<void>;
+   
+ }
+ export class DiscoveryResult extends EventEmitter{}
+ export class DiscoveryStrategy
+ {
+   public getDiscoveryResult(id:string):DiscoveryResult;
+   public getDiscoveryResult():any;
+ }
+ export class ManagerSpeechOutput
+ {
+   public say(text:string,opts:
+    {
+      session:any
+
+    }):Promise<any>
+ }
 }
 
