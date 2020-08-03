@@ -22,8 +22,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const debug_1 = __importDefault(require("debug"));
-const debug = debug_1.default("app:router");
 const nconf_1 = __importDefault(require("nconf"));
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const moment_1 = __importDefault(require("moment"));
@@ -33,7 +31,7 @@ const sentry = __importStar(require("@sentry/node"));
 const validationController = __importStar(require("../middlewares/validations.middleware"));
 const validators = __importStar(require("../validators/validations"));
 const retry = __importStar(require("async-retry"));
-const ramda_1 = __importDefault(require("ramda"));
+const R = __importStar(require("ramda"));
 const composition_1 = __importDefault(require("@arrows/composition"));
 sentry.init({ dsn: nconf_1.default.get("DSN") });
 class PrayersController {
@@ -48,7 +46,6 @@ class PrayersController {
                 return locationSettings;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 new exception_handler_1.HttpException(404, err.message);
             }
@@ -58,7 +55,6 @@ class PrayersController {
                 return this._prayerManager.getPrayerLocationSettings();
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -68,7 +64,6 @@ class PrayersController {
                 await this.initializePrayerManger();
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -81,7 +76,6 @@ class PrayersController {
                 // fn(request, response, next);
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -92,7 +86,6 @@ class PrayersController {
                 return request;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -102,7 +95,6 @@ class PrayersController {
                 let result = this._validatePrayerManager(this._prayerManager);
             }
             catch (err) {
-                debug(err);
                 console.log('caught new error');
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
@@ -120,7 +112,6 @@ class PrayersController {
                 return true;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -130,14 +121,11 @@ class PrayersController {
                 let config = request;
                 let prayerConfig = this.buildPrayerConfigObject(config.prayerConfig);
                 let locationConfig = config.locationConfig;
-                debug(locationConfig);
                 //let locationConfig: prayerlib.ILocationConfig = await new prayerlib.Configurator().getLocationConfig();
                 this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-                debug(this._prayerManager.getPrayerAdjsutments());
                 return this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -152,7 +140,6 @@ class PrayersController {
                 return prayerAdjustments;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -163,7 +150,6 @@ class PrayersController {
                 return prayersSettings;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -174,7 +160,6 @@ class PrayersController {
                 return prayers;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -185,7 +170,6 @@ class PrayersController {
                 return prayersView;
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 throw new exception_handler_1.HttpException(404, err.message);
             }
@@ -196,7 +180,6 @@ class PrayersController {
                 //  response.json(prayerViewRow);
             }
             catch (err) {
-                debug(err);
                 sentry.captureException(err);
                 //  next(new HttpException(404, err.message));
             }
@@ -310,21 +293,20 @@ class PrayersController {
                 Midnight: moment_1.default(obj.Midnight).format('LT'),
             };
         };
-        let swapPrayers = (x) => ramda_1.default.assoc(x.prayerName, x.prayerTime, x);
-        let removePrayers = (x) => ramda_1.default.omit(['prayerName', 'prayerTime', 'undefined'], x);
-        let prayerTime = ramda_1.default.pipe(swapPrayers, removePrayers);
-        let prayerTimes = (x) => ramda_1.default.map(prayerTime, x);
-        let prayersList = (x) => ramda_1.default.append({ prayersDate: x.prayersDate }, x.prayerTime);
-        let projectPrayers = ramda_1.default.curry(sortObject);
-        let pump = ramda_1.default.pipe(prayersList, prayerTimes, ramda_1.default.mergeAll, projectPrayers);
-        return ramda_1.default.map(pump, prayers);
+        let swapPrayers = (x) => R.assoc(x.prayerName, x.prayerTime, x);
+        let removePrayers = (x) => R.omit(['prayerName', 'prayerTime', 'undefined'], x);
+        let prayerTime = R.pipe(swapPrayers, removePrayers);
+        let prayerTimes = (x) => R.map(prayerTime, x);
+        let prayersList = (x) => R.append({ prayersDate: x.prayersDate }, x.prayerTime);
+        let projectPrayers = R.curry(sortObject);
+        let pump = R.pipe(prayersList, prayerTimes, R.mergeAll, projectPrayers);
+        return R.map(pump, prayers);
     }
     async refreshPrayerManager(prayerConfig, locationConfig) {
         let count = 0;
         try {
             return await retry.default(async (bail) => {
                 count += 1;
-                debug(`the number is now reached ${count}`);
                 let _prayerManager = await prayerlib.PrayerTimeBuilder
                     .createPrayerTimeBuilder(locationConfig, prayerConfig)
                     .createPrayerTimeManager();
@@ -345,7 +327,6 @@ class PrayersController {
             this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw err;
         }

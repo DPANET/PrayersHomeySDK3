@@ -1,17 +1,22 @@
+console.log("I'm Running**************");
 import Homey = require('homey');
+
 import config = require('nconf');
 config.file('env.json');
-process.env.DEBUG = config.get("DEBUG");
+// console.log(config.get("DEBUG"));
+// process.env.DEBUG = config.get("DEBUG");
 import fs from "fs-extra";
 cloneConfig();
+console.log("finished clonning file is running");
+
 import * as manager from "./prayers/manager";
 import prayersController from "./controllers/prayers.controller";
+console.log("running prayers controller clonning file is running");
+
 import { IPrayersController, IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
-import { App } from "./routes/main.router";
 import * as sentry from "@sentry/node";
 import * as prayerlib from "@dpanet/prayers-lib";
-import { realpath } from 'fs';
-import { UserWithThatEmailAlreadyExistsException } from './exceptions/exception.handler';
+
 
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {

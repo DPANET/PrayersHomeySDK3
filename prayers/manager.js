@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appmanager = exports.PrayersAppManager = void 0;
-const debug = require('debug')(process.env.DEBUG);
+//const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const events = __importStar(require("./events"));

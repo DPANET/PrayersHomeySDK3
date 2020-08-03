@@ -22,13 +22,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+console.log("I'm Running**************");
 const Homey = require("homey");
 const config = require("nconf");
 config.file('env.json');
-process.env.DEBUG = config.get("DEBUG");
+// console.log(config.get("DEBUG"));
+// process.env.DEBUG = config.get("DEBUG");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 cloneConfig();
+console.log("finished clonning file is running");
 const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
+console.log("running prayers controller clonning file is running");
 const sentry = __importStar(require("@sentry/node"));
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 sentry.init({ dsn: config.get("DSN") });

@@ -1,5 +1,3 @@
-import Debug from 'debug';
-const debug = Debug("app:router");
 import config from 'nconf';
 import * as prayerlib from "@dpanet/prayers-lib";
 import { IController, IPrayersController } from "./controllers.interface";
@@ -12,7 +10,7 @@ import * as validationController from "../middlewares/validations.middleware"
 import * as validators from "../validators/validations";
 import * as retry from "async-retry";
 import { listenerCount } from 'cluster';
-import R from "ramda";
+import * as R from "ramda";
 import arrows from "@arrows/composition";
 import { IPrayerAdjustments } from '@dpanet/prayers-lib';
 sentry.init({ dsn: config.get("DSN") });
@@ -98,7 +96,7 @@ export default class PrayersController implements IController {
             return locationSettings;
         }
         catch (err) {
-            debug(err);
+         
             sentry.captureException(err);
             new HttpException(404, err.message);
         }
@@ -109,7 +107,7 @@ export default class PrayersController implements IController {
             return this._prayerManager.getPrayerLocationSettings();
         }
         catch (err) {
-            debug(err);
+         
             sentry.captureException(err);
             throw new HttpException(404, err.message);
 
@@ -120,7 +118,7 @@ export default class PrayersController implements IController {
             await this.initializePrayerManger();
         }
         catch (err) {
-            debug(err);
+         
             sentry.captureException(err);
             throw new HttpException(404, err.message);
 
@@ -134,7 +132,6 @@ export default class PrayersController implements IController {
             // fn(request, response, next);
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
         }
@@ -145,7 +142,6 @@ export default class PrayersController implements IController {
             return request;
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
         }
@@ -156,7 +152,6 @@ export default class PrayersController implements IController {
             let result: boolean = this._validatePrayerManager(this._prayerManager);
         }
         catch (err) {
-            debug(err);
             console.log('caught new error')
 
             sentry.captureException(err);
@@ -179,7 +174,6 @@ export default class PrayersController implements IController {
             return true
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
         }
@@ -189,13 +183,10 @@ export default class PrayersController implements IController {
             let config: any = request;
             let prayerConfig: prayerlib.IPrayersConfig = this.buildPrayerConfigObject(config.prayerConfig);
             let locationConfig: prayerlib.ILocationConfig = config.locationConfig;
-            debug(locationConfig);
             //let locationConfig: prayerlib.ILocationConfig = await new prayerlib.Configurator().getLocationConfig();
             this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-            debug(this._prayerManager.getPrayerAdjsutments());
             return this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
         } catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
         }
@@ -236,7 +227,6 @@ export default class PrayersController implements IController {
             return prayerAdjustments;
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
         }
@@ -248,7 +238,6 @@ export default class PrayersController implements IController {
             return prayersSettings;
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
 
@@ -260,7 +249,6 @@ export default class PrayersController implements IController {
             return prayers;
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
 
             throw new HttpException(404, err.message);
@@ -272,7 +260,6 @@ export default class PrayersController implements IController {
             return prayersView;
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw new HttpException(404, err.message);
         }
@@ -284,7 +271,6 @@ export default class PrayersController implements IController {
           //  response.json(prayerViewRow);
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
 
           //  next(new HttpException(404, err.message));
@@ -335,7 +321,6 @@ export default class PrayersController implements IController {
         try {
             return await retry.default(async bail => {
                 count += 1;
-                debug(`the number is now reached ${count}`);
                 let _prayerManager: prayerlib.IPrayerManager = await prayerlib.PrayerTimeBuilder
                     .createPrayerTimeBuilder(locationConfig, prayerConfig)
                     .createPrayerTimeManager();
@@ -358,7 +343,6 @@ export default class PrayersController implements IController {
             this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
         }
         catch (err) {
-            debug(err);
             sentry.captureException(err);
             throw err;
         }

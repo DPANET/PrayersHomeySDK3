@@ -1,4 +1,4 @@
-const debug = require('debug')(process.env.DEBUG);
+//const debug = require('debug')(process.env.DEBUG);
 import config= require('nconf');
 import * as prayerlib from '@dpanet/prayers-lib';
 import * as manager from './manager';
@@ -175,7 +175,7 @@ export class ConfigEventListener implements prayerlib.IObserver<string>
     onCompleted(): void {
           }
     onError(error: Error): void {
-      debug(error);
+     // debug(error);
       console.log(error);
     }
    async onNext(value: string): Promise<void> {

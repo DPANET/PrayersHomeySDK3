@@ -20,7 +20,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigEventListener = exports.ConfigEventProvider = exports.PrayerRefreshEventListener = exports.PrayersRefreshEventProvider = exports.PrayersEventListener = exports.PrayersEventProvider = void 0;
-const debug = require('debug')(process.env.DEBUG);
+//const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const to = require('await-to-js').default;
@@ -170,7 +170,7 @@ class ConfigEventListener {
     onCompleted() {
     }
     onError(error) {
-        debug(error);
+        // debug(error);
         console.log(error);
     }
     async onNext(value) {
