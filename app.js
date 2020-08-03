@@ -16,27 +16,51 @@ config.file('env.json');
 process.env.DEBUG = config.get("DEBUG");
 const fs_extra_1 = __importDefault(require("fs-extra"));
 cloneConfig();
-const manager = __importStar(require("./prayers/manager"));
-const prayers_controller_1 = __importDefault(require("@dpanet/prayerswebapp/lib/controllers/prayers.controller"));
-const main_controller_1 = __importDefault(require("@dpanet/prayerswebapp/lib/controllers/main.controller"));
-const keys_controller_1 = __importDefault(require("@dpanet/prayerswebapp/lib/controllers/keys.controller"));
-const main_router_1 = require("@dpanet/prayerswebapp/lib/routes/main.router");
+const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
 const sentry = __importStar(require("@sentry/node"));
+const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {
-    onInit() {
+    async onInit() {
         try {
             this.log(` Prayers Alert App is running! `);
-            let app = new main_router_1.App([new prayers_controller_1.default(), new main_controller_1.default(), new keys_controller_1.default()]);
-            setTimeout(() => {
-                app.listen();
-            }, 5000);
-            manager.PrayersAppManager.initApp();
+            this._prayersController = new prayers_controller_1.default(prayerlib.ConfigProviderFactory.createConfigProviderFactory(prayerlib.ConfigProviderName.CLIENT));
+            await this._prayersController.initializePrayerManger();
+            // manager.PrayersAppManager.initApp(this.homey);
+            this.log('I ran successfully');
         }
         catch (err) {
             sentry.captureException(err);
             this.log(err);
         }
+    }
+    getPrayersAdjustments() {
+        return this._prayersController.router.getPrayersAdjustments();
+    }
+    getPrayersSettings() {
+        return this._prayersController.router.getPrayersSettings();
+    }
+    getPrayers() {
+        return this._prayersController.router.getPrayers();
+    }
+    getPrayersView() {
+        return this._prayersController.router.getPrayersView();
+    }
+    async getPrayersByCalculation(config) {
+        //Send Config
+        return await this._prayersController.router.getPrayersByCalculation(config);
+    }
+    async loadSettings() {
+        await this._prayersController.router.loadSettings();
+    }
+    async setPrayersByCalculation(config) {
+        return await this._prayersController.router.setPrayersByCalculation(config);
+    }
+    getPrayersLocationSettings() {
+        return this._prayersController.router.getPrayersLocationSettings();
+    }
+    async searchLocation(locationConfig) {
+        return await this._prayersController.router.searchLocation(locationConfig);
     }
 }
 function cloneConfig() {

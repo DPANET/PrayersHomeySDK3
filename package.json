@@ -2,7 +2,7 @@
   "name": "prayers-homey",
   "version": "0.0.5",
   "description": "Homey App to track prayers events based on your location",
-  "main": "index.js",
+  "main": "app.js",
   "types": "index.d.ts",
   "author": {
     "name": "Omar B."
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@arrows/composition": "^1.2.2",
-    "@dpanet/prayers-lib": "^1.9.1",
+    "@dpanet/prayers-lib": "^1.9.2",
     "@google/maps": "^1.1.3",
     "@hapi/joi": "^17.1.1",
     "@sentry/node": "^5.20.1",

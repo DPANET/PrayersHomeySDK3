@@ -2,7 +2,7 @@ const debug = require('debug')(process.env.DEBUG);
 import config= require('nconf');
 import * as prayerlib from '@dpanet/prayers-lib';
 import * as events from './events';
-import Homey = require('homey');
+import Homey from 'homey';
 import { isNullOrUndefined } from 'util';
 import path from "path";
 import * as sentry from "@sentry/node";
@@ -15,6 +15,7 @@ export class PrayersAppManager {
 
 
     private static _prayerAppManger: PrayersAppManager;
+    private homey:Homey.Homey;
     private _homeyPrayersTriggerAll: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersTriggerSpecific: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersAthanAction: Homey.FlowCardAction<Homey.FlowCardAction<any>>;
@@ -24,6 +25,7 @@ export class PrayersAppManager {
     private _configEventListener: events.ConfigEventListener;
     private _configEventProvider: events.ConfigEventProvider;
     private _coinfigFilePath:string;
+    private _configProvider: prayerlib.IConfigProvider
     public get prayerEventProvider(): events.PrayersEventProvider {
         return this._prayerEventProvider;
     }
@@ -54,10 +56,10 @@ export class PrayersAppManager {
     private _prayerConfig: prayerlib.IPrayersConfig;
     private _locationConfig:prayerlib.ILocationConfig;
     // private  _prayerEvents:prayerlib.
-    static async initApp(): Promise<void> {
+    static async initApp(homey:Homey.Homey,configProvider: prayerlib.IConfigProvider): Promise<void> {
         try {
-            appmanager._prayerConfig = await new prayerlib.Configurator().getPrayerConfig();
-            appmanager._locationConfig =await new prayerlib.Configurator().getLocationConfig();
+            appmanager._prayerConfig = await configProvider.getPrayerConfig();
+            appmanager._locationConfig =await configProvider.getLocationConfig();
             appmanager._prayerManager = await prayerlib.PrayerTimeBuilder
                 .createPrayerTimeBuilder(appmanager._locationConfig, appmanager._prayerConfig)
                 //.setPrayerMethod(prayerlib.Methods.Mecca)
@@ -66,6 +68,7 @@ export class PrayersAppManager {
                 .createPrayerTimeManager();
             
             appmanager.initPrayersSchedules();
+            appmanager.homey = homey;
             appmanager.initEvents();
             console.log(appmanager._prayerManager.getUpcomingPrayer());
         }
@@ -76,6 +79,7 @@ export class PrayersAppManager {
     }
     // initallize prayer scheduling and refresh events providers and listeners
     public initPrayersSchedules() {
+    
         this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
@@ -97,12 +101,13 @@ export class PrayersAppManager {
 
     //initialize Homey Events
     public initEvents(): void {
-        this._homeyPrayersTriggerAll = new Homey.FlowCardTrigger('prayer_trigger_all');
-        this._homeyPrayersTriggerSpecific = new Homey.FlowCardTrigger('prayer_trigger_specific');
-        this._homeyPrayersAthanAction = new Homey.FlowCardAction('athan_action');
-        this._homeyPrayersTriggerAll.register();
+        this._homeyPrayersTriggerAll = this.homey.flow.getTriggerCard('prayer_trigger_all');
+        this._homeyPrayersTriggerSpecific = this.homey.flow.getTriggerCard('prayer_trigger_specific');
+        this._homeyPrayersAthanAction = this.homey.flow.getActionCard('athan_action');
+        this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
+            return true;});
         this._homeyPrayersAthanAction
-            .register()
+            //.register()
             .registerRunListener(async (args, state) => {
                 this.playAthan(args.athan_dropdown, athanTypes[args.athan_dropdown])
                     .then((value) => {
@@ -117,8 +122,8 @@ export class PrayersAppManager {
             }
             )
         this._homeyPrayersTriggerSpecific
-            .register()
-            .registerRunListener((args, state) => {
+            //.register()
+            .registerRunListener(async (args, state) => {
                 return (args.athan_dropdown === state.prayer_name);
             })
     }
@@ -184,7 +189,7 @@ export class PrayersAppManager {
     let startDate: Date = prayerlib.DateUtil.getNowDate();
     let endDate: Date = prayerlib.DateUtil.addMonth(1, startDate);
        try{
-        appmanager._prayerConfig = await new prayerlib.Configurator().getPrayerConfig();
+        appmanager._prayerConfig = await this._configProvider.getPrayerConfig();
         appmanager._prayerManager = await prayerlib.PrayerTimeBuilder
             .createPrayerTimeBuilder(null, appmanager._prayerConfig)
             .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())

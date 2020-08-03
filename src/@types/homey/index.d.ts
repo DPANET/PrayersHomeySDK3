@@ -49,6 +49,7 @@ declare module 'homey'
     public getActionCard<T>(id: string): FlowCardAction<T>;
     public getConditionCard<T>(id: string): FlowCardCondition<T>;
     public getDeviceTriggerCard<T>(id: string): FlowCardTrigger<T>;
+    public getTriggerCard<T>(id:string):FlowCardTrigger<T>;
     public unregisterToken<T>(tokenInstance: FlowToken): Promise<any>;
   }
   export class ManagerCloud {
@@ -191,7 +192,7 @@ declare module 'homey'
     public registerAutocompleteListener(fn: (query: string, args: any) => Promise<any>): FlowArgument;
   }
   export class FlowCard<T> extends EventEmitter {
-    constructor(id?: string);
+    //constructor(id?: string);
     public getArgument(): FlowArgument;
     public getArgumentValues(): Promise<Array<any>>;
     public registerRunListener(listener: (args: any, state: any) => Promise<any>): FlowCard<T>;

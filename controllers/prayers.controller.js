@@ -25,7 +25,7 @@ const ramda_1 = __importDefault(require("ramda"));
 const composition_1 = __importDefault(require("@arrows/composition"));
 sentry.init({ dsn: nconf_1.default.get("DSN") });
 class PrayersController {
-    constructor() {
+    constructor(configProvider) {
         this.searchLocation = async (request) => {
             try {
                 let locationSettings;
@@ -41,14 +41,14 @@ class PrayersController {
                 new exception_handler_1.HttpException(404, err.message);
             }
         };
-        this.getPrayerLocation = (request, response, next) => {
+        this.getPrayerLocation = (request) => {
             try {
-                response.json(this._prayerManager.getPrayerLocationSettings());
+                return this._prayerManager.getPrayerLocationSettings();
             }
             catch (err) {
                 debug(err);
                 sentry.captureException(err);
-                next(new exception_handler_1.HttpException(404, err.message));
+                throw new exception_handler_1.HttpException(404, err.message);
             }
         };
         this.reloadConfig = async (request) => {
@@ -96,21 +96,21 @@ class PrayersController {
                 throw new exception_handler_1.HttpException(404, err.message);
             }
         };
-        this.updatePrayersByCalculation = async (request, response, next) => {
+        this.updatePrayersByCalculation = async (request) => {
             try {
                 let prayerConfig = this.buildPrayerConfigObject(request.body.prayerConfig);
                 let locationConfig = request.body.locationConfig;
                 this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-                //    await this._prayerManager.updatePrayerConfig(this._prayerManager.getPrayerConfig(),{profileID:request.body.profileID});
-                //  await this._prayerManager.updateLocationConfig(this._prayerManager.getLocationConfig(),{profileID:request.body.profileID})
+                await this._prayerManager.updatePrayerConfig(this._prayerManager.getPrayerConfig(), { profileID: request.body.profileID });
+                await this._prayerManager.updateLocationConfig(this._prayerManager.getLocationConfig(), { profileID: request.body.profileID });
                 // prayerConfig = await new prayerlib.Configurator().getPrayerConfig();
                 // this._prayerManager = await this.refreshPrayerManager(prayerConfig,locationConfig)
-                response.json("completed");
+                return true;
             }
             catch (err) {
                 debug(err);
                 sentry.captureException(err);
-                next(new exception_handler_1.HttpException(404, err.message));
+                throw new exception_handler_1.HttpException(404, err.message);
             }
         };
         this.getPrayersByCalculation = async (request) => {
@@ -192,6 +192,7 @@ class PrayersController {
         try {
             this.path = "/api/app/com.prayerssapp/PrayerManager";
             this._validationController = new validationController.ValidationMiddleware();
+            this._configProvider = configProvider;
             this.initializeValidators();
             //  this.prayerViewMobileRequestValidator =
             // this.initializePrayerManger()
@@ -226,11 +227,11 @@ class PrayersController {
             getPrayersAdjustments: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerAdjsutments),
             getPrayersSettings: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayersSettings),
             getPrayers: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayers),
-            getPrayersViewDesktop: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerView),
-            getPrayersViewMobile: composition_1.default.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.getPrayersByCalculation),
+            getPrayersView: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerView),
+            getPrayersByCalculation: composition_1.default.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.getPrayersByCalculation),
             loadSettings: composition_1.default.tap(this.reloadConfig),
-            setPrayersViewMobile: composition_1.default.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.getPrayersByCalculation),
-            getPrayersLocation: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerView),
+            setPrayersByCalculation: composition_1.default.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.updatePrayersByCalculation),
+            getPrayersLocationSettings: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerLocation),
             searchLocation: composition_1.default.railAsync(this.searchLocation)
         };
         //console.log("validation run successfuly")
@@ -327,9 +328,8 @@ class PrayersController {
     }
     async initializePrayerManger() {
         try {
-            let configProvider = prayerlib.ConfigProviderFactory.createConfigProviderFactory();
-            let locationConfig = await configProvider.getLocationConfig();
-            let prayerConfig = await configProvider.getPrayerConfig();
+            let locationConfig = await this._configProvider.getLocationConfig();
+            let prayerConfig = await this._configProvider.getPrayerConfig();
             this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
         }
         catch (err) {
@@ -342,4 +342,4 @@ class PrayersController {
         return;
     }
 }
-exports.PrayersController = PrayersController;
+exports.default = PrayersController;

@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const nconf_1 = __importDefault(require("nconf"));
 nconf_1.default.file('config/default.json');
 process.env.DEBUG = nconf_1.default.get("DEBUG");
-const prayers_controller_1 = require("./controllers/prayers.controller");
+const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
 const util_1 = __importDefault(require("util"));
 async function init() {
     // let prayerDBConnection: mongoose.Mongoose;
@@ -15,9 +15,9 @@ async function init() {
         // prayerDBConnection = await mongoose.connect(prayerDBURI, { useNewUrlParser: true, useUnifiedTopology: true });
         // mongoose.set('useCreateIndex', true);
         //mongoose.connections.forEach((value)=>value.close());
-        let prayersContoller = new prayers_controller_1.PrayersController();
+        let prayersContoller = new prayers_controller_1.default();
         await prayersContoller.initializePrayerManger();
-        console.log(util_1.default.inspect(prayersContoller.router.getPrayersViewDesktop(), { showHidden: false, depth: null }));
+        console.log(util_1.default.inspect(prayersContoller.router.getPrayersLocation(), { showHidden: false, depth: null }));
         console.log("I DID't CRAsH >.....................................>");
         //   console.log(prayersContoller.router.getPrayersAdjustments())
         //let app = new App([ new prayersController()]);

@@ -1,11 +1,11 @@
 {
-    "id": "com.prayerssapp",
-    "version": "0.0.16",
-    "compatibility": " >=2.0.0",
-    "sdk": 2,
+    "id": "com.dev.prayerssapp",
+    "version": "0.0.1",
+    "compatibility": " >=5.0.0",
+    "sdk": 3,
     "brandColor": "#2698DD",
     "name": {
-        "en": "Prayers Alert"
+        "en": "Prayers Alert[Dev]"
     },
     "description": {
         "en": "Trigger muslim prayers timing events based on your locations"
@@ -33,7 +33,7 @@
         "name": "Omar"
     },
     "bugs": {
-        "url": "https://github.com/DPANET/PrayersHomey/issues"
+        "url": "https://github.com/DPANET/PrayersHomeySDK3/issues"
     },
     "flow": {
         "triggers": [
@@ -148,5 +148,45 @@
                 ]
             }
         ]
+    },
+    "api": {
+        "getPrayersAdjustments": {
+            "method": "get",
+            "path": "/PrayerManager/PrayersAdjustments",
+            "public":"true"
+        },
+        "getPrayersSettings": {
+            "method": "get",
+            "path": "/PrayerManager/PrayersSettings",
+            "public":"true"
+        },
+        "getPrayers": {
+            "method": "get",
+            "path": "/PrayerManager/Prayers"
+        },
+        "getPrayersView": {
+            "method": "get",
+            "path": "/PrayerManager/PrayersView"
+        },
+        "getPrayersByCalculation": {
+            "method": "get",
+            "path": "/PrayerManager/PrayersByCalculation"
+        },
+        "loadSettings": {
+            "method": "get",
+            "path": "/PrayerManager/LoadSettings"
+        },
+        "setPrayersByCalculation": {
+            "method": "set",
+            "path": "/PrayerManager/PrayersByCalculation"
+        },
+        "getPrayersLocationSettings": {
+            "method": "get",
+            "path": "/PrayerManager/PrayersLocationSettings"
+        },
+        "searchLocation": {
+            "method": "get",
+            "path": "/PrayerManager/SearchLocation"
+        }
     }
 }
