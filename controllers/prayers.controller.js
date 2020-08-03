@@ -1,13 +1,25 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const debug_1 = __importDefault(require("debug"));
@@ -130,7 +142,7 @@ class PrayersController {
                 throw new exception_handler_1.HttpException(404, err.message);
             }
         };
-        this.putPrayersSettings = (request, response) => {
+        this.putPrayersSettings = (request) => {
             let prayerSettings = request.body;
         };
         this.getPrayerAdjsutments = (request) => {
@@ -178,15 +190,15 @@ class PrayersController {
                 throw new exception_handler_1.HttpException(404, err.message);
             }
         };
-        this.getPrayerViewRow = (request, response, next) => {
+        this.getPrayerViewRow = (request) => {
             try {
                 let prayerViewRow = this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
-                response.json(prayerViewRow);
+                //  response.json(prayerViewRow);
             }
             catch (err) {
                 debug(err);
                 sentry.captureException(err);
-                next(new exception_handler_1.HttpException(404, err.message));
+                //  next(new HttpException(404, err.message));
             }
         };
         try {

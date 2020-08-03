@@ -4,7 +4,6 @@ import config from 'nconf';
 import * as prayerlib from "@dpanet/prayers-lib";
 import { IController, IPrayersController } from "./controllers.interface";
 import { IPrayersView, IPrayersViewRow } from "./views.interface";
-import express from 'express';
 import moment from "moment";
 //import { NextFunction, NextHandleFunction } from "connect";
 import { HttpException } from "../exceptions/exception.handler";
@@ -227,7 +226,7 @@ export default class PrayersController implements IController {
         }
         return prayerConfigObject;
     }
-    private putPrayersSettings = (request: express.Request, response: express.Response) => {
+    private putPrayersSettings = (request: any) => {
         let prayerSettings: prayerlib.IPrayersSettings = request.body;
     }
     private getPrayerAdjsutments = (request: any): prayerlib.IPrayerAdjustments[] => {
@@ -279,16 +278,16 @@ export default class PrayersController implements IController {
         }
 
     }
-    private getPrayerViewRow = (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    private getPrayerViewRow = (request:any) => {
         try {
             let prayerViewRow: Array<IPrayersViewRow> = this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
-            response.json(prayerViewRow);
+          //  response.json(prayerViewRow);
         }
         catch (err) {
             debug(err);
             sentry.captureException(err);
 
-            next(new HttpException(404, err.message));
+          //  next(new HttpException(404, err.message));
         }
     }
     private createPrayerViewRow(prayersView: IPrayersView[]) {
