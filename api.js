@@ -9,13 +9,60 @@ module.exports =
             // you can access query parameters like `/?foo=bar` through args.query.foo
             let result = homey.app.getPrayersAdjustments();
             // perform other logic like mapping result data
-            return result;
+            return Promise.resolve(result);
         },
         async getPrayersSettings({ homey }) {
             // you can access query parameters like `/?foo=bar` through args.query.foo
             let result = homey.app.getPrayersSettings();
             // perform other logic like mapping result data
+            return Promise.resolve(result);
+        },
+        async getPrayers({ homey }) {
+            // you can access query parameters like `/?foo=bar` through args.query.foo
+            let result = homey.app.getPrayers();
+            // perform other logic like mapping result data
+            return Promise.resolve(result);
+        },
+        async getPrayersView({ homey }) {
+            let result = homey.app.getPrayersView();
+            return Promise.resolve(result);
+        },
+        async getPrayersByCalculation({ homey, body }) {
+            let result = await homey.app.getPrayersByCalculation(body);
             return result;
+        },
+        async loadSettings({ homey }) {
+            let result = homey.app.loadSettings();
+        },
+        async setPrayersByCalculation({ homey, body }) {
+            try {
+                let result = await homey.app.setPrayersByCalculation(body);
+                return result;
+            }
+            catch (err) {
+                console.log(err);
+                throw err;
+            }
+        },
+        async getPrayersLocationSettings({ homey }) {
+            try {
+                let result = homey.app.getPrayersLocationSettings();
+                return Promise.resolve(result);
+            }
+            catch (err) {
+                console.log(err);
+                throw err;
+            }
+        },
+        async searchLocation({ homey, body }) {
+            try {
+                let result = homey.app.searchLocation(body);
+                return Promise.resolve(result);
+            }
+            catch (err) {
+                console.log(err);
+                throw err;
+            }
         }
     };
 // [

@@ -13,7 +13,7 @@ import * as manager from "./prayers/manager";
 import prayersController from "./controllers/prayers.controller";
 console.log("running prayers controller clonning file is running");
 
-import { IPrayersController, IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
+import {IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
 import * as sentry from "@sentry/node";
 import * as prayerlib from "@dpanet/prayers-lib";
 
