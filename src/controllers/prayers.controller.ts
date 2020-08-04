@@ -56,7 +56,7 @@ export default class PrayersController implements IController {
         // this._validateConfigPrayerBody = this._validationController.validationMiddlewareByRequest
         //     .bind(this, validators.PrayerConfigValidator.createValidator(), validationController.ParameterType.body);
         this._validateConfigLocationObject = this._validationController.validationMiddlewareByObject
-            .bind(this, validators.LocationValidator.createValidator());
+            .bind(this, validators.LocationConfigValidator.createValidator());
         this._validationConfigPrayerObject = this._validationController.validationMiddlewareByObject
             .bind(this, validators.PrayerConfigValidator.createValidator());
         //  this.validateConfigLocationRequest = this._validationController.validationMiddlewareByObject.bind(this,validato)
@@ -126,6 +126,7 @@ export default class PrayersController implements IController {
     }
     private validatePrayerConfigRequest = async (request: any) => {
         try {
+            console.log("prayerconfig "+request.prayerConfig)
             let result: boolean = this._validationConfigPrayerObject(request.prayerConfig);
             console.log(result);
             return request;

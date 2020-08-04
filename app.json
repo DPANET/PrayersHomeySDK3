@@ -153,40 +153,47 @@
         "getPrayersAdjustments": {
             "method": "get",
             "path": "/PrayerManager/PrayersAdjustments",
-            "public":"true"
+            "public":true
         },
         "getPrayersSettings": {
             "method": "get",
             "path": "/PrayerManager/PrayersSettings",
-            "public":"true"
+            "public":true
         },
         "getPrayers": {
             "method": "get",
-            "path": "/PrayerManager/Prayers"
+            "path": "/PrayerManager/Prayers",
+            "public":true
         },
         "getPrayersView": {
             "method": "get",
-            "path": "/PrayerManager/PrayersView"
+            "path": "/PrayerManager/PrayersView",
+            "public":true
         },
         "getPrayersByCalculation": {
             "method": "get",
-            "path": "/PrayerManager/PrayersByCalculation"
+            "path": "/PrayerManager/PrayersByCalculation",
+            "public":true
         },
         "loadSettings": {
             "method": "get",
-            "path": "/PrayerManager/LoadSettings"
+            "path": "/PrayerManager/LoadSettings",
+            "public":true
         },
         "setPrayersByCalculation": {
             "method": "set",
-            "path": "/PrayerManager/PrayersByCalculation"
+            "path": "/PrayerManager/PrayersByCalculation",
+            "public":true
         },
         "getPrayersLocationSettings": {
             "method": "get",
-            "path": "/PrayerManager/PrayersLocationSettings"
+            "path": "/PrayerManager/PrayersLocationSettings",
+            "public":true
         },
         "searchLocation": {
             "method": "get",
-            "path": "/PrayerManager/SearchLocation"
+            "path": "/PrayerManager/SearchLocation",
+            "public":true
         }
     }
 }
