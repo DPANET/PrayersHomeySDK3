@@ -212,7 +212,7 @@ class PrayersController {
         // this._validateConfigPrayerBody = this._validationController.validationMiddlewareByRequest
         //     .bind(this, validators.PrayerConfigValidator.createValidator(), validationController.ParameterType.body);
         this._validateConfigLocationObject = this._validationController.validationMiddlewareByObject
-            .bind(this, validators.LocationValidator.createValidator());
+            .bind(this, validators.LocationConfigValidator.createValidator());
         this._validationConfigPrayerObject = this._validationController.validationMiddlewareByObject
             .bind(this, validators.PrayerConfigValidator.createValidator());
         //  this.validateConfigLocationRequest = this._validationController.validationMiddlewareByObject.bind(this,validato)
