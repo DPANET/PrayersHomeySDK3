@@ -27,9 +27,15 @@ module.exports =
             let result = homey.app.getPrayersView();
             return Promise.resolve(result);
         },
-        async getPrayersByCalculation({ homey, body }) {
-            let result = await homey.app.getPrayersByCalculation(body);
-            return result;
+        async getPrayersByCalculation({ homey, query }) {
+            try {
+                let result = await homey.app.getPrayersByCalculation(query);
+                return result;
+            }
+            catch (err) {
+                console.log(err.message);
+                throw err;
+            }
         },
         async loadSettings({ homey }) {
             let result = homey.app.loadSettings();
@@ -40,7 +46,7 @@ module.exports =
                 return result;
             }
             catch (err) {
-                console.log(err);
+                console.log(err.message);
                 throw err;
             }
         },

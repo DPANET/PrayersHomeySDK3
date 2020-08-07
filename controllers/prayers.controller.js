@@ -103,11 +103,13 @@ class PrayersController {
         };
         this.updatePrayersByCalculation = async (request) => {
             try {
-                let prayerConfig = this.buildPrayerConfigObject(request.body.prayerConfig);
-                let locationConfig = request.body.locationConfig;
+                let prayerConfig = this.buildPrayerConfigObject(request.prayerConfig);
+                let locationConfig = request.locationConfig;
                 this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-                await this._prayerManager.updatePrayerConfig(this._prayerManager.getPrayerConfig(), { profileID: request.body.profileID });
-                await this._prayerManager.updateLocationConfig(this._prayerManager.getLocationConfig(), { profileID: request.body.profileID });
+                // await this._prayerManager.updatePrayerConfig(this._prayerManager.getPrayerConfig(), null,this._configProvider);
+                //await this._prayerManager.updateLocationConfig(this._prayerManager.getLocationConfig(), null,this._configProvider);
+                await this._configProvider.updateLocationConfig(locationConfig);
+                await this._configProvider.updatePrayerConfig(prayerConfig);
                 // prayerConfig = await new prayerlib.Configurator().getPrayerConfig();
                 // this._prayerManager = await this.refreshPrayerManager(prayerConfig,locationConfig)
                 return true;

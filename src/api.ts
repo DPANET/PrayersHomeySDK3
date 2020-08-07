@@ -42,9 +42,15 @@ module.exports =
     return Promise.resolve(result);
 
   },
-  async getPrayersByCalculation({ homey, body }: any): Promise<IPrayersViewRow[]> {
-    let result = await homey.app.getPrayersByCalculation(body);
+  async getPrayersByCalculation({ homey, query}: any): Promise<IPrayersViewRow[]> {
+    try{
+    let result = await homey.app.getPrayersByCalculation(query);
     return result;
+    }
+    catch (err) {
+      console.log(err.message);
+      throw err;
+    }
   },
   async loadSettings({ homey }: any): Promise<void> {
     let result = homey.app.loadSettings();
@@ -56,7 +62,7 @@ module.exports =
       return result;
     } 
     catch (err) {
-      console.log(err);
+      console.log(err.message);
       throw err;
     }
 

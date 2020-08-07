@@ -165,11 +165,13 @@ export default class PrayersController implements IController {
 
     private updatePrayersByCalculation = async (request: any) => {
         try {
-            let prayerConfig: prayerlib.IPrayersConfig = this.buildPrayerConfigObject(request.body.prayerConfig);
-            let locationConfig: prayerlib.ILocationConfig = request.body.locationConfig;
+            let prayerConfig: prayerlib.IPrayersConfig = this.buildPrayerConfigObject(request.prayerConfig);
+            let locationConfig: prayerlib.ILocationConfig = request.locationConfig;
             this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-            await this._prayerManager.updatePrayerConfig(this._prayerManager.getPrayerConfig(), { profileID: request.body.profileID },this._configProvider);
-            await this._prayerManager.updateLocationConfig(this._prayerManager.getLocationConfig(), { profileID: request.body.profileID },this._configProvider)
+           // await this._prayerManager.updatePrayerConfig(this._prayerManager.getPrayerConfig(), null,this._configProvider);
+            //await this._prayerManager.updateLocationConfig(this._prayerManager.getLocationConfig(), null,this._configProvider);
+            await this._configProvider.updateLocationConfig(locationConfig);
+            await this._configProvider.updatePrayerConfig(prayerConfig)
             // prayerConfig = await new prayerlib.Configurator().getPrayerConfig();
             // this._prayerManager = await this.refreshPrayerManager(prayerConfig,locationConfig)
             return true

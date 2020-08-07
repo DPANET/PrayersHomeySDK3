@@ -63,13 +63,14 @@ class PrayersApp extends Homey.App {
         return this._prayersController.router.getPrayersView();
     }
     async getPrayersByCalculation(config) {
-        //Send Config
+        console.log(config);
         return await this._prayersController.router.getPrayersByCalculation(config);
     }
     async loadSettings() {
         await this._prayersController.router.loadSettings();
     }
     async setPrayersByCalculation(config) {
+        console.log(config);
         return await this._prayersController.router.setPrayersByCalculation(config);
     }
     getPrayersLocationSettings() {

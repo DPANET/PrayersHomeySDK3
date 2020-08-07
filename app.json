@@ -181,7 +181,7 @@
             "public":true
         },
         "setPrayersByCalculation": {
-            "method": "set",
+            "method": "post",
             "path": "/PrayerManager/PrayersByCalculation",
             "public":true
         },
