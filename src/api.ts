@@ -78,10 +78,10 @@ module.exports =
     throw err;
   }
   },
-  async searchLocation({homey,body}:any):Promise<prayerlib.ILocationSettings>
+  async searchLocation({homey,query}:any):Promise<prayerlib.ILocationSettings>
   {
     try{
-    let result = homey.app.searchLocation(body);
+    let result = homey.app.searchLocation(query);
     return Promise.resolve(result);
   } 
   catch (err) {

@@ -6,8 +6,9 @@ const to = require('await-to-js').default;
 import { isNullOrUndefined } from 'util';
 import * as cron from 'cron';
 import { DateUtil } from '@dpanet/prayers-lib';
-import chokidar = require('chokidar');
+//import chokidar = require('chokidar');
 import * as sentry from "@sentry/node";
+import Homey from "homey"
 sentry.init({ dsn: config.get("DSN") });
 
 
@@ -127,46 +128,46 @@ export class PrayerRefreshEventListener implements prayerlib.IObserver<prayerlib
     onNext(value: prayerlib.IPrayerManager): void {
     }
 }
-export class ConfigEventProvider extends prayerlib.EventProvider<string>
+export class ConfigEventProvider extends prayerlib.EventProvider<Homey.Homey>
 {
-    private _pathName: string;
-    private _chokidar: chokidar.FSWatcher;
-    constructor(pathName: string) {
+    private _homey: Homey.Homey;
+  //  private _chokidar: chokidar.FSWatcher;
+    constructor(homey: Homey.Homey) {
         super();
-        this._pathName= pathName;
-        this._chokidar = chokidar.watch(this._pathName,{awaitWriteFinish:true,persistent:true,ignorePermissionErrors:true,usePolling :true});
+        this._homey= homey;
+      //  this._chokidar = chokidar.watch(this._pathName,{awaitWriteFinish:true,persistent:true,ignorePermissionErrors:true,usePolling :true});
 
-        this._chokidar.on("change",this.fileChangedEvent.bind(this))
-        this._chokidar.on("error",this.fileChangeError.bind(this));
+        this._homey.settings.on("set",this.settingsChangedEvent.bind(this))
+        this._homey.settings.on("error",this.settingsChangedError.bind(this));
 
     }
-    public registerListener(observer: prayerlib.IObserver<string>): void {
+    public registerListener(observer: prayerlib.IObserver<Homey.Homey>): void {
         super.registerListener(observer);
     }
-    public removeListener(observer: prayerlib.IObserver<string>): void {
+    public removeListener(observer: prayerlib.IObserver<Homey.Homey>): void {
         super.removeListener(observer);
     }
-    public notifyObservers(eventType: prayerlib.EventsType, fileName: string, error?: Error): void {
-        super.notifyObservers(eventType, fileName, error);
+    public notifyObservers(eventType: prayerlib.EventsType, homey: Homey.Homey, error?: Error): void {
+        super.notifyObservers(eventType, homey, error);
     }
-    private fileChangedEvent(pathName:string)
+    private settingsChangedEvent(homey:Homey.Homey)
     {
         try{
-        this.notifyObservers(prayerlib.EventsType.OnNext,pathName);
+        this.notifyObservers(prayerlib.EventsType.OnNext,homey);
         }
         catch(err)
         {
-            this.notifyObservers(prayerlib.EventsType.OnError,pathName,err)
+            this.notifyObservers(prayerlib.EventsType.OnError,homey,err)
         }
 
     }
-    private fileChangeError(error:Error)
+    private settingsChangedError(error:Error)
     {
-        this.notifyObservers(prayerlib.EventsType.OnError,this._pathName,error);
+        this.notifyObservers(prayerlib.EventsType.OnError,this._homey,error);
     }
 }
 
-export class ConfigEventListener implements prayerlib.IObserver<string>
+export class ConfigEventListener implements prayerlib.IObserver<Homey.Homey>
 {
     private _prayerAppManager: manager.PrayersAppManager
     constructor(prayerAppManager: manager.PrayersAppManager) {
@@ -178,9 +179,9 @@ export class ConfigEventListener implements prayerlib.IObserver<string>
      // debug(error);
       console.log(error);
     }
-   async onNext(value: string): Promise<void> {
+   async onNext(value: Homey.Homey): Promise<void> {
       //  debug(`${value} config file has been saved`);
-        console.log(`${value} config file has been saved`);
+        console.log(`${value.settings.getKeys()} config file has been saved`);
         await this._prayerAppManager.refreshPrayerManagerByConfig();
     }
 }

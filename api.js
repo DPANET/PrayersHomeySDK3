@@ -60,9 +60,9 @@ module.exports =
                 throw err;
             }
         },
-        async searchLocation({ homey, body }) {
+        async searchLocation({ homey, query }) {
             try {
-                let result = homey.app.searchLocation(body);
+                let result = homey.app.searchLocation(query);
                 return Promise.resolve(result);
             }
             catch (err) {

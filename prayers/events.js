@@ -1,19 +1,32 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConfigEventListener = exports.ConfigEventProvider = exports.PrayerRefreshEventListener = exports.PrayersRefreshEventProvider = exports.PrayersEventListener = exports.PrayersEventProvider = void 0;
 //const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const to = require('await-to-js').default;
 const util_1 = require("util");
 const cron = __importStar(require("cron"));
-const chokidar = require("chokidar");
+//import chokidar = require('chokidar');
 const sentry = __importStar(require("@sentry/node"));
 sentry.init({ dsn: config.get("DSN") });
 class PrayersEventProvider extends prayerlib.EventProvider {
@@ -121,12 +134,13 @@ class PrayerRefreshEventListener {
 }
 exports.PrayerRefreshEventListener = PrayerRefreshEventListener;
 class ConfigEventProvider extends prayerlib.EventProvider {
-    constructor(pathName) {
+    //  private _chokidar: chokidar.FSWatcher;
+    constructor(homey) {
         super();
-        this._pathName = pathName;
-        this._chokidar = chokidar.watch(this._pathName, { awaitWriteFinish: true, persistent: true, ignorePermissionErrors: true, usePolling: true });
-        this._chokidar.on("change", this.fileChangedEvent.bind(this));
-        this._chokidar.on("error", this.fileChangeError.bind(this));
+        this._homey = homey;
+        //  this._chokidar = chokidar.watch(this._pathName,{awaitWriteFinish:true,persistent:true,ignorePermissionErrors:true,usePolling :true});
+        this._homey.settings.on("set", this.settingsChangedEvent.bind(this));
+        this._homey.settings.on("error", this.settingsChangedError.bind(this));
     }
     registerListener(observer) {
         super.registerListener(observer);
@@ -134,19 +148,19 @@ class ConfigEventProvider extends prayerlib.EventProvider {
     removeListener(observer) {
         super.removeListener(observer);
     }
-    notifyObservers(eventType, fileName, error) {
-        super.notifyObservers(eventType, fileName, error);
+    notifyObservers(eventType, homey, error) {
+        super.notifyObservers(eventType, homey, error);
     }
-    fileChangedEvent(pathName) {
+    settingsChangedEvent(homey) {
         try {
-            this.notifyObservers(prayerlib.EventsType.OnNext, pathName);
+            this.notifyObservers(prayerlib.EventsType.OnNext, homey);
         }
         catch (err) {
-            this.notifyObservers(prayerlib.EventsType.OnError, pathName, err);
+            this.notifyObservers(prayerlib.EventsType.OnError, homey, err);
         }
     }
-    fileChangeError(error) {
-        this.notifyObservers(prayerlib.EventsType.OnError, this._pathName, error);
+    settingsChangedError(error) {
+        this.notifyObservers(prayerlib.EventsType.OnError, this._homey, error);
     }
 }
 exports.ConfigEventProvider = ConfigEventProvider;
@@ -162,7 +176,7 @@ class ConfigEventListener {
     }
     async onNext(value) {
         //  debug(`${value} config file has been saved`);
-        console.log(`${value} config file has been saved`);
+        console.log(`${value.settings.getKeys()} config file has been saved`);
         await this._prayerAppManager.refreshPrayerManagerByConfig();
     }
 }

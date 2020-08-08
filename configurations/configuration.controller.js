@@ -16,9 +16,10 @@ const prayerConfigFE = {
     school: 0,
     midnight: 0,
     adjustmentMethod: 2,
-    latitudeAdjustment: 3,
-    startDate: new Date(),
-    endDate: prayers_lib_1.DateUtil.addMonth(1, new Date()),
+    latitudeAdjustment: 3
+    //  startDate: DateUtil.getNowDate(),
+    // endDate: DateUtil.addMonth(1, DateUtil.getNowDate())
+    ,
     adjustments: [
         { prayerName: prayers_lib_1.PrayersName.IMSAK, adjustments: 0 },
         { prayerName: prayers_lib_1.PrayersName.FAJR, adjustments: 0 },
@@ -133,7 +134,7 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
                 });
             }
             else {
-                return Promise.reject(ConfigErrorMessages.FILE_NOT_FOUND);
+                return Promise.resolve(this.createDefaultConfig());
             }
         }
         catch (err) {

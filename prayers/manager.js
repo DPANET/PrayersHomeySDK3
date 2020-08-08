@@ -1,22 +1,34 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.appmanager = exports.PrayersAppManager = void 0;
 //const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const events = __importStar(require("./events"));
 const homey_1 = __importDefault(require("homey"));
 const util_1 = require("util");
-const path_1 = __importDefault(require("path"));
 const sentry = __importStar(require("@sentry/node"));
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;
@@ -68,7 +80,7 @@ class PrayersAppManager {
     }
     // initallize prayer scheduling and refresh events providers and listeners
     initPrayersSchedules() {
-        this._coinfigFilePath = path_1.default.join(config.get("CONFIG_FOLDER_PATH"), config.get("PRAYER_CONFIG"));
+        //  this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
         this._prayerEventProvider.registerListener(this._prayerEventListener);
@@ -76,7 +88,7 @@ class PrayersAppManager {
         this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
         this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
-        this._configEventProvider = new events.ConfigEventProvider(this._coinfigFilePath);
+        this._configEventProvider = new events.ConfigEventProvider(this.homey);
         this._configEventListener = new events.ConfigEventListener(this);
         this._configEventProvider.registerListener(this._configEventListener);
     }
@@ -171,9 +183,10 @@ class PrayersAppManager {
         let endDate = prayerlib.DateUtil.addMonth(1, startDate);
         try {
             exports.appmanager._prayerConfig = await this._configProvider.getPrayerConfig();
+            exports.appmanager._locationConfig = await this._configProvider.getLocationConfig();
             exports.appmanager._prayerManager = await prayerlib.PrayerTimeBuilder
-                .createPrayerTimeBuilder(null, exports.appmanager._prayerConfig)
-                .setLocationByCoordinates(homey_1.default.ManagerGeolocation.getLatitude(), homey_1.default.ManagerGeolocation.getLongitude())
+                .createPrayerTimeBuilder(exports.appmanager._locationConfig, exports.appmanager._prayerConfig)
+                // .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
                 .createPrayerTimeManager();
             this.prayerEventProvider.startPrayerSchedule(exports.appmanager._prayerManager);
         }

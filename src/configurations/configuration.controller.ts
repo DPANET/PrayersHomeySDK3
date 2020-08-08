@@ -28,15 +28,15 @@ export const enum ConfigSettingsKeys {
     PrayersConfigKey = "prayerConfig",
     LocationConfigKey = "locationConfig",
 }
-const prayerConfigFE: IPrayersConfig =
+const prayerConfigFE: any =
 {
     method: 4,
     school: 0,
     midnight: 0,
     adjustmentMethod: 2,
-    latitudeAdjustment: 3,
-    startDate: new Date(),
-    endDate: DateUtil.addMonth(1, new Date())
+    latitudeAdjustment: 3
+  //  startDate: DateUtil.getNowDate(),
+   // endDate: DateUtil.addMonth(1, DateUtil.getNowDate())
     ,
     adjustments: [
         { prayerName: PrayersName.IMSAK, adjustments: 0 },
@@ -162,7 +162,7 @@ export default class HomeyConfigurator extends ConfigProvider {
                 });
             }
             else {
-                return Promise.reject(ConfigErrorMessages.FILE_NOT_FOUND)
+                return Promise.resolve(this.createDefaultConfig());
             }
         }
         catch (err) {

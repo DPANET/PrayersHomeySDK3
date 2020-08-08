@@ -11,10 +11,10 @@ config.file('env.json');
 
 import * as manager from "./prayers/manager";
 import prayersController from "./controllers/prayers.controller";
-import HomeyConfigurator from "./configurations/configuration.controller";
+import HomeyConfigurator, {ConfigSettingsKeys} from "./configurations/configuration.controller";
 console.log("running prayers controller clonning file is running");
 
-import {IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
+import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
 import * as sentry from "@sentry/node";
 import * as prayerlib from "@dpanet/prayers-lib";
 
@@ -22,14 +22,15 @@ import * as prayerlib from "@dpanet/prayers-lib";
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {
   private _prayersController: prayersController;
-  private _homeyConfigurator:prayerlib.IConfigProvider;
+  private _homeyConfigurator: prayerlib.IConfigProvider;
+  private _iConfig:prayerlib.IConfig;
   async onInit() {
     try {
 
       this.log(` Prayers Alert App is running! `);
       this.initalizeConfig();
       this._prayersController = new prayersController(this._homeyConfigurator);
-      await this._prayersController.initializePrayerManger();
+       await this._prayersController.initializePrayerManger();
       // manager.PrayersAppManager.initApp(this.homey);
       this.log('I ran successfully');
     }
@@ -71,14 +72,20 @@ class PrayersApp extends Homey.App {
   }
   public async initalizeConfig() {
     //fs.copySync(Homey.env.NODE_CONFIG_DIR, Homey.env.CONFIG_FOLDER_PATH, { overwrite: false });
-    this._homeyConfigurator = prayerlib.ConfigProviderFactory.createConfigProviderFactory(HomeyConfigurator,this.homey);
-    if (prayerlib.isNullOrUndefined(this._homeyConfigurator.getConfig()))
-    {
-      this._homeyConfigurator.createDefaultConfig();
-    }
+    try {
+    //  this.homey.settings.unset(ConfigSettingsKeys.LocationConfigKey);
+      //this.homey.settings.unset(ConfigSettingsKeys.PrayersConfigKey);
+      this._homeyConfigurator = prayerlib.ConfigProviderFactory.createConfigProviderFactory(HomeyConfigurator, this.homey);
+      this._iConfig = await this._homeyConfigurator.getConfig();
 
+
+    } catch (err) {
+     // await this._homeyConfigurator.createDefaultConfig()
+      console.log(err)
+    }
   }
 }
+
 
 module.exports = PrayersApp;
 

@@ -96,7 +96,7 @@ export default class PrayersController implements IController {
             return locationSettings;
         }
         catch (err) {
-         
+            console.log(err)
             sentry.captureException(err);
             new HttpException(404, err.message);
         }

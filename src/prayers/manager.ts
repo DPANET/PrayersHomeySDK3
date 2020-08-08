@@ -24,7 +24,7 @@ export class PrayersAppManager {
     private _prayerEventProvider: events.PrayersEventProvider; ///= new event.PrayersEventProvider(prayerManager);
     private _configEventListener: events.ConfigEventListener;
     private _configEventProvider: events.ConfigEventProvider;
-    private _coinfigFilePath:string;
+   // private _coinfigFilePath:string;
     private _configProvider: prayerlib.IConfigProvider
     public get prayerEventProvider(): events.PrayersEventProvider {
         return this._prayerEventProvider;
@@ -80,7 +80,7 @@ export class PrayersAppManager {
     // initallize prayer scheduling and refresh events providers and listeners
     public initPrayersSchedules() {
     
-        this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
+      //  this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
         this._prayerEventProvider.registerListener(this._prayerEventListener);
@@ -88,7 +88,7 @@ export class PrayersAppManager {
         this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
         this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
-        this._configEventProvider = new events.ConfigEventProvider(this._coinfigFilePath);
+        this._configEventProvider = new events.ConfigEventProvider(this.homey);
         this._configEventListener = new events.ConfigEventListener(this);
         this._configEventProvider.registerListener(this._configEventListener);
 
@@ -190,9 +190,10 @@ export class PrayersAppManager {
     let endDate: Date = prayerlib.DateUtil.addMonth(1, startDate);
        try{
         appmanager._prayerConfig = await this._configProvider.getPrayerConfig();
+        appmanager._locationConfig = await this._configProvider.getLocationConfig()
         appmanager._prayerManager = await prayerlib.PrayerTimeBuilder
-            .createPrayerTimeBuilder(null, appmanager._prayerConfig)
-            .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
+            .createPrayerTimeBuilder(appmanager._locationConfig, appmanager._prayerConfig)
+           // .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
             .createPrayerTimeManager();
         this.prayerEventProvider.startPrayerSchedule(appmanager._prayerManager);
         }catch(err)
