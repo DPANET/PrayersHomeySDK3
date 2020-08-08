@@ -20,20 +20,20 @@
   },
   "dependencies": {
     "@arrows/composition": "^1.2.2",
-    "@dpanet/prayers-lib": "^1.9.10",
+    "@dpanet/prayers-lib": "^1.9.13",
     "@google/maps": "^1.1.3",
     "@hapi/joi": "^17.1.1",
     "@sentry/node": "^5.20.1",
     "async-retry": "^1.3.1",
     "chokidar": "^3.0.1",
-    "cron": "^1.7.1",
+    "cron": "^1.8.2",
     "fs-extra": "^8.1.0",
     "nconf": "^0.10.0",
     "ramda": "^0.27.1"
   },
   "devDependencies": {
     "@types/async-retry": "^1.4.2",
-    "@types/cron": "^1.7.1",
+    "@types/cron": "^1.7.2",
     "@types/dotenv": "^6.1.1",
     "@types/fs-extra": "^7.0.0",
     "@types/hapi__joi": "^17.1.4",
