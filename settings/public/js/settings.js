@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -6,21 +9,20 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 //import $ = require('jquery');
-const prayerlib = __importStar(require("../../models/prayers.model"));
 const moment_1 = __importDefault(require("moment"));
 const noty_1 = __importDefault(require("noty"));
-const google = require("google");
+const prayerlib = __importStar(require("@dpanet/prayers-lib/lib/entities/prayer"));
+const prayerConfigValidator = __importStar(require("@dpanet/prayers-lib/lib/validators/validator"));
+const google = require("@google/maps");
 //import { isNullOrUndefined } from 'util';
 // const DataTable = require("datatables.net")(window, $);
 //const daterangepicker = require("daterangepicker");
 // const DataTableResp = require("datatables.net-responsive")(window, $);
 // const DataTableRowGroup = require("datatables.net-rowgroup")(window, $);
-var mainURL = `${location.origin}/api/app/com.prayerssapp`;
+var mainURL = `${location.origin}/api/app/com.dev.prayerssapp`;
+//var mainURL = 'http://192.168.86.81/api/app/com.dev.prayerssapp';
 async function buildObject() {
     let noty;
     await $('document').ready(async () => {
@@ -40,7 +42,7 @@ async function buildObject() {
 exports.buildObject = buildObject;
 async function loadPrayerLocation() {
     return await $.ajax({
-        url: `${mainURL}/PrayerManager/PrayersLocation`,
+        url: `${mainURL}/PrayerManager/PrayersLocationSettings`,
         // error: genericErrorHandler,
         dataType: "json",
         success: (prayersLocation) => {
@@ -51,7 +53,8 @@ async function loadPrayerLocation() {
 function loadLocationSettings(prayersLocation) {
     $("#city").val(`${prayersLocation.city}/ ${prayersLocation.countryCode}`);
     $("#coordinates").val(`(${prayersLocation.latitude},${prayersLocation.longtitude})`);
-    $("#time-zone").val(`(${prayersLocation.timeZoneId})`);
+    // $("#time-zone").val(`(${prayersLocation.timeZoneId})`); 
+    $("#coordinates").data("location", prayersLocation);
 }
 function initForm() {
     $("#view-button").on("click", refreshDataTable);
@@ -154,22 +157,27 @@ function refreshLocationConfig() {
     coordinates = coordinates.replace("(", "");
     coordinates = coordinates.replace(")", "");
     latlngArray = coordinates.split(",");
-    let latlng = {
+    let latlng = $("#coordinates").data("location");
+    let locationConfig = {
         location: {
-            latitude: parseFloat(latlngArray[0]),
-            longtitude: parseFloat(latlngArray[1]),
+            latitude: latlng.latitude,
+            longtitude: latlng.longtitude,
+            city: latlng.city,
+            countryCode: latlng.countryCode,
+            countryName: latlng.countryName,
+            address: latlng.city
         },
         timezone: {
-            timeZoneId: null,
-            timeZoneName: null,
-            rawOffset: null,
-            dstOffset: null
+            timeZoneId: latlng.timeZoneId,
+            timeZoneName: latlng.timeZoneName,
+            rawOffset: latlng.rawOffset,
+            dstOffset: latlng.dstOffset
         }
     };
-    return latlng;
+    return locationConfig;
 }
 function validatePrayerForm(prayersConfig) {
-    let validator = prayerlib.PrayerConfigValidator.createValidator();
+    let validator = prayerConfigValidator.PrayerConfigValidator.createValidator();
     let result = validator.validate(prayersConfig);
     if (result)
         return result;
@@ -181,7 +189,7 @@ function validatePrayerForm(prayersConfig) {
     }
 }
 function validateLocationForm(locationConfig) {
-    let validator = prayerlib.LocationValidator.createValidator();
+    let validator = prayerConfigValidator.LocationValidator.createValidator();
     let result = validator.validate(locationConfig.location);
     if (result)
         return result;
@@ -222,13 +230,25 @@ async function saveDataTable() {
         let locationValidationResult = validateLocationForm(locationConfig);
         if (prayerValidationResult && locationValidationResult) {
             await $.ajax({
-                url: `${mainURL}/PrayerManager/PrayersViewMobile`, type: "POST",
-                data: JSON.stringify({ "prayerConfig": refreshPrayerConfigForm(),
+                url: `${mainURL}/PrayerManager/PrayersByCalculation`, type: "POST",
+                data: 
+                // (d) => {
+                //     try {
+                //         let config={ "prayerConfig":refreshPrayerConfigForm(),
+                //         "locationConfig": refreshLocationConfig()}
+                //         return config;
+                //     }
+                //     catch (err) {
+                //         //notify("error", err.message);
+                //     }
+                // },
+                JSON.stringify({ "prayerConfig": refreshPrayerConfigForm(),
                     "locationConfig": refreshLocationConfig() }),
                 dataType: "json",
                 //crossDomain:true,
+                processData: true,
                 contentType: "application/json; charset=utf-8",
-                // error: genericErrorHandler,
+                error: dataRefreshErrorHandler,
                 success: () => notify("success", "Configuration is saved")
             }).catch((jqXHR, textStatus, errorThrown) => { throw new Error(jqXHR.responseJSON.message); });
         }
@@ -244,7 +264,7 @@ async function loadDataTable() {
     let paramlist = new Array();
     await $('#prayers-table-mobile').DataTable({
         ajax: {
-            url: `${mainURL}/PrayerManager/PrayersViewMobile`,
+            url: `${mainURL}/PrayerManager/PrayersByCalculation`,
             type: 'GET',
             dataType: "json",
             data: (d) => {
@@ -343,4 +363,3 @@ buildObject();
 //     let _db: lowdb.LowdbAsync<any>;
 //     return _db = await lowdb(new lowdbfile(_fileName));
 // }
-//# sourceMappingURL=settings.js.map
