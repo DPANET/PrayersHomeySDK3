@@ -7,9 +7,15 @@ module.exports =
     {
         async getPrayersAdjustments({ homey }) {
             // you can access query parameters like `/?foo=bar` through args.query.foo
-            let result = homey.app.getPrayersAdjustments();
-            // perform other logic like mapping result data
-            return Promise.resolve(result);
+            try {
+                let result = homey.app.getPrayersAdjustments();
+                // perform other logic like mapping result data
+                return Promise.resolve(result);
+            }
+            catch (err) {
+                console.log(err.message);
+                throw err;
+            }
         },
         async getPrayersSettings({ homey }) {
             // you can access query parameters like `/?foo=bar` through args.query.foo
@@ -38,7 +44,13 @@ module.exports =
             }
         },
         async loadSettings({ homey }) {
-            let result = homey.app.loadSettings();
+            try {
+                let result = homey.app.loadSettings();
+            }
+            catch (err) {
+                console.log(err.message);
+                throw err;
+            }
         },
         async setPrayersByCalculation({ homey, body }) {
             try {

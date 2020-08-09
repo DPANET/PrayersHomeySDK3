@@ -31,7 +31,7 @@ class PrayersApp extends Homey.App {
       this.initalizeConfig();
       this._prayersController = new prayersController(this._homeyConfigurator);
        await this._prayersController.initializePrayerManger();
-      // manager.PrayersAppManager.initApp(this.homey);
+       manager.PrayersAppManager.initApp(this.homey,this._homeyConfigurator);
       this.log('I ran successfully');
     }
     catch (err) {
@@ -53,14 +53,12 @@ class PrayersApp extends Homey.App {
     return this._prayersController.router.getPrayersView() as IPrayersView[];
   }
   public async getPrayersByCalculation(config: any): Promise<IPrayersViewRow[]> {
-    console.log(config);
     return await this._prayersController.router.getPrayersByCalculation(config) as IPrayersViewRow[]
   }
   public async loadSettings(): Promise<void> {
     await this._prayersController.router.loadSettings();
   }
   public async setPrayersByCalculation(config: any): Promise<IPrayersViewRow[]> {
-    console.log(config);
     return await this._prayersController.router.setPrayersByCalculation(config) as IPrayersViewRow[]
 
   }

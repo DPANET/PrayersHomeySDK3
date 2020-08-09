@@ -1,15 +1,28 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.appmanager = exports.PrayersAppManager = void 0;
 //const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
@@ -55,10 +68,13 @@ class PrayersAppManager {
                 //  .setPrayerPeriod(prayerlib.DateUtil.getNowDate(), prayerlib.DateUtil.addDay(1, prayerlib.DateUtil.getNowDate()))
                 //   .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
                 .createPrayerTimeManager();
+            console.log("InitApp is running");
+            this._prayerAppManger._homey = homey;
+            this._prayerAppManger._configProvider = configProvider;
             exports.appmanager.initPrayersSchedules();
-            exports.appmanager.homey = homey;
             exports.appmanager.initEvents();
-            console.log(exports.appmanager._prayerManager.getUpcomingPrayer());
+            console.log(prayerlib.DateUtil.getNowTime());
+            console.log(exports.appmanager._prayerManager.getUpcomingPrayer(prayerlib.DateUtil.getNowTime()));
         }
         catch (err) {
             sentry.captureException(err);
@@ -67,6 +83,7 @@ class PrayersAppManager {
     }
     // initallize prayer scheduling and refresh events providers and listeners
     initPrayersSchedules() {
+        console.log("Prayer Schedule  Are being Initatized");
         //  this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
@@ -75,7 +92,7 @@ class PrayersAppManager {
         this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
         this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
-        this._configEventProvider = new events.ConfigEventProvider(this.homey);
+        this._configEventProvider = new events.ConfigEventProvider(this._homey);
         this._configEventListener = new events.ConfigEventListener(this);
         this._configEventProvider.registerListener(this._configEventListener);
     }
@@ -85,9 +102,9 @@ class PrayersAppManager {
     }
     //initialize Homey Events
     initEvents() {
-        this._homeyPrayersTriggerAll = this.homey.flow.getTriggerCard('prayer_trigger_all');
-        this._homeyPrayersTriggerSpecific = this.homey.flow.getTriggerCard('prayer_trigger_specific');
-        this._homeyPrayersAthanAction = this.homey.flow.getActionCard('athan_action');
+        this._homeyPrayersTriggerAll = this._homey.flow.getTriggerCard('prayer_trigger_all');
+        this._homeyPrayersTriggerSpecific = this._homey.flow.getTriggerCard('prayer_trigger_specific');
+        this._homeyPrayersAthanAction = this._homey.flow.getActionCard('athan_action');
         this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
             return true;
         });

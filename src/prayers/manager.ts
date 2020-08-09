@@ -15,7 +15,7 @@ export class PrayersAppManager {
 
 
     private static _prayerAppManger: PrayersAppManager;
-    private homey:Homey.Homey;
+    private _homey:Homey.Homey;
     private _homeyPrayersTriggerAll: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersTriggerSpecific: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersAthanAction: Homey.FlowCardAction<Homey.FlowCardAction<any>>;
@@ -66,11 +66,13 @@ export class PrayersAppManager {
               //  .setPrayerPeriod(prayerlib.DateUtil.getNowDate(), prayerlib.DateUtil.addDay(1, prayerlib.DateUtil.getNowDate()))
              //   .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
                 .createPrayerTimeManager();
-            
+            console.log("InitApp is running")
+            this._prayerAppManger._homey= homey;
+            this._prayerAppManger._configProvider = configProvider;
             appmanager.initPrayersSchedules();
-            appmanager.homey = homey;
             appmanager.initEvents();
-            console.log(appmanager._prayerManager.getUpcomingPrayer());
+            console.log(prayerlib.DateUtil.getNowTime())
+            console.log(appmanager._prayerManager.getUpcomingPrayer(prayerlib.DateUtil.getNowTime()));
         }
         catch (err) {
             sentry.captureException(err);
@@ -80,6 +82,7 @@ export class PrayersAppManager {
     // initallize prayer scheduling and refresh events providers and listeners
     public initPrayersSchedules() {
     
+        console.log("Prayer Schedule  Are being Initatized");
       //  this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
@@ -88,7 +91,7 @@ export class PrayersAppManager {
         this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
         this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
-        this._configEventProvider = new events.ConfigEventProvider(this.homey);
+        this._configEventProvider = new events.ConfigEventProvider(this._homey);
         this._configEventListener = new events.ConfigEventListener(this);
         this._configEventProvider.registerListener(this._configEventListener);
 
@@ -101,9 +104,9 @@ export class PrayersAppManager {
 
     //initialize Homey Events
     public initEvents(): void {
-        this._homeyPrayersTriggerAll = this.homey.flow.getTriggerCard('prayer_trigger_all');
-        this._homeyPrayersTriggerSpecific = this.homey.flow.getTriggerCard('prayer_trigger_specific');
-        this._homeyPrayersAthanAction = this.homey.flow.getActionCard('athan_action');
+        this._homeyPrayersTriggerAll = this._homey.flow.getTriggerCard('prayer_trigger_all');
+        this._homeyPrayersTriggerSpecific = this._homey.flow.getTriggerCard('prayer_trigger_specific');
+        this._homeyPrayersAthanAction = this._homey.flow.getActionCard('athan_action');
         this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
             return true;});
         this._homeyPrayersAthanAction

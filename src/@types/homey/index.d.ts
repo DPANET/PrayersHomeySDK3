@@ -191,7 +191,7 @@ declare module 'homey'
   export class FlowArgument {
     public registerAutocompleteListener(fn: (query: string, args: any) => Promise<any>): FlowArgument;
   }
-  export class FlowCard<T> extends EventEmitter {
+  export class FlowCard<T> extends SimpleClass {
     //constructor(id?: string);
     public getArgument(): FlowArgument;
     public getArgumentValues(): Promise<Array<any>>;
@@ -247,7 +247,7 @@ declare module 'homey'
     static removeMp3<T>(sampleId: string): Promise<T>;
     static removeWav<T>(sampleId: string): Promise<T>;
   }
-  export class CloudOAuth2Callback extends EventEmitter {
+  export class CloudOAuth2Callback extends SimpleClass {
   }
 
   export class Api<T>
@@ -266,16 +266,16 @@ declare module 'homey'
     getVersion(): Promise<T>;
   }
 
-  export class ManagerGeolocation extends EventEmitter {
+  export class ManagerGeolocation extends SimpleClass {
     static getAccuracy(): number;
     static getLatitude(): number;
     static getLongitude(): number;
     static getMode(): string;
   }
-  export class ManagerClock extends EventEmitter {
+  export class ManagerClock extends SimpleClass {
     static getTimezone(): string;
   }
-  export class CronTask extends EventEmitter {
+  export class CronTask extends SimpleClass {
 
   }
   export type CronWhenType = string | Date;
@@ -442,7 +442,7 @@ declare module 'homey'
      */
     unregisterScreensaver(screensaverId: any): Promise<any>;
   }
-  export class ManagerSettings extends EventEmitter {
+  export class ManagerSettings extends SimpleClass {
     /**
      * Get all settings keys.
      * @returns {String[]}
@@ -489,7 +489,7 @@ declare module 'homey'
     public sendFrame(endpointId:number,clusterId:number,frame:Buffer):Promise<void>;
    
  }
- export class DiscoveryResult extends EventEmitter{}
+ export class DiscoveryResult extends SimpleClass{}
  export class DiscoveryStrategy
  {
    public getDiscoveryResult(id:string):DiscoveryResult;

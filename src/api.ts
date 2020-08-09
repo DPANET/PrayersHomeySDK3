@@ -10,12 +10,18 @@ module.exports =
 {
   async getPrayersAdjustments({ homey }: any): Promise<prayerlib.IPrayerAdjustments[]> {
     // you can access query parameters like `/?foo=bar` through args.query.foo
+    try {
+      let result = homey.app.getPrayersAdjustments();
 
-    let result = homey.app.getPrayersAdjustments();
+      // perform other logic like mapping result data
 
-    // perform other logic like mapping result data
+      return Promise.resolve(result);
+    }
+    catch (err) {
+      console.log(err.message);
+      throw err;
+    }
 
-    return Promise.resolve(result);
   },
 
   async getPrayersSettings({ homey }: any): Promise<prayerlib.IPrayersSettings> {
@@ -42,10 +48,10 @@ module.exports =
     return Promise.resolve(result);
 
   },
-  async getPrayersByCalculation({ homey, query}: any): Promise<IPrayersViewRow[]> {
-    try{
-    let result = await homey.app.getPrayersByCalculation(query);
-    return result;
+  async getPrayersByCalculation({ homey, query }: any): Promise<IPrayersViewRow[]> {
+    try {
+      let result = await homey.app.getPrayersByCalculation(query);
+      return result;
     }
     catch (err) {
       console.log(err.message);
@@ -53,41 +59,46 @@ module.exports =
     }
   },
   async loadSettings({ homey }: any): Promise<void> {
-    let result = homey.app.loadSettings();
+    try {
+      let result = homey.app.loadSettings();
+    }
+    catch (err) {
+      console.log(err.message);
+      throw err;
+    }
+
 
   },
   async setPrayersByCalculation({ homey, body }: any): Promise<IPrayersViewRow[]> {
     try {
       let result = await homey.app.setPrayersByCalculation(body);
       return result;
-    } 
+    }
     catch (err) {
       console.log(err.message);
       throw err;
     }
 
   },
-  async getPrayersLocationSettings({ homey }: any): Promise<prayerlib.ILocationSettings>
-  {
-    try{
-    let result = homey.app.getPrayersLocationSettings();
-    return Promise.resolve(result);
-  } 
-  catch (err) {
-    console.log(err);
-    throw err;
-  }
+  async getPrayersLocationSettings({ homey }: any): Promise<prayerlib.ILocationSettings> {
+    try {
+      let result = homey.app.getPrayersLocationSettings();
+      return Promise.resolve(result);
+    }
+    catch (err) {
+      console.log(err);
+      throw err;
+    }
   },
-  async searchLocation({homey,query}:any):Promise<prayerlib.ILocationSettings>
-  {
-    try{
-    let result = homey.app.searchLocation(query);
-    return Promise.resolve(result);
-  } 
-  catch (err) {
-    console.log(err);
-    throw err;
-  }
+  async searchLocation({ homey, query }: any): Promise<prayerlib.ILocationSettings> {
+    try {
+      let result = homey.app.searchLocation(query);
+      return Promise.resolve(result);
+    }
+    catch (err) {
+      console.log(err);
+      throw err;
+    }
   }
 
 }
