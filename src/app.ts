@@ -2,20 +2,12 @@ console.log("I'm Running**************");
 import Homey = require('homey');
 import config = require('nconf');
 config.file('env.json');
-// console.log(config.get("DEBUG"));
-// process.env.DEBUG = config.get("DEBUG");
-// import fs from "fs-extra";
-// cloneConfig();
-// console.log("finished clonning file is running");
-
 import * as manager from "./prayers/manager";
 import prayersController from "./controllers/prayers.controller";
 import HomeyConfigurator, {ConfigSettingsKeys} from "./configurations/configuration.controller";
 import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
 import * as sentry from "@sentry/node";
 import * as prayerlib from "@dpanet/prayers-lib";
-import util from "util";
-
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {
   private _prayersController: prayersController;
@@ -26,8 +18,6 @@ class PrayersApp extends Homey.App {
 
       this.log(` Prayers Alert App is running! `);
       this.initalizeConfig();
-      this.log( new Date('2020-08-09 15:00'));
-    // await this.initalizeTest();
       this._prayersController = new prayersController(this._homeyConfigurator);
        await this._prayersController.initializePrayerManger();
        manager.PrayersAppManager.initApp(this.homey,this._homeyConfigurator);
@@ -38,17 +28,6 @@ class PrayersApp extends Homey.App {
       this.log(err);
     }
 
-  }
-  async initalizeTest() {
-    let configProvider:prayerlib.IConfigProvider = prayerlib.ConfigProviderFactory.createConfigProviderFactory(prayerlib.ClientConfigurator);
-    let prayerConfig: prayerlib.IPrayersConfig = await configProvider.getPrayerConfig();
-    let locationConfig: prayerlib.ILocationConfig = await configProvider.getLocationConfig();
-    let prayerManager: prayerlib.IPrayerManager = await prayerlib.PrayerTimeBuilder
-            .createPrayerTimeBuilder(locationConfig, prayerConfig)
-            .createPrayerTimeManager() ;
-    //let prayersContoller:PrayersController = new PrayersController(configProvider);
-    //await prayersContoller.initializePrayerManger();
-    console.log(util.inspect(  prayerManager.getPrayers(), {showHidden: false, depth: null}));
   }
   public getPrayersAdjustments(): prayerlib.IPrayerAdjustments[] {
     return this._prayersController.router.getPrayersAdjustments() as prayerlib.IPrayerAdjustments[];

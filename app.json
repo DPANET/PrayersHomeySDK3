@@ -1,11 +1,11 @@
 {
-    "id": "com.dev.prayerssapp",
-    "version": "0.0.1",
+    "id": "com.prayerssapp",
+    "version": "1.0.0",
     "compatibility": " >=5.0.0",
     "sdk": 3,
     "brandColor": "#2698DD",
     "name": {
-        "en": "Prayers Alert[Dev]"
+        "en": "Prayers Alert"
     },
     "description": {
         "en": "Trigger muslim prayers timing events based on your locations"
@@ -17,7 +17,9 @@
             "prayers",
             "muslim",
             "timing",
-            "time"
+            "time",
+            "islam",
+            "quran"
         ]
     },
     "images": {
@@ -25,9 +27,8 @@
         "small": "assets/images/small.jpg"
     },
     "permissions": [
-        "homey:manager:speech-output",
-        "homey:manager:geolocation"
-    ],
+        "homey:manager:speech-output"   
+     ],
     "author": {
         "email": "dpanet@hotmail.com",
         "name": "Omar"

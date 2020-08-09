@@ -1,8 +1,3 @@
-import Homey from "homey";
-import request = require("request-promise-native");
-import config = require('nconf');
-config.file('env.json');
-var mainUrl = `http://localhost:3005/api/app/com.prayerssapp`;
 import * as prayerlib from "@dpanet/prayers-lib";
 import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
 
@@ -26,12 +21,17 @@ module.exports =
 
   async getPrayersSettings({ homey }: any): Promise<prayerlib.IPrayersSettings> {
     // you can access query parameters like `/?foo=bar` through args.query.foo
+    try {
+      let result = homey.app.getPrayersSettings();
 
-    let result = homey.app.getPrayersSettings();
+      // perform other logic like mapping result data
 
-    // perform other logic like mapping result data
-
-    return Promise.resolve(result);
+      return Promise.resolve(result);
+    }
+    catch (err) {
+      console.log(err.message);
+      throw err;
+    }
   },
 
   async getPrayers({ homey }: any): Promise<prayerlib.IPrayers> {
@@ -44,9 +44,14 @@ module.exports =
     return Promise.resolve(result);
   },
   async getPrayersView({ homey }: any): Promise<IPrayersView[]> {
-    let result = homey.app.getPrayersView();
-    return Promise.resolve(result);
-
+    try {
+      let result = homey.app.getPrayersView();
+      return Promise.resolve(result);
+    }
+    catch (err) {
+      console.log(err.message);
+      throw err;
+    }
   },
   async getPrayersByCalculation({ homey, query }: any): Promise<IPrayersViewRow[]> {
     try {

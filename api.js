@@ -1,8 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const config = require("nconf");
-config.file('env.json');
-var mainUrl = `http://localhost:3005/api/app/com.prayerssapp`;
 module.exports =
     {
         async getPrayersAdjustments({ homey }) {
@@ -19,9 +16,15 @@ module.exports =
         },
         async getPrayersSettings({ homey }) {
             // you can access query parameters like `/?foo=bar` through args.query.foo
-            let result = homey.app.getPrayersSettings();
-            // perform other logic like mapping result data
-            return Promise.resolve(result);
+            try {
+                let result = homey.app.getPrayersSettings();
+                // perform other logic like mapping result data
+                return Promise.resolve(result);
+            }
+            catch (err) {
+                console.log(err.message);
+                throw err;
+            }
         },
         async getPrayers({ homey }) {
             // you can access query parameters like `/?foo=bar` through args.query.foo
@@ -30,8 +33,14 @@ module.exports =
             return Promise.resolve(result);
         },
         async getPrayersView({ homey }) {
-            let result = homey.app.getPrayersView();
-            return Promise.resolve(result);
+            try {
+                let result = homey.app.getPrayersView();
+                return Promise.resolve(result);
+            }
+            catch (err) {
+                console.log(err.message);
+                throw err;
+            }
         },
         async getPrayersByCalculation({ homey, query }) {
             try {

@@ -75,6 +75,7 @@ export class PrayersEventListener implements prayerlib.IObserver<prayerlib.IPray
     }
     onError(error: Error): void {
         console.log(error);
+        sentry.captureException(error);
     }
     onNext(value: prayerlib.IPrayersTiming): void {
         this._prayerAppManager.triggerEvent(value.prayerName,value.prayerTime);
@@ -126,6 +127,7 @@ export class PrayerRefreshEventListener implements prayerlib.IObserver<prayerlib
     }
     onError(error: Error): void {
         console.log(error);
+        sentry.captureException(error);
     }
     onNext(value: prayerlib.IPrayerManager): void {
     }
@@ -152,8 +154,7 @@ export class ConfigEventProvider extends prayerlib.EventProvider<string>
     }
     private settingsChangedEvent(homey:string)
     {
-        console.log("*****settings changed and triggered")
-        console.log("value of homey is" + homey);
+
         try{
         this.notifyObservers(prayerlib.EventsType.OnNext,homey);
         }
@@ -181,6 +182,7 @@ export class ConfigEventListener implements prayerlib.IObserver<string>
     onError(error: Error): void {
      // debug(error);
       console.log(error);
+      sentry.captureException(error);
     }
    async onNext(value: string): Promise<void> {
       //  debug(`${value} config file has been saved`);

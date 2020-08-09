@@ -13,7 +13,7 @@ const google = require( "@google/maps");
 //const daterangepicker = require("daterangepicker");
 // const DataTableResp = require("datatables.net-responsive")(window, $);
 // const DataTableRowGroup = require("datatables.net-rowgroup")(window, $);
-var mainURL=`${location.origin}/api/app/com.dev.prayerssapp` ;
+var mainURL=`${location.origin}/api/app/com.prayerssapp` ;
 //var mainURL = 'http://192.168.86.81/api/app/com.dev.prayerssapp';
 export async function buildObject() {
     let noty: Noty;

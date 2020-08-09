@@ -1,6 +1,6 @@
 {
   "name": "@dpanet/prayers",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "Homey App to track prayers events based on your location",
   "main": "app.js",
   "author": {

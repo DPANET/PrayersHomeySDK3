@@ -83,6 +83,7 @@ class PrayersEventListener {
     }
     onError(error) {
         console.log(error);
+        sentry.captureException(error);
     }
     onNext(value) {
         this._prayerAppManager.triggerEvent(value.prayerName, value.prayerTime);
@@ -128,6 +129,7 @@ class PrayerRefreshEventListener {
     }
     onError(error) {
         console.log(error);
+        sentry.captureException(error);
     }
     onNext(value) {
     }
@@ -152,8 +154,6 @@ class ConfigEventProvider extends prayerlib.EventProvider {
         super.notifyObservers(eventType, homey, error);
     }
     settingsChangedEvent(homey) {
-        console.log("*****settings changed and triggered");
-        console.log("value of homey is" + homey);
         try {
             this.notifyObservers(prayerlib.EventsType.OnNext, homey);
         }
@@ -176,6 +176,7 @@ class ConfigEventListener {
     onError(error) {
         // debug(error);
         console.log(error);
+        sentry.captureException(error);
     }
     async onNext(value) {
         //  debug(`${value} config file has been saved`);
