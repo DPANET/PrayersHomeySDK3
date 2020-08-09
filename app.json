@@ -125,7 +125,7 @@
             {
                 "id": "athan_action",
                 "title": {
-                    "en": "Play athan sound based on action"
+                    "en": "Play athan sound"
                 },
                 "args": [
                     {
@@ -136,12 +136,6 @@
                                 "id": "athan_short",
                                 "label": {
                                     "en": "Play first part of the athan"
-                                }
-                            },
-                            {
-                                "id": "athan_full",
-                                "label": {
-                                    "en": "Play athan fully "
                                 }
                             }
                         ]

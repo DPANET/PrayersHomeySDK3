@@ -18,16 +18,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appmanager = exports.PrayersAppManager = void 0;
 //const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const events = __importStar(require("./events"));
-const homey_1 = __importDefault(require("homey"));
 const util_1 = require("util");
 const sentry = __importStar(require("@sentry/node"));
 sentry.init({ dsn: config.get("DSN") });
@@ -111,7 +107,7 @@ class PrayersAppManager {
         this._homeyPrayersAthanAction
             //.register()
             .registerRunListener(async (args, state) => {
-            this.playAthan(args.athan_dropdown, athanTypes[args.athan_dropdown])
+            this._homey.audio.playMp3(args.athan_dropdown, athanTypes[args.athan_dropdown])
                 .then((value) => {
                 console.log(value);
                 return value;
@@ -132,11 +128,10 @@ class PrayersAppManager {
     async playAthan(sampleId, fileName) {
         console.log(sampleId);
         let err, result;
-        homey_1.default.ManagerAudio.playMp3(sampleId, fileName)
-            .then(() => {
-            console.log(err);
-            sentry.captureException(err);
-            return Promise.resolve(false);
+        this._homey.audio.playMp3(sampleId, fileName)
+            .then((value) => {
+            console.log(value);
+            return Promise.resolve(true);
         })
             .catch((err) => {
             console.log(err);

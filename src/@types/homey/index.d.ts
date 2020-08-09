@@ -242,10 +242,10 @@ declare module 'homey'
   // }
   export type AudioType = Buffer | string
   export class ManagerAudio {
-    static playMp3<T>(sampleId: string, sample?: AudioType): Promise<T>;
-    static playWav<T>(sampleId: string, sample?: AudioType): Promise<T>;
-    static removeMp3<T>(sampleId: string): Promise<T>;
-    static removeWav<T>(sampleId: string): Promise<T>;
+    public playMp3<T>(sampleId: string, sample?: AudioType): Promise<T>;
+    public playWav<T>(sampleId: string, sample?: AudioType): Promise<T>;
+    public removeMp3<T>(sampleId: string): Promise<T>;
+    public removeWav<T>(sampleId: string): Promise<T>;
   }
   export class CloudOAuth2Callback extends SimpleClass {
   }

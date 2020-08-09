@@ -112,7 +112,7 @@ export class PrayersAppManager {
         this._homeyPrayersAthanAction
             //.register()
             .registerRunListener(async (args, state) => {
-                this.playAthan(args.athan_dropdown, athanTypes[args.athan_dropdown])
+                this._homey.audio.playMp3(args.athan_dropdown, athanTypes[args.athan_dropdown])
                     .then((value) => {
                         console.log(value);
                         return value;
@@ -135,11 +135,10 @@ export class PrayersAppManager {
     public async playAthan(sampleId: string, fileName: string): Promise<boolean> {
         console.log(sampleId);
         let err: Error, result: any;
-        Homey.ManagerAudio.playMp3(sampleId, fileName)
-            .then(() => {
-                console.log(err);
-                sentry.captureException(err);
-                return Promise.resolve(false);
+        this._homey.audio.playMp3(sampleId, fileName)
+            .then((value) => {
+                console.log(value);
+                return Promise.resolve(true);
             })
             .catch((err) => {
                 console.log(err);
