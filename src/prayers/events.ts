@@ -138,8 +138,8 @@ export class ConfigEventProvider extends prayerlib.EventProvider<string>
         super();
         this._homey= homey;
       //  this._chokidar = chokidar.watch(this._pathName,{awaitWriteFinish:true,persistent:true,ignorePermissionErrors:true,usePolling :true});
-        this._homey.settings.on("set",this.settingsChangedEvent.bind(this,this._homey));
-        this._homey.settings.on("error",this.settingsChangedError.bind(this,this._homey));
+        this._homey.settings.on("set",this.settingsChangedEvent.bind(this));
+        this._homey.settings.on("error",this.settingsChangedError.bind(this));
     }
     public registerListener(observer: prayerlib.IObserver<string>): void {
         super.registerListener(observer);

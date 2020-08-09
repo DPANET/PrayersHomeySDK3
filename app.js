@@ -60,6 +60,8 @@ class PrayersApp extends Homey.App {
         return this._prayersController.router.getPrayersSettings();
     }
     getPrayers() {
+        //console.log(util.inspect(this._prayersController.router.getPrayers(), {showHidden: false, depth: null}))
+        //console.log(this._prayersController.router.getPrayers());
         return this._prayersController.router.getPrayers();
     }
     getPrayersView() {

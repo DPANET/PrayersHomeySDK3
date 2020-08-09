@@ -294,7 +294,7 @@ class PrayersController {
                 Sunset: moment_1.default(obj.Sunset).format('LT'),
                 Maghrib: moment_1.default(obj.Maghrib).format('LT'),
                 Isha: moment_1.default(obj.Isha).format('LT'),
-                Midnight: moment_1.default(obj.Midnight).format('LT'),
+                Midnight: moment_1.default(obj.Midnight).format('LT')
             };
         };
         let swapPrayers = (x) => R.assoc(x.prayerName, x.prayerTime, x);

@@ -74,7 +74,7 @@ class PrayersAppManager {
             exports.appmanager.initPrayersSchedules();
             exports.appmanager.initEvents();
             console.log(prayerlib.DateUtil.getNowTime());
-            console.log(exports.appmanager._prayerManager.getUpcomingPrayer(prayerlib.DateUtil.getNowTime()));
+            console.log(exports.appmanager._prayerManager.getUpcomingPrayer());
         }
         catch (err) {
             sentry.captureException(err);

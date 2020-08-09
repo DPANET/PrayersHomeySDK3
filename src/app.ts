@@ -17,7 +17,7 @@ console.log("running prayers controller clonning file is running");
 import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
 import * as sentry from "@sentry/node";
 import * as prayerlib from "@dpanet/prayers-lib";
-
+import util from "util";
 
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {
@@ -47,6 +47,8 @@ class PrayersApp extends Homey.App {
     return this._prayersController.router.getPrayersSettings() as prayerlib.IPrayersSettings;
   }
   public getPrayers(): prayerlib.IPrayers {
+    //console.log(util.inspect(this._prayersController.router.getPrayers(), {showHidden: false, depth: null}))
+    //console.log(this._prayersController.router.getPrayers());
     return this._prayersController.router.getPrayers() as prayerlib.IPrayers;
   }
   public getPrayersView(): IPrayersView[] {

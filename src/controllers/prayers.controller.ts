@@ -307,7 +307,7 @@ export default class PrayersController implements IController {
                 Sunset: moment(obj.Sunset).format('LT'),
                 Maghrib: moment(obj.Maghrib).format('LT'),
                 Isha: moment(obj.Isha).format('LT'),
-                Midnight: moment(obj.Midnight).format('LT'),
+                Midnight: moment(obj.Midnight).format('LT')
             }
         }
         let swapPrayers = (x: any) => R.assoc(x.prayerName, x.prayerTime, x)
