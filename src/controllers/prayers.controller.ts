@@ -3,6 +3,7 @@ import * as prayerlib from "@dpanet/prayers-lib";
 import { IController, IPrayersController } from "./controllers.interface";
 import { IPrayersView, IPrayersViewRow } from "./views.interface";
 import moment from "moment";
+import  momentTZ from "moment-timezone";
 //import { NextFunction, NextHandleFunction } from "connect";
 import { HttpException } from "../exceptions/exception.handler";
 import * as sentry from "@sentry/node";
@@ -13,6 +14,7 @@ import { listenerCount } from 'cluster';
 import * as R from "ramda";
 import arrows from "@arrows/composition";
 import { IPrayerAdjustments } from '@dpanet/prayers-lib';
+import { time } from 'console';
 sentry.init({ dsn: config.get("DSN") });
 export default class PrayersController implements IController {
     path: string;
@@ -188,7 +190,7 @@ export default class PrayersController implements IController {
             let locationConfig: prayerlib.ILocationConfig = config.locationConfig;
             //let locationConfig: prayerlib.ILocationConfig = await new prayerlib.Configurator().getLocationConfig();
             this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-            return this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
+            return this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers(),locationConfig.timezone.timeZoneId));
         } catch (err) {
             sentry.captureException(err);
             throw new HttpException(404, err.message);
@@ -259,7 +261,7 @@ export default class PrayersController implements IController {
     }
     private getPrayerView = (request: any) => {
         try {
-            let prayersView: IPrayersView[] = this.createPrayerView(this._prayerManager.getPrayers());
+            let prayersView: IPrayersView[] = this.createPrayerView(this._prayerManager.getPrayers(),this._prayerManager.getPrayerLocationSettings().timeZoneId);
             return prayersView;
         }
         catch (err) {
@@ -270,7 +272,7 @@ export default class PrayersController implements IController {
     }
     private getPrayerViewRow = (request:any) => {
         try {
-            let prayerViewRow: Array<IPrayersViewRow> = this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
+            let prayerViewRow: Array<IPrayersViewRow> = this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers(),this._prayerManager.getPrayerLocationSettings().timeZoneId));
           //  response.json(prayerViewRow);
         }
         catch (err) {
@@ -295,19 +297,20 @@ export default class PrayersController implements IController {
         return prayerViewRow;
     }
 
-    private createPrayerView(prayers: prayerlib.IPrayers[]) {
+    private createPrayerView(prayers: prayerlib.IPrayers[],timeZoneName:string) {
+        
         let sortObject = (obj: IPrayersView): IPrayersView => {
             return {
                 prayersDate: moment(obj.prayersDate).toDate().toDateString(),
-                Imsak: moment(obj.Imsak).format('LT'),
-                Fajr: moment(obj.Fajr).format('LT'),
-                Sunrise: moment(obj.Sunrise).format('LT'),
-                Dhuhr: moment(obj.Dhuhr).format('LT'),
-                Asr: moment(obj.Asr).format('LT'),
-                Sunset: moment(obj.Sunset).format('LT'),
-                Maghrib: moment(obj.Maghrib).format('LT'),
-                Isha: moment(obj.Isha).format('LT'),
-                Midnight: moment(obj.Midnight).format('LT')
+                Imsak: moment.tz(obj.Imsak,timeZoneName).format('LT'),
+                Fajr: moment.tz(obj.Fajr,timeZoneName).format('LT'),
+                Sunrise: moment.tz(obj.Sunrise,timeZoneName).format('LT'),
+                Dhuhr: moment.tz(obj.Dhuhr,timeZoneName).format('LT'),
+                Asr: moment.tz(obj.Asr,timeZoneName).format('LT'),
+                Sunset: moment.tz(obj.Sunset,timeZoneName).format('LT'),
+                Maghrib: moment.tz(obj.Maghrib,timeZoneName).format('LT'),
+                Isha: moment.tz(obj.Isha,timeZoneName).format('LT'),
+                Midnight: moment.tz(obj.Midnight,timeZoneName).format('LT')
             }
         }
         let swapPrayers = (x: any) => R.assoc(x.prayerName, x.prayerTime, x)

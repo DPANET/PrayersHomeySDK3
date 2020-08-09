@@ -1,6 +1,6 @@
 ﻿# Prayers Alert
  
-#### This app requires Homey SW release 2.0.0 or higher
+#### This app requires Homey SW release 4.0.0 or higher
 
 ## Summary
 This app allows Homey device owner to build and trigger Flows based on muslim prayers times.

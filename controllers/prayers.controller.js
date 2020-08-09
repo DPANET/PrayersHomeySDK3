@@ -127,7 +127,7 @@ class PrayersController {
                 let locationConfig = config.locationConfig;
                 //let locationConfig: prayerlib.ILocationConfig = await new prayerlib.Configurator().getLocationConfig();
                 this._prayerManager = await this.refreshPrayerManager(prayerConfig, locationConfig);
-                return this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
+                return this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers(), locationConfig.timezone.timeZoneId));
             }
             catch (err) {
                 sentry.captureException(err);
@@ -170,7 +170,7 @@ class PrayersController {
         };
         this.getPrayerView = (request) => {
             try {
-                let prayersView = this.createPrayerView(this._prayerManager.getPrayers());
+                let prayersView = this.createPrayerView(this._prayerManager.getPrayers(), this._prayerManager.getPrayerLocationSettings().timeZoneId);
                 return prayersView;
             }
             catch (err) {
@@ -180,7 +180,7 @@ class PrayersController {
         };
         this.getPrayerViewRow = (request) => {
             try {
-                let prayerViewRow = this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers()));
+                let prayerViewRow = this.createPrayerViewRow(this.createPrayerView(this._prayerManager.getPrayers(), this._prayerManager.getPrayerLocationSettings().timeZoneId));
                 //  response.json(prayerViewRow);
             }
             catch (err) {
@@ -282,19 +282,19 @@ class PrayersController {
         });
         return prayerViewRow;
     }
-    createPrayerView(prayers) {
+    createPrayerView(prayers, timeZoneName) {
         let sortObject = (obj) => {
             return {
                 prayersDate: moment_1.default(obj.prayersDate).toDate().toDateString(),
-                Imsak: moment_1.default(obj.Imsak).format('LT'),
-                Fajr: moment_1.default(obj.Fajr).format('LT'),
-                Sunrise: moment_1.default(obj.Sunrise).format('LT'),
-                Dhuhr: moment_1.default(obj.Dhuhr).format('LT'),
-                Asr: moment_1.default(obj.Asr).format('LT'),
-                Sunset: moment_1.default(obj.Sunset).format('LT'),
-                Maghrib: moment_1.default(obj.Maghrib).format('LT'),
-                Isha: moment_1.default(obj.Isha).format('LT'),
-                Midnight: moment_1.default(obj.Midnight).format('LT')
+                Imsak: moment_1.default.tz(obj.Imsak, timeZoneName).format('LT'),
+                Fajr: moment_1.default.tz(obj.Fajr, timeZoneName).format('LT'),
+                Sunrise: moment_1.default.tz(obj.Sunrise, timeZoneName).format('LT'),
+                Dhuhr: moment_1.default.tz(obj.Dhuhr, timeZoneName).format('LT'),
+                Asr: moment_1.default.tz(obj.Asr, timeZoneName).format('LT'),
+                Sunset: moment_1.default.tz(obj.Sunset, timeZoneName).format('LT'),
+                Maghrib: moment_1.default.tz(obj.Maghrib, timeZoneName).format('LT'),
+                Isha: moment_1.default.tz(obj.Isha, timeZoneName).format('LT'),
+                Midnight: moment_1.default.tz(obj.Midnight, timeZoneName).format('LT')
             };
         };
         let swapPrayers = (x) => R.assoc(x.prayerName, x.prayerTime, x);

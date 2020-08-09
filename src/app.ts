@@ -1,6 +1,5 @@
 console.log("I'm Running**************");
 import Homey = require('homey');
-
 import config = require('nconf');
 config.file('env.json');
 // console.log(config.get("DEBUG"));
@@ -12,8 +11,6 @@ config.file('env.json');
 import * as manager from "./prayers/manager";
 import prayersController from "./controllers/prayers.controller";
 import HomeyConfigurator, {ConfigSettingsKeys} from "./configurations/configuration.controller";
-console.log("running prayers controller clonning file is running");
-
 import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
 import * as sentry from "@sentry/node";
 import * as prayerlib from "@dpanet/prayers-lib";
@@ -29,6 +26,7 @@ class PrayersApp extends Homey.App {
 
       this.log(` Prayers Alert App is running! `);
       this.initalizeConfig();
+      this.log( new Date('2020-08-09 15:00'));
     // await this.initalizeTest();
       this._prayersController = new prayersController(this._homeyConfigurator);
        await this._prayersController.initializePrayerManger();

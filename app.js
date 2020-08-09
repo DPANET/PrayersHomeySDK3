@@ -34,7 +34,6 @@ config.file('env.json');
 const manager = __importStar(require("./prayers/manager"));
 const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
 const configuration_controller_1 = __importDefault(require("./configurations/configuration.controller"));
-console.log("running prayers controller clonning file is running");
 const sentry = __importStar(require("@sentry/node"));
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const util_1 = __importDefault(require("util"));
@@ -44,7 +43,8 @@ class PrayersApp extends Homey.App {
         try {
             this.log(` Prayers Alert App is running! `);
             this.initalizeConfig();
-            await this.initalizeTest();
+            this.log(new Date('2020-08-09 15:00'));
+            // await this.initalizeTest();
             this._prayersController = new prayers_controller_1.default(this._homeyConfigurator);
             await this._prayersController.initializePrayerManger();
             manager.PrayersAppManager.initApp(this.homey, this._homeyConfigurator);
