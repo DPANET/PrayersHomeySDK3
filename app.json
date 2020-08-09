@@ -8,7 +8,7 @@
         "en": "Prayers Alert"
     },
     "description": {
-        "en": "Trigger muslim prayers timing events based on your locations"
+        "en": "Trigger muslim prayers timing events based on your location"
     },
     "category": "tools",
     "tags": {
@@ -101,7 +101,7 @@
             {
                 "id": "prayer_trigger_all",
                 "title": {
-                    "en": "Trigger to all prayers event"
+                    "en": "Trigger to all prayers time"
                 },
                 "tokens": [
                     {
