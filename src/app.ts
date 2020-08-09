@@ -29,6 +29,7 @@ class PrayersApp extends Homey.App {
 
       this.log(` Prayers Alert App is running! `);
       this.initalizeConfig();
+    // await this.initalizeTest();
       this._prayersController = new prayersController(this._homeyConfigurator);
        await this._prayersController.initializePrayerManger();
        manager.PrayersAppManager.initApp(this.homey,this._homeyConfigurator);
@@ -39,6 +40,17 @@ class PrayersApp extends Homey.App {
       this.log(err);
     }
 
+  }
+  async initalizeTest() {
+    let configProvider:prayerlib.IConfigProvider = prayerlib.ConfigProviderFactory.createConfigProviderFactory(prayerlib.ClientConfigurator);
+    let prayerConfig: prayerlib.IPrayersConfig = await configProvider.getPrayerConfig();
+    let locationConfig: prayerlib.ILocationConfig = await configProvider.getLocationConfig();
+    let prayerManager: prayerlib.IPrayerManager = await prayerlib.PrayerTimeBuilder
+            .createPrayerTimeBuilder(locationConfig, prayerConfig)
+            .createPrayerTimeManager() ;
+    //let prayersContoller:PrayersController = new PrayersController(configProvider);
+    //await prayersContoller.initializePrayerManger();
+    console.log(util.inspect(  prayerManager.getPrayers(), {showHidden: false, depth: null}));
   }
   public getPrayersAdjustments(): prayerlib.IPrayerAdjustments[] {
     return this._prayersController.router.getPrayersAdjustments() as prayerlib.IPrayerAdjustments[];

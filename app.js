@@ -37,12 +37,14 @@ const configuration_controller_1 = __importDefault(require("./configurations/con
 console.log("running prayers controller clonning file is running");
 const sentry = __importStar(require("@sentry/node"));
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
+const util_1 = __importDefault(require("util"));
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {
     async onInit() {
         try {
             this.log(` Prayers Alert App is running! `);
             this.initalizeConfig();
+            await this.initalizeTest();
             this._prayersController = new prayers_controller_1.default(this._homeyConfigurator);
             await this._prayersController.initializePrayerManger();
             manager.PrayersAppManager.initApp(this.homey, this._homeyConfigurator);
@@ -52,6 +54,17 @@ class PrayersApp extends Homey.App {
             sentry.captureException(err);
             this.log(err);
         }
+    }
+    async initalizeTest() {
+        let configProvider = prayerlib.ConfigProviderFactory.createConfigProviderFactory(prayerlib.ClientConfigurator);
+        let prayerConfig = await configProvider.getPrayerConfig();
+        let locationConfig = await configProvider.getLocationConfig();
+        let prayerManager = await prayerlib.PrayerTimeBuilder
+            .createPrayerTimeBuilder(locationConfig, prayerConfig)
+            .createPrayerTimeManager();
+        //let prayersContoller:PrayersController = new PrayersController(configProvider);
+        //await prayersContoller.initializePrayerManger();
+        console.log(util_1.default.inspect(prayerManager.getPrayers(), { showHidden: false, depth: null }));
     }
     getPrayersAdjustments() {
         return this._prayersController.router.getPrayersAdjustments();
