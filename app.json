@@ -1,196 +1,196 @@
 {
-    "id": "com.prayerssapp",
-    "version": "1.0.0",
-    "compatibility": " >=5.0.0",
-    "sdk": 3,
-    "brandColor": "#2698DD",
-    "name": {
-        "en": "Prayers Alert"
-    },
-    "description": {
-        "en": "Trigger muslim prayers timing events based on your location"
-    },
-    "category": "tools",
-    "tags": {
-        "en": [
-            "prayer",
-            "prayers",
-            "muslim",
-            "timing",
-            "time",
-            "islam",
-            "quran",
-            "alarm"
-        ]
-    },
-    "images": {
-        "large": "assets/images/large.jpg",
-        "small": "assets/images/small.jpg"
-    },
-    "homepage": "https://github.com/DPANET/PrayersHomeySDK3",
-    "permissions": [
-        "homey:manager:speech-output"   
-     ],
-    "author": {
-        "email": "dpanet@hotmail.com",
-        "name": "Omar"
-    },
-    "bugs": {
-        "url": "https://github.com/DPANET/PrayersHomeySDK3/issues"
-    },
-    "flow": {
-        "triggers": [
-            {
-                "id": "prayer_trigger_specific",
-                "title": {
-                    "en": "Trigger to a specific prayer time"
-                },
-                "tokens": [
-                    {
-                        "name": "prayer_name",
-                        "type": "string",
-                        "title": {
-                            "en": "Prayer Name"
-                        }
-                    },
-                    {
-                        "name": "prayer_time",
-                        "type": "string",
-                        "title": {
-                            "en": "Prayer Time"
-                        }
-                    }
-                ],
-                "args": [
-                    {
-                        "type": "dropdown",
-                        "name": "prayers_dropdown",
-                        "values": [
-                            {
-                                "id": "FAJR",
-                                "label": {
-                                    "en": "Fajr"
-                                }
-                            },
-                            {
-                                "id": "DHUR",
-                                "label": {
-                                    "en": "Dhur"
-                                }
-                            },
-                            {
-                                "id": "ASR",
-                                "label": {
-                                    "en": "Asr"
-                                }
-                            },
-                            {
-                                "id": "MAGHRIB",
-                                "label": {
-                                    "en": "Maghrib"
-                                }
-                            },
-                            {
-                                "id": "Isha",
-                                "label": {
-                                    "en": "Isha"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "id": "prayer_trigger_all",
-                "title": {
-                    "en": "Trigger to all prayers time"
-                },
-                "tokens": [
-                    {
-                        "name": "prayer_name",
-                        "type": "string",
-                        "title": {
-                            "en": "Prayer Name"
-                        }
-                    },
-                    {
-                        "name": "prayer_time",
-                        "type": "string",
-                        "title": {
-                            "en": "Prayer Time"
-                        }
-                    }
-                ]
+  "id": "com.prayerssapp",
+  "version": "1.0.1",
+  "compatibility": " >=5.0.0",
+  "sdk": 3,
+  "brandColor": "#2698DD",
+  "name": {
+    "en": "Prayers Alert"
+  },
+  "description": {
+    "en": "Trigger muslim prayers timing events based on your location"
+  },
+  "category": "tools",
+  "tags": {
+    "en": [
+      "prayer",
+      "prayers",
+      "muslim",
+      "timing",
+      "time",
+      "islam",
+      "quran",
+      "alarm"
+    ]
+  },
+  "images": {
+    "large": "assets/images/large.jpg",
+    "small": "assets/images/small.jpg"
+  },
+  "homepage": "https://github.com/DPANET/PrayersHomeySDK3",
+  "permissions": [
+    "homey:manager:speech-output"
+  ],
+  "author": {
+    "email": "dpanet@hotmail.com",
+    "name": "Omar"
+  },
+  "bugs": {
+    "url": "https://github.com/DPANET/PrayersHomeySDK3/issues"
+  },
+  "flow": {
+    "triggers": [
+      {
+        "id": "prayer_trigger_specific",
+        "title": {
+          "en": "Trigger to a specific prayer time"
+        },
+        "tokens": [
+          {
+            "name": "prayer_name",
+            "type": "string",
+            "title": {
+              "en": "Prayer Name"
             }
+          },
+          {
+            "name": "prayer_time",
+            "type": "string",
+            "title": {
+              "en": "Prayer Time"
+            }
+          }
         ],
-        "actions": [
-            {
-                "id": "athan_action",
-                "title": {
-                    "en": "Play athan sound"
-                },
-                "args": [
-                    {
-                        "type": "dropdown",
-                        "name": "athan_dropdown",
-                        "values": [
-                            {
-                                "id": "athan_short",
-                                "label": {
-                                    "en": "Short"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
+        "args": [
+          {
+            "type": "dropdown",
+            "name": "prayers_dropdown",
+            "values": [
+              {
+                "id": "FAJR",
+                "label": {
+                  "en": "Fajr"
+                }
+              },
+              {
+                "id": "DHUR",
+                "label": {
+                  "en": "Dhur"
+                }
+              },
+              {
+                "id": "ASR",
+                "label": {
+                  "en": "Asr"
+                }
+              },
+              {
+                "id": "MAGHRIB",
+                "label": {
+                  "en": "Maghrib"
+                }
+              },
+              {
+                "id": "Isha",
+                "label": {
+                  "en": "Isha"
+                }
+              }
+            ]
+          }
         ]
+      },
+      {
+        "id": "prayer_trigger_all",
+        "title": {
+          "en": "Trigger to all prayers time"
+        },
+        "tokens": [
+          {
+            "name": "prayer_name",
+            "type": "string",
+            "title": {
+              "en": "Prayer Name"
+            }
+          },
+          {
+            "name": "prayer_time",
+            "type": "string",
+            "title": {
+              "en": "Prayer Time"
+            }
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "athan_action",
+        "title": {
+          "en": "Play athan sound"
+        },
+        "args": [
+          {
+            "type": "dropdown",
+            "name": "athan_dropdown",
+            "values": [
+              {
+                "id": "athan_short",
+                "label": {
+                  "en": "Short"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "api": {
+    "getPrayersAdjustments": {
+      "method": "get",
+      "path": "/PrayerManager/PrayersAdjustments",
+      "public": true
     },
-    "api": {
-        "getPrayersAdjustments": {
-            "method": "get",
-            "path": "/PrayerManager/PrayersAdjustments",
-            "public":true
-        },
-        "getPrayersSettings": {
-            "method": "get",
-            "path": "/PrayerManager/PrayersSettings",
-            "public":true
-        },
-        "getPrayers": {
-            "method": "get",
-            "path": "/PrayerManager/Prayers",
-            "public":true
-        },
-        "getPrayersView": {
-            "method": "get",
-            "path": "/PrayerManager/PrayersView",
-            "public":true
-        },
-        "getPrayersByCalculation": {
-            "method": "get",
-            "path": "/PrayerManager/PrayersByCalculation",
-            "public":true
-        },
-        "loadSettings": {
-            "method": "get",
-            "path": "/PrayerManager/LoadSettings",
-            "public":true
-        },
-        "setPrayersByCalculation": {
-            "method": "post",
-            "path": "/PrayerManager/PrayersByCalculation",
-            "public":true
-        },
-        "getPrayersLocationSettings": {
-            "method": "get",
-            "path": "/PrayerManager/PrayersLocationSettings",
-            "public":true
-        },
-        "searchLocation": {
-            "method": "get",
-            "path": "/PrayerManager/SearchLocation",
-            "public":true
-        }
+    "getPrayersSettings": {
+      "method": "get",
+      "path": "/PrayerManager/PrayersSettings",
+      "public": true
+    },
+    "getPrayers": {
+      "method": "get",
+      "path": "/PrayerManager/Prayers",
+      "public": true
+    },
+    "getPrayersView": {
+      "method": "get",
+      "path": "/PrayerManager/PrayersView",
+      "public": true
+    },
+    "getPrayersByCalculation": {
+      "method": "get",
+      "path": "/PrayerManager/PrayersByCalculation",
+      "public": true
+    },
+    "loadSettings": {
+      "method": "get",
+      "path": "/PrayerManager/LoadSettings",
+      "public": true
+    },
+    "setPrayersByCalculation": {
+      "method": "post",
+      "path": "/PrayerManager/PrayersByCalculation",
+      "public": true
+    },
+    "getPrayersLocationSettings": {
+      "method": "get",
+      "path": "/PrayerManager/PrayersLocationSettings",
+      "public": true
+    },
+    "searchLocation": {
+      "method": "get",
+      "path": "/PrayerManager/SearchLocation",
+      "public": true
     }
+  }
 }
