@@ -19,13 +19,15 @@
             "timing",
             "time",
             "islam",
-            "quran"
+            "quran",
+            "alarm"
         ]
     },
     "images": {
         "large": "assets/images/large.jpg",
         "small": "assets/images/small.jpg"
     },
+    "homepage": "https://github.com/DPANET/PrayersHomeySDK3",
     "permissions": [
         "homey:manager:speech-output"   
      ],
@@ -41,7 +43,7 @@
             {
                 "id": "prayer_trigger_specific",
                 "title": {
-                    "en": "Trigger to specific prayer time"
+                    "en": "Trigger to a specific prayer time"
                 },
                 "tokens": [
                     {
@@ -135,7 +137,7 @@
                             {
                                 "id": "athan_short",
                                 "label": {
-                                    "en": "Play first part of the athan"
+                                    "en": "Short"
                                 }
                             }
                         ]
