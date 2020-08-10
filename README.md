@@ -24,4 +24,4 @@ The Flow will trigger the actions based on the prayer times, below examples of w
 ## Athan Library
 you can cast audio link to an alexa and google home devices once athan is triggered, I posted a link in my homepage for mp3 library of athan
 
-<a href="https://imgbb.com/" > Assabile MP3 Library </a>
+<a href="http://www.assabile.com/adhan-call-prayer" > Assabile MP3 Library </a>
