@@ -47,7 +47,7 @@ class PrayersApp extends Homey.App {
     return await this._prayersController.router.getPrayersByCalculation(config) as IPrayersViewRow[]
   }
   public async loadSettings(): Promise<void> {
-    await this._prayersController.router.loadSettings();
+   return await this._prayersController.router.loadSettings();
   }
   public async setPrayersByCalculation(config: any): Promise<IPrayersViewRow[]> {
     return await this._prayersController.router.setPrayersByCalculation(config) as IPrayersViewRow[]

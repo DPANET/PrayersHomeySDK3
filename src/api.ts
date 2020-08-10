@@ -65,7 +65,7 @@ module.exports =
   },
   async loadSettings({ homey }: any): Promise<void> {
     try {
-      let result = homey.app.loadSettings();
+      let result = await homey.app.loadSettings();
     }
     catch (err) {
       console.log(err.message);

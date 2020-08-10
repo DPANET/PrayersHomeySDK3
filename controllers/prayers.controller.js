@@ -228,7 +228,7 @@ class PrayersController {
             getPrayers: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayers),
             getPrayersView: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerView),
             getPrayersByCalculation: composition_1.default.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.getPrayersByCalculation),
-            loadSettings: composition_1.default.tap(this.reloadConfig),
+            loadSettings: composition_1.default.railAsync(this.reloadConfig),
             setPrayersByCalculation: composition_1.default.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.updatePrayersByCalculation),
             getPrayersLocationSettings: composition_1.default.rail(this.validatePrayerManagerRequest, this.getPrayerLocation),
             searchLocation: composition_1.default.railAsync(this.searchLocation)

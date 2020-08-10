@@ -65,7 +65,7 @@ class PrayersApp extends Homey.App {
         return await this._prayersController.router.getPrayersByCalculation(config);
     }
     async loadSettings() {
-        await this._prayersController.router.loadSettings();
+        return await this._prayersController.router.loadSettings();
     }
     async setPrayersByCalculation(config) {
         return await this._prayersController.router.setPrayersByCalculation(config);

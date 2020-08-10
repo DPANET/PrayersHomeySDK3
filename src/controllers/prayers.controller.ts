@@ -71,7 +71,7 @@ export default class PrayersController implements IController {
             getPrayers: arrows.rail(this.validatePrayerManagerRequest, this.getPrayers),
             getPrayersView: arrows.rail(this.validatePrayerManagerRequest, this.getPrayerView),
             getPrayersByCalculation: arrows.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.getPrayersByCalculation),
-            loadSettings: arrows.tap(this.reloadConfig),
+            loadSettings: arrows.railAsync(this.reloadConfig),
             setPrayersByCalculation: arrows.railAsync(this.validatePrayerConfigRequest, this.validateLocationConfigRequest, this.updatePrayersByCalculation),
             getPrayersLocationSettings: arrows.rail(this.validatePrayerManagerRequest, this.getPrayerLocation),
             searchLocation: arrows.railAsync(this.searchLocation)
