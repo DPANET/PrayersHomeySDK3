@@ -1,7 +1,7 @@
 //const debug = require('debug')(process.env.DEBUG);
 import config= require('nconf');
 import * as prayerlib from '@dpanet/prayers-lib';
-import * as manager from './manager';
+import * as manager from '../controllers/homey.controller.';
 const to = require('await-to-js').default;
 import { isNullOrUndefined } from 'util';
 import * as cron from 'cron';

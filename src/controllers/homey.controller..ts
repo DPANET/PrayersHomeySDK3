@@ -1,7 +1,7 @@
 //const debug = require('debug')(process.env.DEBUG);
 import config= require('nconf');
 import * as prayerlib from '@dpanet/prayers-lib';
-import * as events from './events';
+import * as events from '../events/prayers.events';
 import Homey from 'homey';
 import { isNullOrUndefined } from 'util';
 import path from "path";

@@ -23,7 +23,7 @@ exports.appmanager = exports.PrayersAppManager = void 0;
 //const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
-const events = __importStar(require("./events"));
+const events = __importStar(require("../events/prayers.events"));
 const util_1 = require("util");
 const sentry = __importStar(require("@sentry/node"));
 sentry.init({ dsn: config.get("DSN") });

@@ -26,7 +26,7 @@ console.log("I'm Running**************");
 const Homey = require("homey");
 const config = require("nconf");
 config.file('env.json');
-const manager = __importStar(require("./prayers/manager"));
+const manager = __importStar(require("./controllers/homey.controller."));
 const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
 const configuration_controller_1 = __importDefault(require("./configurations/configuration.controller"));
 const sentry = __importStar(require("@sentry/node"));

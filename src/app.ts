@@ -2,7 +2,7 @@ console.log("I'm Running**************");
 import Homey = require('homey');
 import config = require('nconf');
 config.file('env.json');
-import * as manager from "./prayers/manager";
+import * as manager from "./controllers/homey.controller.";
 import prayersController from "./controllers/prayers.controller";
 import HomeyConfigurator, {ConfigSettingsKeys} from "./configurations/configuration.controller";
 import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
