@@ -4,5 +4,8 @@
   },
   "1.0.1": {
     "en": "Enahnced app readme"
+  },
+  "1.0.2": {
+    "en": "Publish the app with SDK3"
   }
 }
