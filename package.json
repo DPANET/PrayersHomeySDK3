@@ -30,7 +30,8 @@
     "moment-timezone": "^0.5.31",
     "nconf": "^0.10.0",
     "noty": "^3.2.0-beta",
-    "ramda": "^0.27.1"
+    "ramda": "^0.27.1",
+    "rxjs": "^6.6.2"
   },
   "devDependencies": {
     "@types/async-retry": "^1.4.2",

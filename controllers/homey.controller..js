@@ -84,7 +84,7 @@ class PrayersAppManager {
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
         this._prayerEventProvider.registerListener(this._prayerEventListener);
-        this._prayerEventProvider.startPrayerSchedule();
+        //this._prayerEventProvider.startPrayerSchedule();
         this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
         this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
@@ -142,23 +142,28 @@ class PrayersAppManager {
     }
     //trigger homey event based on prayer scheduling event.
     triggerEvent(prayerName, prayerTime) {
-        let timeZone = this._prayerManager.getPrayerTimeZone().timeZoneId;
-        let prayerTimeZone = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
-        this._homeyPrayersTriggerAll
-            .trigger({ prayer_name: prayerName, prayer_time: prayerTimeZone }, null)
-            .then(() => console.log('event all run'))
-            .catch((err) => {
-            this.prayerEventProvider.stopPrayerSchedule();
-            sentry.captureException(err);
-            console.log(err);
-        });
-        this._homeyPrayersTriggerSpecific.trigger({ prayer_name: prayerName, prayer_time: prayerTimeZone }, null)
-            .then(() => console.log('event specific run'))
-            .catch((err) => {
-            this.prayerEventProvider.stopPrayerSchedule();
-            sentry.captureException(err);
-            console.log(err);
-        });
+        try {
+            let timeZone = this._prayerManager.getPrayerTimeZone().timeZoneId;
+            let prayerTimeZone = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
+            this._homeyPrayersTriggerAll
+                .trigger({ prayer_name: prayerName, prayer_time: prayerTimeZone }, null)
+                .then(() => console.log('event all run'))
+                .catch((err) => {
+                this.prayerEventProvider.stopPrayerSchedule();
+                sentry.captureException(err);
+                console.log(err);
+            });
+            this._homeyPrayersTriggerSpecific.trigger({ prayer_name: prayerName, prayer_time: prayerTimeZone }, null)
+                .then(() => console.log('event specific run'))
+                .catch((err) => {
+                this.prayerEventProvider.stopPrayerSchedule();
+                sentry.captureException(err);
+                console.log(err);
+            });
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
     //refresh prayer manager in case we reach the end of the array.
     refreshPrayerManagerByDate() {

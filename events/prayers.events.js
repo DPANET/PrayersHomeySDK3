@@ -26,13 +26,26 @@ const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const to = require('await-to-js').default;
 const util_1 = require("util");
 const cron = __importStar(require("cron"));
+const prayers_lib_1 = require("@dpanet/prayers-lib");
 //import chokidar = require('chokidar');
 const sentry = __importStar(require("@sentry/node"));
 sentry.init({ dsn: config.get("DSN") });
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 class PrayersEventProvider extends prayerlib.EventProvider {
+    //  private _prayerTimerObservable:Observable<prayerlib.IPrayersTiming>;
     constructor(prayerManager) {
         super();
+        this._prayerTimeObserver = {
+            next: (prayersTime) => this.notifyObservers(prayers_lib_1.EventsType.OnNext, prayersTime),
+            complete: () => this.notifyObservers(prayers_lib_1.EventsType.OnCompleted, null),
+            error: (err) => this.notifyObservers(prayers_lib_1.EventsType.OnError, null, err)
+        };
         this._prayerManager = prayerManager;
+        this._upcomingPrayerSourceObservable = rxjs_1.defer(() => rxjs_1.timer(this.getUpcomingPrayerTime()));
+        this._validatePrayerTimeObservable = rxjs_1.iif(() => !util_1.isNullOrUndefined(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable, rxjs_1.throwError(new Error("Reached the end of Prayers")));
+        this.runNextPrayerSchedule();
+        this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
     }
     registerListener(observer) {
         super.registerListener(observer);
@@ -43,33 +56,53 @@ class PrayersEventProvider extends prayerlib.EventProvider {
     notifyObservers(eventType, prayersTime, error) {
         super.notifyObservers(eventType, prayersTime, error);
     }
+    getUpcomingPrayerTime() { return this._prayerManager.getUpcomingPrayer().prayerTime; }
+    ;
+    getUpcomingPrayer() { return this._prayerManager.getUpcomingPrayer(); }
+    ;
     startPrayerSchedule(prayerManager) {
-        if (!util_1.isNullOrUndefined(this._upcomingPrayerEvent))
-            this.stopPrayerSchedule();
+        //     if(!isNullOrUndefined(this._upcomingPrayerEvent))
+        //     this.stopPrayerSchedule();
+        //     if (!isNullOrUndefined(prayerManager))
+        //         this._prayerManager = prayerManager;
+        //    // if (isNullOrUndefined(this._upcomingPrayerEvent) || !this._upcomingPrayerEvent.running) {
+        //         this.runNextPrayerSchedule();
+        //if(this._upcomingPrayerSubscription.closed)
         if (!util_1.isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
-        // if (isNullOrUndefined(this._upcomingPrayerEvent) || !this._upcomingPrayerEvent.running) {
-        this.runNextPrayerSchedule();
+        if (this._upcomingPrayerSubscription.closed) {
+            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
+        }
+        else {
+            this._upcomingPrayerSubscription.unsubscribe();
+            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
+        }
+        //this.runNextPrayerSchedule();
     }
     stopPrayerSchedule() {
-        if (this._upcomingPrayerEvent.running)
-            this._upcomingPrayerEvent.stop();
+        if (!this._upcomingPrayerSubscription.closed)
+            this._upcomingPrayerSubscription.unsubscribe();
     }
     runNextPrayerSchedule() {
-        let prayerTiming = this._prayerManager.getUpcomingPrayer();
-        if (util_1.isNullOrUndefined(prayerTiming)) {
-            this.notifyObservers(prayerlib.EventsType.OnCompleted, null);
-            return;
-        }
-        this._upcomingPrayerEvent = new cron.CronJob(prayerTiming.prayerTime, () => {
-            this.notifyObservers(prayerlib.EventsType.OnNext, prayerTiming);
-        }, null, true);
-        this._upcomingPrayerEvent.addCallback(() => {
-            setTimeout(() => {
-                this.runNextPrayerSchedule();
-                //this.notifyObservers(prayerlib.EventsType.OnCompleted, null);
-            }, 60000);
-        });
+        this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(operators_1.expand(() => rxjs_1.timer(60000).pipe(operators_1.mergeMap(() => this._validatePrayerTimeObservable))), operators_1.scan((accum, curr) => ({ ...accum, ...curr }), this.getUpcomingPrayer()), operators_1.takeWhile((prayerTime) => !util_1.isNullOrUndefined(prayerTime)), 
+        // startWith(this.getUpcomingPrayer()),
+        operators_1.finalize(() => console.log('completiong of subscriptioin')));
+        // let prayerTiming: prayerlib.IPrayersTiming = this._prayerManager.getUpcomingPrayer();
+        // if(isNullOrUndefined(prayerTiming))
+        // {
+        // this.notifyObservers(prayerlib.EventsType.OnCompleted, null);
+        // return;
+        // }
+        // this._upcomingPrayerEvent = new cron.CronJob(prayerTiming.prayerTime, () => {
+        //     this.notifyObservers(prayerlib.EventsType.OnNext, prayerTiming)
+        // },
+        //     null, true);
+        // this._upcomingPrayerEvent.addCallback(() => {
+        //     setTimeout(() => {
+        //         this.runNextPrayerSchedule()
+        //         //this.notifyObservers(prayerlib.EventsType.OnCompleted, null);
+        //     }, 60000);
+        // });
     }
 }
 exports.PrayersEventProvider = PrayersEventProvider;
@@ -78,12 +111,13 @@ class PrayersEventListener {
         this._prayerAppManager = prayerAppManager;
     }
     onCompleted() {
-        this._prayerAppManager.prayerEventProvider.stopPrayerSchedule();
-        this._prayerAppManager.refreshPrayerManagerByDate();
+        console.log("completed");
     }
     onError(error) {
-        console.log(error);
-        sentry.captureException(error);
+        console.log(error.message);
+        this._prayerAppManager.prayerEventProvider.stopPrayerSchedule();
+        this._prayerAppManager.refreshPrayerManagerByDate();
+        //sentry.captureException(error);
     }
     onNext(value) {
         this._prayerAppManager.triggerEvent(value.prayerName, value.prayerTime);

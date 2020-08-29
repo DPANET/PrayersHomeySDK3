@@ -6,6 +6,7 @@ import Homey from 'homey';
 import { isNullOrUndefined } from 'util';
 import path from "path";
 import * as sentry from "@sentry/node";
+import { concatAll } from 'rxjs/operators';
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;
 
@@ -87,7 +88,7 @@ export class PrayersAppManager {
         this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
         this._prayerEventListener = new events.PrayersEventListener(this);
         this._prayerEventProvider.registerListener(this._prayerEventListener);
-        this._prayerEventProvider.startPrayerSchedule();
+        //this._prayerEventProvider.startPrayerSchedule();
         this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
         this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
@@ -150,6 +151,7 @@ export class PrayersAppManager {
     }
     //trigger homey event based on prayer scheduling event.
     public triggerEvent(prayerName: string, prayerTime: Date): void {
+        try{
         let timeZone: string = this._prayerManager.getPrayerTimeZone().timeZoneId;
         let prayerTimeZone: string = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
         this._homeyPrayersTriggerAll
@@ -168,6 +170,12 @@ export class PrayersAppManager {
                 sentry.captureException(err);
                 console.log(err);
             });
+        }
+        catch(error)
+        {
+            console.log(error);
+            
+        }
     }
     //refresh prayer manager in case we reach the end of the array.
     public refreshPrayerManagerByDate(): void {
