@@ -84,7 +84,7 @@ class PrayersEventProvider extends prayerlib.EventProvider {
             this._upcomingPrayerSubscription.unsubscribe();
     }
     runNextPrayerSchedule() {
-        this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(operators_1.expand(() => rxjs_1.timer(60000).pipe(operators_1.mergeMap(() => this._validatePrayerTimeObservable))), operators_1.scan((accum, curr) => ({ ...accum, ...curr }), this.getUpcomingPrayer()), operators_1.takeWhile((prayerTime) => !util_1.isNullOrUndefined(prayerTime)), 
+        this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(operators_1.expand(() => rxjs_1.timer(60000).pipe(operators_1.mergeMap(() => this._validatePrayerTimeObservable))), operators_1.scan((accum, curr) => (Object.assign({ ...accum }, this.getUpcomingPrayer())), this.getUpcomingPrayer()), operators_1.takeWhile((prayerTime) => !util_1.isNullOrUndefined(prayerTime)), 
         // startWith(this.getUpcomingPrayer()),
         operators_1.finalize(() => console.log('completiong of subscriptioin')));
         // let prayerTiming: prayerlib.IPrayersTiming = this._prayerManager.getUpcomingPrayer();

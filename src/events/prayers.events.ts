@@ -81,7 +81,7 @@ export class PrayersEventProvider extends prayerlib.EventProvider<prayerlib.IPra
     private runNextPrayerSchedule(): void {
         this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(
             expand(() => timer(60000).pipe(mergeMap(() => this._validatePrayerTimeObservable))),
-            scan((accum: prayerlib.IPrayersTiming, curr: prayerlib.IPrayersTiming) => ({ ...accum, ...curr }),
+            scan((accum: prayerlib.IPrayersTiming, curr: prayerlib.IPrayersTiming) => (Object.assign({ ...accum},this.getUpcomingPrayer())),
                 this.getUpcomingPrayer()),
             takeWhile((prayerTime: prayerlib.IPrayersTiming) => !isNullOrUndefined(prayerTime)),
            // startWith(this.getUpcomingPrayer()),
