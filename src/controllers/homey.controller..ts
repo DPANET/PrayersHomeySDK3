@@ -7,6 +7,7 @@ import { isNullOrUndefined } from 'util';
 import path from "path";
 import * as sentry from "@sentry/node";
 import { concatAll } from 'rxjs/operators';
+import * as util from "util"
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;
 
@@ -19,6 +20,7 @@ export class PrayersAppManager {
     private _homey:Homey.Homey;
     private _homeyPrayersTriggerAll: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersTriggerSpecific: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
+    private _homeyPrayersTriggerBeforAfterSpecific: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersAthanAction: Homey.FlowCardAction<Homey.FlowCardAction<any>>;
     private _prayersRefreshEventProvider: events.PrayersRefreshEventProvider;
     private _prayersRefreshEventListener: events.PrayerRefreshEventListener;
@@ -103,10 +105,28 @@ export class PrayersAppManager {
         this._prayersRefreshEventProvider.startPrayerRefreshSchedule(date);
     }
 
+    //test flow card trigger
+    private async onUpdateFlowCardUpdate()
+    {
+         this._homeyPrayersTriggerBeforAfterSpecific.on('update',async ()=>
+        {
+            console.log('updates: ');
+            let values:Array<any> = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
+            console.log(values.entries());
+            values.forEach((value,index)=>
+            {
+            console.log("index " +index)
+            console.log(util.inspect(value, {showHidden: false, depth: null}))
+            }
+            )
+        });
+    }
+
     //initialize Homey Events
     public initEvents(): void {
         this._homeyPrayersTriggerAll = this._homey.flow.getTriggerCard('prayer_trigger_all');
         this._homeyPrayersTriggerSpecific = this._homey.flow.getTriggerCard('prayer_trigger_specific');
+        this._homeyPrayersTriggerBeforAfterSpecific= this._homey.flow.getTriggerCard('prayer_trigger_before_after_specific');
         this._homeyPrayersAthanAction = this._homey.flow.getActionCard('athan_action');
         this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
             return true;});
@@ -129,7 +149,8 @@ export class PrayersAppManager {
             //.register()
             .registerRunListener(async (args, state) => {
                 return (args.athan_dropdown === state.prayer_name);
-            })
+            });
+        this.onUpdateFlowCardUpdate();
     }
 
     //play athan based on trigger

@@ -121,6 +121,111 @@
             }
           }
         ]
+      },
+      {
+        "id": "prayer_trigger_before_after_specific",
+        "title": {
+          "en": "Trigger before/after specific prayer time"
+        },
+        "tokens": [
+          {
+            "name": "prayer_name",
+            "type": "string",
+            "title": {
+              "en": "Prayer Name"
+            }
+          },
+          {
+            "name": "alert_time",
+            "type": "string",
+            "title": {
+              "en": "Alert Time"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "dropdown",
+            "name": "before_after_dropdown",
+            "values": [
+              {
+                "id": "before",
+                "label": {
+                  "en": "Before"
+                }
+              },
+              {
+                "id": "after",
+                "label": {
+                  "en": "After"
+                }
+              }
+            ]
+          },
+          {
+            "type": "dropdown",
+            "name": "prayers_dropdown",
+            "values": [
+              {
+                "id": "FAJR",
+                "label": {
+                  "en": "Fajr"
+                }
+              },
+              {
+                "id": "DHUR",
+                "label": {
+                  "en": "Dhur"
+                }
+              },
+              {
+                "id": "ASR",
+                "label": {
+                  "en": "Asr"
+                }
+              },
+              {
+                "id": "MAGHRIB",
+                "label": {
+                  "en": "Maghrib"
+                }
+              },
+              {
+                "id": "Isha",
+                "label": {
+                  "en": "Isha"
+                }
+              }
+            ]
+          },
+          {
+            "type": "number",
+            "name": "duration_number",
+            "min": 0,
+            "step": 1,
+            "placeholder": {
+              "en": "Set duration in number >=0"
+            }
+          },
+          {
+            "type":"dropdown",
+            "name":"duration_type",
+            "values":[
+              {
+                "id":"seconds",
+                "label":{"en":"second(s)"}
+              },
+              {
+                "id":"minutes",
+                "label":{"en":"minute(s)"}
+              },
+              {
+                "id":"hours",
+                "label":{"en":"hour(s)"}
+              }
+            ]
+          }
+        ]
       }
     ],
     "actions": [

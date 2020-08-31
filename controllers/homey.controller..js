@@ -26,6 +26,7 @@ const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const events = __importStar(require("../events/prayers.events"));
 const util_1 = require("util");
 const sentry = __importStar(require("@sentry/node"));
+const util = __importStar(require("util"));
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;
 const athanTypes = { athan_short: "assets/prayers/prayer_short.mp3", athan_full: "assets/prayers/prayer_full.mp3" };
@@ -96,10 +97,23 @@ class PrayersAppManager {
     scheduleRefresh(date) {
         this._prayersRefreshEventProvider.startPrayerRefreshSchedule(date);
     }
+    //test flow card trigger
+    async onUpdateFlowCardUpdate() {
+        this._homeyPrayersTriggerBeforAfterSpecific.on('update', async () => {
+            console.log('updates: ');
+            let values = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
+            console.log(values.entries());
+            values.forEach((value, index) => {
+                console.log("index " + index);
+                console.log(util.inspect(value, { showHidden: false, depth: null }));
+            });
+        });
+    }
     //initialize Homey Events
     initEvents() {
         this._homeyPrayersTriggerAll = this._homey.flow.getTriggerCard('prayer_trigger_all');
         this._homeyPrayersTriggerSpecific = this._homey.flow.getTriggerCard('prayer_trigger_specific');
+        this._homeyPrayersTriggerBeforAfterSpecific = this._homey.flow.getTriggerCard('prayer_trigger_before_after_specific');
         this._homeyPrayersAthanAction = this._homey.flow.getActionCard('athan_action');
         this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
             return true;
@@ -123,6 +137,7 @@ class PrayersAppManager {
             .registerRunListener(async (args, state) => {
             return (args.athan_dropdown === state.prayer_name);
         });
+        this.onUpdateFlowCardUpdate();
     }
     //play athan based on trigger
     async playAthan(sampleId, fileName) {

@@ -1,0 +1,48 @@
+{
+    "updates": [
+        {
+            "before_after_dropdown": "After",
+            "prayers_dropdow": "Asr",
+            "duration_number": 20,
+            "duration_type": "minutes"
+        },
+        {
+            "0": [
+                {
+                    "before_after_dropdown": "before",
+                    "prayers_dropdown": "MAGHRIB",
+                    "duration_number": 200,
+                    "duration_type": "hours"
+                },
+                {
+                    "before_after_dropdown": "after",
+                    "prayers_dropdown": "FAJR",
+                    "duration_number": 5,
+                    "duration_type": "minutes"
+                }
+            ]
+        },
+        {
+            "before_after_dropdown": "befor",
+            "prayers_dropdown": "Dhur",
+            "duration_number": 12,
+            "duration_type": "hours"
+        },
+        {
+            "1": [
+                {
+                    "before_after_dropdown": "before",
+                    "prayers_dropdown": "MAGHRIB",
+                    "duration_number": 200,
+                    "duration_type": "hours"
+                },
+                {
+                    "before_after_dropdown": "after",
+                    "prayers_dropdown": "FAJR",
+                    "duration_number": 5,
+                    "duration_type": "minutes"
+                }
+            ]
+        }
+    ]
+}

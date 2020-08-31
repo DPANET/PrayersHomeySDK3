@@ -12,7 +12,7 @@ import * as sentry from "@sentry/node";
 import Homey from "homey"
 sentry.init({ dsn: config.get("DSN") });
 import { Observable,defer, Observer, timer, Subscription, iif, throwError } from "rxjs";
-import { mergeMap, takeWhile, startWith, finalize, scan, expand } from "rxjs/operators";
+import { mergeMap, takeWhile, startWith, finalize, scan, expand, mapTo } from "rxjs/operators";
 
 export class PrayersEventProvider extends prayerlib.EventProvider<prayerlib.IPrayersTiming>
 {
@@ -20,7 +20,7 @@ export class PrayersEventProvider extends prayerlib.EventProvider<prayerlib.IPra
     constructor(prayerManager: prayerlib.IPrayerManager) {
         super();
         this._prayerManager = prayerManager;
-        this._upcomingPrayerSourceObservable =defer(()=>timer(this.getUpcomingPrayerTime()));
+        this._upcomingPrayerSourceObservable =defer(()=>timer(this.getUpcomingPrayerTime()).pipe(mapTo(this.getUpcomingPrayer())));
         this._validatePrayerTimeObservable= iif(() => !isNullOrUndefined(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable,
         throwError(new Error("Reached the end of Prayers")));
         this.runNextPrayerSchedule();
@@ -80,10 +80,9 @@ export class PrayersEventProvider extends prayerlib.EventProvider<prayerlib.IPra
     }
     private runNextPrayerSchedule(): void {
         this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(
-            expand(() => timer(60000).pipe(mergeMap(() => this._validatePrayerTimeObservable))),
-            scan((accum: prayerlib.IPrayersTiming, curr: prayerlib.IPrayersTiming) => (Object.assign({ ...accum},this.getUpcomingPrayer())),
-                this.getUpcomingPrayer()),
-            takeWhile((prayerTime: prayerlib.IPrayersTiming) => !isNullOrUndefined(prayerTime)),
+           expand(() => this._validatePrayerTimeObservable),
+           scan((accum: prayerlib.IPrayersTiming, curr: prayerlib.IPrayersTiming) => ({ ...accum,...curr})),
+            //takeWhile((prayerTime: prayerlib.IPrayersTiming) => !isNullOrUndefined(prayerTime)),
            // startWith(this.getUpcomingPrayer()),
             finalize(() => console.log('completiong of subscriptioin'))
         )
