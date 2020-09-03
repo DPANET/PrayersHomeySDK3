@@ -1,12 +1,13 @@
 //const debug = require('debug')(process.env.DEBUG);
 import config= require('nconf');
 import * as prayerlib from '@dpanet/prayers-lib';
-import * as events from '../events/prayers.events';
+import {PrayersEventProvider,PrayersEventListener} from '../events/nextprayer.event';
+import {PrayersRefreshEventProvider,PrayerRefreshEventListener} from '../events/prayerrefresh.event';
+import {ConfigEventProvider,ConfigEventListener} from '../events/config.event';
+import {PrayerConditionTriggerEventProvider,PrayerConditionTriggerEventListener,ITriggerEvent,ITriggerCondition} from '../events/conditionprayer.event';
 import Homey from 'homey';
 import { isNullOrUndefined } from 'util';
-import path from "path";
 import * as sentry from "@sentry/node";
-import { concatAll } from 'rxjs/operators';
 import * as util from "util"
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;
@@ -22,20 +23,22 @@ export class PrayersAppManager {
     private _homeyPrayersTriggerSpecific: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersTriggerBeforAfterSpecific: Homey.FlowCardTrigger<Homey.FlowCardTrigger<any>>;
     private _homeyPrayersAthanAction: Homey.FlowCardAction<Homey.FlowCardAction<any>>;
-    private _prayersRefreshEventProvider: events.PrayersRefreshEventProvider;
-    private _prayersRefreshEventListener: events.PrayerRefreshEventListener;
-    private _prayerEventProvider: events.PrayersEventProvider; ///= new event.PrayersEventProvider(prayerManager);
-    private _configEventListener: events.ConfigEventListener;
-    private _configEventProvider: events.ConfigEventProvider;
+    private _prayersRefreshEventProvider: PrayersRefreshEventProvider;
+    private _prayersRefreshEventListener: PrayerRefreshEventListener;
+    private _prayerEventProvider: PrayersEventProvider; ///= new event.PrayersEventProvider(prayerManager);
+    private _configEventListener: ConfigEventListener;
+    private _configEventProvider: ConfigEventProvider;
+    private _prayerConditionTriggerEventProvider:PrayerConditionTriggerEventProvider;
+    private _prayerConditionTriggerEventListener:PrayerConditionTriggerEventListener;
    // private _coinfigFilePath:string;
     private _configProvider: prayerlib.IConfigProvider
-    public get prayerEventProvider(): events.PrayersEventProvider {
+    public get prayerEventProvider(): PrayersEventProvider {
         return this._prayerEventProvider;
     }
-    public set prayerEventProvider(value: events.PrayersEventProvider) {
+    public set prayerEventProvider(value: PrayersEventProvider) {
         this._prayerEventProvider = value;
     }
-    private _prayerEventListener: events.PrayersEventListener;
+    private _prayerEventListener: PrayersEventListener;
 
     public static get prayerAppManger(): PrayersAppManager {
         if (!isNullOrUndefined(PrayersAppManager._prayerAppManger))
@@ -87,15 +90,15 @@ export class PrayersAppManager {
     
         console.log("Prayer Schedule  Are being Initatized");
       //  this._coinfigFilePath =path.join(config.get("CONFIG_FOLDER_PATH"),config.get("PRAYER_CONFIG")) ;
-        this._prayerEventProvider = new events.PrayersEventProvider(this._prayerManager);
-        this._prayerEventListener = new events.PrayersEventListener(this);
+        this._prayerEventProvider = new PrayersEventProvider(this._prayerManager);
+        this._prayerEventListener = new PrayersEventListener(this);
         this._prayerEventProvider.registerListener(this._prayerEventListener);
         //this._prayerEventProvider.startPrayerSchedule();
-        this._prayersRefreshEventProvider = new events.PrayersRefreshEventProvider(this._prayerManager);
-        this._prayersRefreshEventListener = new events.PrayerRefreshEventListener(this);
+        this._prayersRefreshEventProvider = new PrayersRefreshEventProvider(this._prayerManager);
+        this._prayersRefreshEventListener = new PrayerRefreshEventListener(this);
         this._prayersRefreshEventProvider.registerListener(this._prayersRefreshEventListener);
-        this._configEventProvider = new events.ConfigEventProvider(this._homey);
-        this._configEventListener = new events.ConfigEventListener(this);
+        this._configEventProvider = new ConfigEventProvider(this._homey);
+        this._configEventListener = new ConfigEventListener(this);
         this._configEventProvider.registerListener(this._configEventListener);
 
     }
@@ -171,7 +174,7 @@ export class PrayersAppManager {
 
     }
     //trigger homey event based on prayer scheduling event.
-    public triggerEvent(prayerName: string, prayerTime: Date): void {
+    public triggerNextPrayerEvent(prayerName: string, prayerTime: Date): void {
         try{
         let timeZone: string = this._prayerManager.getPrayerTimeZone().timeZoneId;
         let prayerTimeZone: string = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
@@ -179,7 +182,7 @@ export class PrayersAppManager {
             .trigger({ prayer_name: prayerName, prayer_time: prayerTimeZone }, null)
             .then(() => console.log('event all run'))
             .catch((err) => {
-                this.prayerEventProvider.stopPrayerSchedule();
+                this.prayerEventProvider.stopProvider();
                 sentry.captureException(err);
                 console.log(err);
             });
@@ -187,7 +190,7 @@ export class PrayersAppManager {
         this._homeyPrayersTriggerSpecific.trigger({ prayer_name: prayerName, prayer_time: prayerTimeZone }, null)
             .then(() => console.log('event specific run'))
             .catch((err) => {
-                this.prayerEventProvider.stopPrayerSchedule();
+                this.prayerEventProvider.stopProvider();
                 sentry.captureException(err);
                 console.log(err);
             });
@@ -198,6 +201,28 @@ export class PrayersAppManager {
             
         }
     }
+
+    //trigger homey event based on before or after spepcific prayer event
+    public triggerConditionPrayerEvent(triggerConditionEvent:ITriggerEvent)
+    {
+        try{
+
+        this._homeyPrayersTriggerAll
+            .trigger(triggerConditionEvent, null)
+            .then(() => console.log('prayer_trigger_before_after_specific'))
+            .catch((err) => {
+                this._prayerConditionTriggerEventProvider.stopProvider();
+                sentry.captureException(err);
+                console.log(err);
+            });
+        }
+        catch(error)
+        {
+            console.log(error);
+            sentry.captureException(error);
+
+        }
+    }
     //refresh prayer manager in case we reach the end of the array.
     public refreshPrayerManagerByDate(): void {
         let startDate: Date = prayerlib.DateUtil.getNowDate();
@@ -205,8 +230,8 @@ export class PrayersAppManager {
         
         this.prayerManager.updatePrayersDate(startDate, endDate)
             .then((value) => {
-                this.prayerEventProvider.startPrayerSchedule(value)
-                // this._prayerManager = value;
+                this.prayerEventProvider.startProvider(value)
+                 //this._prayerManager = value;
             })
             //retry every date until the prayer refresh task is done.
             .catch((err) => {
@@ -226,7 +251,7 @@ export class PrayersAppManager {
             .createPrayerTimeBuilder(appmanager._locationConfig, appmanager._prayerConfig)
            // .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
             .createPrayerTimeManager();
-        this.prayerEventProvider.startPrayerSchedule(appmanager._prayerManager);
+        this.prayerEventProvider.startProvider(appmanager._prayerManager);
         }catch(err)
         {
             console.log(err);

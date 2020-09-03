@@ -193,11 +193,6 @@ class PrayersController {
             this._validationController = new validationController.ValidationMiddleware();
             this._configProvider = configProvider;
             this.initializeValidators();
-            //  this.prayerViewMobileRequestValidator =
-            // this.initializePrayerManger()
-            //     .then(() => {
-            //     })
-            //     .catch((err) => { throw err });
             this.initializeRoutes();
         }
         catch (err) {

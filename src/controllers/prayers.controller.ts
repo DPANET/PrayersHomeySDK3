@@ -10,11 +10,10 @@ import * as sentry from "@sentry/node";
 import * as validationController from "../middlewares/validations.middleware"
 import * as validators from "../validators/validations";
 import * as retry from "async-retry";
-import { listenerCount } from 'cluster';
+
 import * as R from "ramda";
 import arrows from "@arrows/composition";
-import { IPrayerAdjustments } from '@dpanet/prayers-lib';
-import { time } from 'console';
+
 sentry.init({ dsn: config.get("DSN") });
 export default class PrayersController implements IController {
     path: string;
@@ -35,12 +34,6 @@ export default class PrayersController implements IController {
             this._validationController = new validationController.ValidationMiddleware();
             this._configProvider = configProvider;
             this.initializeValidators();
-            //  this.prayerViewMobileRequestValidator =
-            // this.initializePrayerManger()
-            //     .then(() => {
-
-            //     })
-            //     .catch((err) => { throw err });
             this.initializeRoutes();
         }
         catch (err) {
