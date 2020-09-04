@@ -36,7 +36,7 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
         this._upcomingPrayerSourceObservable = Rx.defer(() => Rx.timer(this.getUpcomingPrayerTime()).pipe(RxOp.mapTo(this.getUpcomingPrayer())));
         this._validatePrayerTimeObservable = Rx.iif(() => !util_1.isNullOrUndefined(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable, Rx.throwError(new Error("Reached the end of Prayers")));
         this.runNextPrayerSchedule();
-        this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
+        //this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
     }
     registerListener(observer) {
         super.registerListener(observer);
@@ -54,7 +54,7 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
     async startProvider(prayerManager) {
         if (!util_1.isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
-        if (this._upcomingPrayerSubscription.closed) {
+        if (util_1.isNullOrUndefined(this._upcomingPrayerSubscription) || this._upcomingPrayerSubscription.closed) {
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
         }
         else {

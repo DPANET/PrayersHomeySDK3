@@ -14,7 +14,7 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
         this._validatePrayerTimeObservable = Rx.iif(() => !isNullOrUndefined(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable,
             Rx.throwError(new Error("Reached the end of Prayers")));
         this.runNextPrayerSchedule();
-        this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
+        //this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
     }
     private _prayerManager: prayerlib.IPrayerManager;
     private _upcomingPrayerSubscription: Rx.Subscription;
@@ -46,7 +46,7 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
 
         if (!isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
-        if (this._upcomingPrayerSubscription.closed) {
+        if (isNullOrUndefined(this._upcomingPrayerSubscription) || this._upcomingPrayerSubscription.closed) {
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
         }
         else {

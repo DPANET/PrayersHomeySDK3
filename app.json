@@ -47,14 +47,14 @@
         },
         "tokens": [
           {
-            "name": "prayer_name",
+            "name": "prayerName",
             "type": "string",
             "title": {
               "en": "Prayer Name"
             }
           },
           {
-            "name": "prayer_time",
+            "name": "prayerTime",
             "type": "string",
             "title": {
               "en": "Prayer Time"
@@ -64,7 +64,7 @@
         "args": [
           {
             "type": "dropdown",
-            "name": "prayers_dropdown",
+            "name": "prayerName",
             "values": [
               {
                 "id": "FAJR",
@@ -107,14 +107,14 @@
         },
         "tokens": [
           {
-            "name": "prayer_name",
+            "name": "prayerName",
             "type": "string",
             "title": {
               "en": "Prayer Name"
             }
           },
           {
-            "name": "prayer_time",
+            "name": "prayerTime",
             "type": "string",
             "title": {
               "en": "Prayer Time"
@@ -129,14 +129,14 @@
         },
         "tokens": [
           {
-            "name": "prayer_name",
+            "name": "prayerName",
             "type": "string",
             "title": {
               "en": "Prayer Name"
             }
           },
           {
-            "name": "alert_time",
+            "name": "prayerTimeCalculated",
             "type": "string",
             "title": {
               "en": "Alert Time"
@@ -146,7 +146,7 @@
         "args": [
           {
             "type": "dropdown",
-            "name": "before_after_dropdown",
+            "name": "prayerAfterBefore",
             "values": [
               {
                 "id": "before",
@@ -164,7 +164,7 @@
           },
           {
             "type": "dropdown",
-            "name": "prayers_dropdown",
+            "name": "prayerName",
             "values": [
               {
                 "id": "FAJR",
@@ -200,7 +200,7 @@
           },
           {
             "type": "number",
-            "name": "duration_number",
+            "name": "prayerDurationTime",
             "min": 0,
             "step": 1,
             "placeholder": {
@@ -209,7 +209,7 @@
           },
           {
             "type":"dropdown",
-            "name":"duration_type",
+            "name":"prayerDurationType",
             "values":[
               {
                 "id":"seconds",
