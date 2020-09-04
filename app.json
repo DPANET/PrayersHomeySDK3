@@ -67,25 +67,25 @@
             "name": "prayerName",
             "values": [
               {
-                "id": "FAJR",
+                "id": "Fajr",
                 "label": {
                   "en": "Fajr"
                 }
               },
               {
-                "id": "DHUR",
+                "id": "Dhur",
                 "label": {
                   "en": "Dhur"
                 }
               },
               {
-                "id": "ASR",
+                "id": "Asr",
                 "label": {
                   "en": "Asr"
                 }
               },
               {
-                "id": "MAGHRIB",
+                "id": "Maghrib",
                 "label": {
                   "en": "Maghrib"
                 }
@@ -167,13 +167,13 @@
             "name": "prayerName",
             "values": [
               {
-                "id": "FAJR",
+                "id": "Fajr",
                 "label": {
                   "en": "Fajr"
                 }
               },
               {
-                "id": "DHUR",
+                "id": "Dhur",
                 "label": {
                   "en": "Dhur"
                 }
@@ -185,7 +185,7 @@
                 }
               },
               {
-                "id": "MAGHRIB",
+                "id": "Maghrib",
                 "label": {
                   "en": "Maghrib"
                 }
