@@ -55,6 +55,7 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
         if (!util_1.isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
         if (util_1.isNullOrUndefined(this._upcomingPrayerSubscription) || this._upcomingPrayerSubscription.closed) {
+            console.log('subscribed to next prayer provider');
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
         }
         else {

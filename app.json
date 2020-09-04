@@ -149,13 +149,13 @@
             "name": "prayerAfterBefore",
             "values": [
               {
-                "id": "before",
+                "id": "Before",
                 "label": {
                   "en": "Before"
                 }
               },
               {
-                "id": "after",
+                "id": "After",
                 "label": {
                   "en": "After"
                 }

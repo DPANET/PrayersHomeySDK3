@@ -67,9 +67,9 @@ class TriggerPrayerEventBuilder {
 }
 exports.TriggerPrayerEventBuilder = TriggerPrayerEventBuilder;
 class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
-    constructor(prayerManager, fromDate, ...triggerConditiosn) {
+    constructor(prayerManager, fromDate, triggerCondition) {
         super();
-        this._triggerConditions = triggerConditiosn;
+        this._triggerConditions = triggerCondition;
         this._prayerManager = prayerManager;
         this._prayerTimeObserver =
             {

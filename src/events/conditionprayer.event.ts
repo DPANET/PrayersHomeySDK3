@@ -95,9 +95,9 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
     private _prayerTimeObserver: Rx.Observer<any>;
     private _schedulePrayersObservable: Rx.Observable<any>;
     private _schedulePrayersSubscription: Rx.Subscription;
-    constructor(prayerManager: prayerlib.IPrayerManager, fromDate: Date, ...triggerConditiosn: Array<ITriggerCondition>) {
+    constructor(prayerManager: prayerlib.IPrayerManager, fromDate: Date, triggerCondition: Array<ITriggerCondition>) {
         super();
-        this._triggerConditions = triggerConditiosn;
+        this._triggerConditions = triggerCondition;
         this._prayerManager = prayerManager;
         this._prayerTimeObserver =
         {
