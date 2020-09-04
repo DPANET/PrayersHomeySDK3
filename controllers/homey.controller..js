@@ -30,6 +30,7 @@ const conditionprayer_event_1 = require("../events/conditionprayer.event");
 const util_1 = require("util");
 const sentry = __importStar(require("@sentry/node"));
 const prayers_lib_1 = require("@dpanet/prayers-lib");
+const ramda = __importStar(require("ramda"));
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;
 const athanTypes = { athan_short: "assets/prayers/prayer_short.mp3", athan_full: "assets/prayers/prayer_full.mp3" };
@@ -156,14 +157,33 @@ class PrayersAppManager {
                 .registerRunListener(async (args, state) => {
                 return (args.prayerName === state.prayerName);
             });
+            await this.updateNextPrayerEvent();
+            this._homeyPrayersTriggerSpecific.on('update', this.updateNextPrayerEvent);
+            this._homeyPrayersTriggerAll.on('update', this.updateNextPrayerEvent);
+        }
+        catch (err) {
+            console.log(err);
+            await this._prayerEventProvider.stopProvider();
+            sentry.captureException(err);
+        }
+    }
+    //update homey trigger event based on prayer scheduling event.
+    async updateNextPrayerEvent() {
+        try {
             console.log('registerNextPrayerEvent: ');
             if (!this._prayersEventProviders.includes(this._prayerEventProvider))
                 this._prayersEventProviders.push(this._prayerEventProvider);
-            let argumentValues = new Array();
-            argumentValues = await this._homeyPrayersTriggerAll.getArgumentValues();
-            console.log("number of registered nextPrayer listener is " + argumentValues.length);
-            if (argumentValues.length > 0) {
+            let triggerAllArgumentValues = new Array();
+            let triggerSpecificArgumentValues = new Array();
+            triggerAllArgumentValues = await this._homeyPrayersTriggerAll.getArgumentValues();
+            triggerSpecificArgumentValues = await this._homeyPrayersTriggerSpecific.getArgumentValues();
+            console.log("number of registered nextPrayer All listener is " + triggerAllArgumentValues.length);
+            console.log("number of registered nextPrayer specific listener is " + triggerAllArgumentValues.length);
+            if (triggerAllArgumentValues.length > 0 || triggerSpecificArgumentValues.length > 0) {
                 await this._prayerEventProvider.startProvider();
+            }
+            else {
+                await this.prayerEventProvider.stopProvider();
             }
         }
         catch (err) {
@@ -199,7 +219,7 @@ class PrayersAppManager {
             sentry.captureException(error);
         }
     }
-    //test flow card trigger
+    //register homey trigger event based on prayer after/before condition event.
     async registerConditionPrayerEvent() {
         try {
             this._homeyPrayersTriggerBeforAfterSpecific.registerRunListener(async (args, state) => {
@@ -210,11 +230,28 @@ class PrayersAppManager {
                     return true;
                 return false;
             });
+            await this.updateConditionPrayerEvent();
+            this._homeyPrayersTriggerBeforAfterSpecific.on('update', this.updateConditionPrayerEvent);
+        }
+        catch (err) {
+            console.log(err);
+            sentry.captureException(err);
+        }
+    }
+    async updateConditionPrayerEvent() {
+        try {
             console.log('registerConditionPrayerEvent: ');
             let argumentValues = new Array();
             // let conditions: Array<ITriggerCondition> = new Array<ITriggerCondition>();
             argumentValues = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
             console.log("number of registered before and after listener is " + argumentValues.length);
+            if (!util_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
+                this._prayerConditionTriggerEventProvider.stopProvider();
+                if (this._prayersEventProviders.includes(this._prayerConditionTriggerEventProvider)) {
+                    console.log("removing instance of register condition");
+                    this._prayersEventProviders = ramda.without([this._prayerConditionTriggerEventProvider], this._prayersEventProviders);
+                }
+            }
             if (argumentValues.length > 0) {
                 argumentValues.forEach((condition) => {
                     this._prayerConditionTriggerConditions.push(new conditionprayer_event_1.TriggerPrayerEventBuilder({
@@ -233,6 +270,14 @@ class PrayersAppManager {
             }
         }
         catch (err) {
+            console.log(err);
+            if (!util_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
+                this._prayerConditionTriggerEventProvider.stopProvider();
+                if (this._prayersEventProviders.includes(this._prayerConditionTriggerEventProvider)) {
+                    this._prayersEventProviders = ramda.without([this._prayerConditionTriggerEventProvider], this._prayersEventProviders);
+                }
+            }
+            sentry.captureException(err);
         }
     }
     //trigger homey event based on before or after spepcific prayer event

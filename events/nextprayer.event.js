@@ -54,18 +54,18 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
     async startProvider(prayerManager) {
         if (!util_1.isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
-        if (util_1.isNullOrUndefined(this._upcomingPrayerSubscription) || this._upcomingPrayerSubscription.closed) {
+        if (!util_1.isNullOrUndefined(this._upcomingPrayerSubscription)) {
+            if (this._upcomingPrayerSubscription.closed)
+                this._upcomingPrayerSubscription.unsubscribe();
+            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
             console.log('subscribed to next prayer provider');
-            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
-        }
-        else {
-            this._upcomingPrayerSubscription.unsubscribe();
-            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
         }
     }
     async stopProvider() {
-        if (!this._upcomingPrayerSubscription.closed)
+        if (!util_1.isNullOrUndefined(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed) {
+            console.log('stopping prayer event provider');
             this._upcomingPrayerSubscription.unsubscribe();
+        }
     }
     runNextPrayerSchedule() {
         this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(RxOp.expand(() => this._validatePrayerTimeObservable), RxOp.scan((accum, curr) => ({ ...accum, ...curr })), 

@@ -99,11 +99,9 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
         try {
             if (!prayers_lib_1.isNullOrUndefined(prayerManager))
                 this._prayerManager = prayerManager;
-            if (prayers_lib_1.isNullOrUndefined(this._schedulePrayersSubscription) || this._schedulePrayersSubscription.closed) {
-                this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
-            }
-            else {
-                this._schedulePrayersSubscription.unsubscribe();
+            if (!prayers_lib_1.isNullOrUndefined(this._schedulePrayersSubscription)) {
+                if (!this._schedulePrayersSubscription.closed)
+                    this._schedulePrayersSubscription.unsubscribe();
                 this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
             }
         }
@@ -113,7 +111,9 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
     }
     async stopProvider() {
         try {
-            this._schedulePrayersSubscription.unsubscribe();
+            if (!prayers_lib_1.isNullOrUndefined(this._schedulePrayersSubscription) && !this._schedulePrayersSubscription.closed) {
+                this._schedulePrayersSubscription.unsubscribe();
+            }
         }
         catch (err) {
             throw new Error("Stop Provider Failed \n" + err.message);

@@ -43,23 +43,23 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
     private getUpcomingPrayer(): prayerlib.IPrayersTiming { return this._prayerManager.getUpcomingPrayer() };
 
     public async startProvider(prayerManager?: prayerlib.IPrayerManager): Promise<void> {
-
         if (!isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
-        if (isNullOrUndefined(this._upcomingPrayerSubscription) || this._upcomingPrayerSubscription.closed) {
-            console.log('subscribed to next prayer provider')
-            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
-        }
-        else {
-            
+        if (!isNullOrUndefined(this._upcomingPrayerSubscription))
+        {
+            if ( this._upcomingPrayerSubscription.closed) 
             this._upcomingPrayerSubscription.unsubscribe();
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
+            console.log('subscribed to next prayer provider');
         }
 
     }
     public async stopProvider(): Promise<void> {
-        if (!this._upcomingPrayerSubscription.closed)
+        if (!isNullOrUndefined(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed)
+        {
+            console.log('stopping prayer event provider')
             this._upcomingPrayerSubscription.unsubscribe();
+        }
     }
     private runNextPrayerSchedule(): void {
         this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(
