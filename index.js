@@ -179,7 +179,7 @@ async function conditionPipe() {
     ]);
     let sortedConditions = new Array(conditionOne, conditionTwo, conditionOne, conditionTwo);
     sortedConditions = sortWith(sortedConditions);
-    let cronTimerObservable = cronTimer("* * * * *");
+    let cronTimerObservable = cronTimer("2 0 * * *", prayers_lib_1.DateUtil.getNowDate());
     let schedulePrayersObservable = (conditions, fromDate) => Rx.from(conditions).pipe(RxOp.distinctUntilChanged(), RxOp.map((condition) => condition.getPrayerEventCalculated(fromDate)), RxOp.tap((event) => { if (prayers_lib_1.isNullOrUndefined(event.upcomingPrayerTime))
         throw new Error("Upcoming Prayer is Null"); }), RxOp.filter((event) => event.prayerTimeCalculated >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))));
     let combinedObservable = cronTimerObservable
@@ -230,4 +230,3 @@ function askQuestion(query) {
         resolve(ans);
     }));
 }
-init();

@@ -171,8 +171,8 @@ export class PrayersAppManager {
                 });
 
             await this.updateNextPrayerEvent();
-            this._homeyPrayersTriggerSpecific.on('update', this.updateNextPrayerEvent);
-            this._homeyPrayersTriggerAll.on('update', this.updateNextPrayerEvent);
+            this._homeyPrayersTriggerSpecific.on('update', this.updateNextPrayerEvent.bind(this));
+            this._homeyPrayersTriggerAll.on('update', this.updateNextPrayerEvent.bind(this));
         }
         catch (err) {
             console.log(err);
@@ -192,7 +192,7 @@ export class PrayersAppManager {
             triggerAllArgumentValues = await this._homeyPrayersTriggerAll.getArgumentValues();
             triggerSpecificArgumentValues = await this._homeyPrayersTriggerSpecific.getArgumentValues();
             console.log("number of registered nextPrayer All listener is " + triggerAllArgumentValues.length);
-            console.log("number of registered nextPrayer specific listener is " + triggerAllArgumentValues.length);
+            console.log("number of registered nextPrayer specific listener is " + triggerSpecificArgumentValues.length);
 
             if (triggerAllArgumentValues.length > 0 || triggerSpecificArgumentValues.length > 0) {
                 await this._prayerEventProvider.startProvider();
@@ -248,7 +248,7 @@ export class PrayersAppManager {
                 return false;
             });
             await this.updateConditionPrayerEvent();
-            this._homeyPrayersTriggerBeforAfterSpecific.on('update', this.updateConditionPrayerEvent);
+            this._homeyPrayersTriggerBeforAfterSpecific.on('update', this.updateConditionPrayerEvent.bind(this));
         } catch (err) {
             console.log(err);
             sentry.captureException(err);
@@ -258,6 +258,7 @@ export class PrayersAppManager {
         try {
             console.log('registerConditionPrayerEvent: ');
             let argumentValues: Array<any> = new Array<any>();
+            let triggerPrayerEventBuilder: TriggerPrayerEventBuilder ;
             // let conditions: Array<ITriggerCondition> = new Array<ITriggerCondition>();
             argumentValues = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
             console.log("number of registered before and after listener is " + argumentValues.length);
@@ -268,17 +269,23 @@ export class PrayersAppManager {
                     this._prayersEventProviders = ramda.without([this._prayerConditionTriggerEventProvider], this._prayersEventProviders);
                 }
             }
+            
             if (argumentValues.length > 0) {
                 argumentValues.forEach((condition: ITriggerCondition) => {
-                    this._prayerConditionTriggerConditions.push(new TriggerPrayerEventBuilder({
+                    triggerPrayerEventBuilder=  new TriggerPrayerEventBuilder({
                         prayerAfterBefore: condition.prayerAfterBefore,
                         prayerDurationTime: condition.prayerDurationTime,
                         prayerDurationType: condition.prayerDurationType,
-                        prayerFromDate: DateUtil.getNowDate(),
+                        prayerFromDate: DateUtil.getNowTime(),
                         prayerName: condition.prayerName,
-                        upcomingPrayerTime: this._prayerManager.getPrayerTime
-                    }));
+                        upcomingPrayerTime: this._prayerManager.getPrayerTime.bind(this._prayerManager)
+                    });
+                    console.log("prayer time by date:" + this.prayerManager.getPrayerTime(prayerlib.PrayersName.ASR,DateUtil.getNowTime()))
+                    console.log(triggerPrayerEventBuilder.getPrayerEventCalculated(DateUtil.getNowTime()));
+                    
+                    this._prayerConditionTriggerConditions.push(triggerPrayerEventBuilder);
                 });
+                
                 this._prayerConditionTriggerEventProvider = new PrayerConditionTriggerEventProvider(this._prayerManager,
                     DateUtil.getNowDate(), this._prayerConditionTriggerConditions);
                 this._prayerConditionTriggerEventProvider.startProvider();

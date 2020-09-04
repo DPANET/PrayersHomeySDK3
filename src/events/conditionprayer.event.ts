@@ -7,7 +7,7 @@ import * as RxOp from "rxjs/operators";
 import * as chrono from "chrono-node";
 import * as ramda from "ramda";
 import * as manager from '../controllers/homey.controller.';
-
+import * as util from "util"
 enum DurationTypes {
     Seconds = "seconds",
     Minutes = "minutes",
@@ -62,6 +62,8 @@ export class TriggerPrayerEventBuilder implements ITriggerCondition {
     }
     getPrayerEventCalculated(onDate: Date): ITriggerEvent {
         try {
+            console.log(this.prayerName);
+            console.log(this.upcomingPrayerTime(this.prayerName,onDate));
             let calculatedDate: Date = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`,
                 this.upcomingPrayerTime(this.prayerName, onDate).prayerTime);
 
@@ -77,7 +79,7 @@ export class TriggerPrayerEventBuilder implements ITriggerCondition {
             }
         } catch (error) {
 
-            throw new Error("getParyer Calculation resulted in null ");
+            throw new Error("getParyer Calculation resulted in null " + error.message);
         }
     }
     prayerDurationTime: number;
@@ -113,6 +115,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             , ramda.descend(ramda.prop('prayerDurationTime'))
         ]);
         this._triggerConditions = sortWith(this._triggerConditions);
+        console.log(util.inspect(this._triggerConditions, {showHidden: false, depth: null}))
         this.initSchedulersObservables(fromDate);
 
     }
@@ -134,6 +137,10 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
                 if (!this._schedulePrayersSubscription.closed)
                     this._schedulePrayersSubscription.unsubscribe();
                 this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
+            }
+            else{
+                this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
+
             }
         }
         catch (err) {

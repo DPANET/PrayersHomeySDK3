@@ -210,7 +210,7 @@ async function conditionPipe() {
 
     let sortedConditions: Array<ITriggerCondition> = new Array(conditionOne, conditionTwo, conditionOne, conditionTwo);
     sortedConditions = sortWith(sortedConditions);
-    let cronTimerObservable: Rx.Observable<Date> = cronTimer("* * * * *");
+    let cronTimerObservable: Rx.Observable<Date> = cronTimer("2 0 * * *", DateUtil.getNowDate());
     let schedulePrayersObservable: Function = (conditions: Array<ITriggerCondition>, fromDate: Date): Rx.Observable<ITriggerEvent> =>
         Rx.from(conditions).pipe(
             RxOp.distinctUntilChanged(),
@@ -283,4 +283,3 @@ function askQuestion(query: string) {
 
 
 
-init();

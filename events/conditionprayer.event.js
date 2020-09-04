@@ -27,6 +27,7 @@ const Rx = __importStar(require("rxjs"));
 const RxOp = __importStar(require("rxjs/operators"));
 const chrono = __importStar(require("chrono-node"));
 const ramda = __importStar(require("ramda"));
+const util = __importStar(require("util"));
 var DurationTypes;
 (function (DurationTypes) {
     DurationTypes["Seconds"] = "seconds";
@@ -49,6 +50,8 @@ class TriggerPrayerEventBuilder {
     }
     getPrayerEventCalculated(onDate) {
         try {
+            console.log(this.prayerName);
+            console.log(this.upcomingPrayerTime(this.prayerName, onDate));
             let calculatedDate = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`, this.upcomingPrayerTime(this.prayerName, onDate).prayerTime);
             return {
                 upcomingPrayerTime: this.upcomingPrayerTime(this.prayerName, onDate),
@@ -61,7 +64,7 @@ class TriggerPrayerEventBuilder {
             };
         }
         catch (error) {
-            throw new Error("getParyer Calculation resulted in null ");
+            throw new Error("getParyer Calculation resulted in null " + error.message);
         }
     }
 }
@@ -84,6 +87,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             ramda.descend(ramda.prop('prayerDurationTime'))
         ]);
         this._triggerConditions = sortWith(this._triggerConditions);
+        console.log(util.inspect(this._triggerConditions, { showHidden: false, depth: null }));
         this.initSchedulersObservables(fromDate);
     }
     registerListener(observer) {
@@ -102,6 +106,9 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             if (!prayers_lib_1.isNullOrUndefined(this._schedulePrayersSubscription)) {
                 if (!this._schedulePrayersSubscription.closed)
                     this._schedulePrayersSubscription.unsubscribe();
+                this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
+            }
+            else {
                 this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
             }
         }

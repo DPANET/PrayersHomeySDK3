@@ -52,6 +52,11 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
             console.log('subscribed to next prayer provider');
         }
+        else{
+            this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
+            console.log('subscribed to next prayer provider');
+
+        }
 
     }
     public async stopProvider(): Promise<void> {
