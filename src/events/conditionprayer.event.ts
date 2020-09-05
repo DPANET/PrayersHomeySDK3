@@ -8,7 +8,7 @@ import * as chrono from "chrono-node";
 import * as ramda from "ramda";
 import * as manager from '../controllers/homey.controller.';
 import * as util from "util"
-import { UpcomingPrayerNotFoundException, PrayerProviderNotStaterd } from "../exceptions/exception.handler"
+import { UpcomingPrayerNotFoundException, PrayerProviderNotStaterdException } from "../exceptions/exception.handler"
 import * as sentry from "@sentry/node";
 enum DurationTypes {
     Seconds = "seconds",
@@ -150,7 +150,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             }
         }
         catch (err) {
-            throw new PrayerProviderNotStaterd("Star Provider Failed \n" + err.message);
+            throw new PrayerProviderNotStaterdException("Star Provider Failed \n" + err.message);
         }
     }
     public async stopProvider(): Promise<void> {
@@ -160,7 +160,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             }
         }
         catch (err) {
-            throw new PrayerProviderNotStaterd("Stop Provider Failed \n" + err.message);
+            throw new PrayerProviderNotStaterdException("Stop Provider Failed \n" + err.message);
         }
     }
     public initSchedulersObservables(fromDate: Date) {

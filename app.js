@@ -33,6 +33,7 @@ class PrayersApp extends Homey.App {
         catch (err) {
             sentry.captureException(err);
             this.log(err);
+            process.exit(1);
         }
     }
     getPrayersAdjustments() {

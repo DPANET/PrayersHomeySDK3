@@ -106,7 +106,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             }
         }
         catch (err) {
-            throw new exception_handler_1.PrayerProviderNotStaterd("Star Provider Failed \n" + err.message);
+            throw new exception_handler_1.PrayerProviderNotStaterdException("Star Provider Failed \n" + err.message);
         }
     }
     async stopProvider() {
@@ -116,7 +116,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             }
         }
         catch (err) {
-            throw new exception_handler_1.PrayerProviderNotStaterd("Stop Provider Failed \n" + err.message);
+            throw new exception_handler_1.PrayerProviderNotStaterdException("Stop Provider Failed \n" + err.message);
         }
     }
     initSchedulersObservables(fromDate) {

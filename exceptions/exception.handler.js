@@ -43,10 +43,17 @@ class UpcomingPrayerNotFoundException extends Error {
     }
 }
 exports.UpcomingPrayerNotFoundException = UpcomingPrayerNotFoundException;
-class PrayerProviderNotStaterd extends Error {
+class PrayerProviderNotStaterdException extends Error {
     constructor(message) {
         super(message);
-        this.name = "UpcomingPrayerNotFoundException";
+        this.name = "PrayerProviderNotStaterdException";
     }
 }
-exports.PrayerProviderNotStaterd = PrayerProviderNotStaterd;
+exports.PrayerProviderNotStaterdException = PrayerProviderNotStaterdException;
+class PrayerManagerNotStaterdException extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "PrayerManagerNotStaterdException";
+    }
+}
+exports.PrayerManagerNotStaterdException = PrayerManagerNotStaterdException;

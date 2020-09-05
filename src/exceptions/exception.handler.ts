@@ -51,9 +51,16 @@ export class UpcomingPrayerNotFoundException extends Error {
     this.name = "UpcomingPrayerNotFoundException";
   }
 }
-export class PrayerProviderNotStaterd extends Error {
+export class PrayerProviderNotStaterdException extends Error {
   constructor(message) {
     super(message);
-    this.name = "UpcomingPrayerNotFoundException";
+    this.name = "PrayerProviderNotStaterdException";
+  }
+}
+
+export class PrayerManagerNotStaterdException extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "PrayerManagerNotStaterdException";
   }
 }

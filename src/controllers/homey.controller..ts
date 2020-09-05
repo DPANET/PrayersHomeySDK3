@@ -8,7 +8,7 @@ import { PrayerConditionTriggerEventProvider, PrayerConditionTriggerEventListene
 import Homey from 'homey';
 import { isNullOrUndefined } from 'util';
 import * as sentry from "@sentry/node";
-import * as util from "util"
+import {PrayerManagerNotStaterdException} from "../exceptions/exception.handler";
 import { ITimerObservable, DateUtil } from '@dpanet/prayers-lib';
 import * as ramda from "ramda";
 sentry.init({ dsn: config.get("DSN") });
@@ -83,6 +83,15 @@ export class PrayersAppManager {
                 //  .setPrayerPeriod(prayerlib.DateUtil.getNowDate(), prayerlib.DateUtil.addDay(1, prayerlib.DateUtil.getNowDate()))
                 //   .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
                 .createPrayerTimeManager();
+        
+        }catch(err)
+        {
+            //sentry.captureException(err);
+            console.log(err);
+            throw new PrayerManagerNotStaterdException("Prayer Manager Faild to Initialize with Following Error : "+ err.message);
+
+        }
+        try{
             console.log("InitApp is running")
             this._prayerAppManger._homey = homey;
             this._prayerAppManger._configProvider = configProvider;

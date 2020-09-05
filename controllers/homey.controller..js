@@ -16,6 +16,7 @@ const config_event_1 = require("../events/config.event");
 const conditionprayer_event_1 = require("../events/conditionprayer.event");
 const util_1 = require("util");
 const sentry = __importStar(require("@sentry/node"));
+const exception_handler_1 = require("../exceptions/exception.handler");
 const prayers_lib_1 = require("@dpanet/prayers-lib");
 const ramda = __importStar(require("ramda"));
 sentry.init({ dsn: config.get("DSN") });
@@ -62,6 +63,13 @@ class PrayersAppManager {
                 //  .setPrayerPeriod(prayerlib.DateUtil.getNowDate(), prayerlib.DateUtil.addDay(1, prayerlib.DateUtil.getNowDate()))
                 //   .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
                 .createPrayerTimeManager();
+        }
+        catch (err) {
+            //sentry.captureException(err);
+            console.log(err);
+            throw new exception_handler_1.PrayerManagerNotStaterdException("Prayer Manager Faild to Initialize with Following Error : " + err.message);
+        }
+        try {
             console.log("InitApp is running");
             this._prayerAppManger._homey = homey;
             this._prayerAppManger._configProvider = configProvider;
