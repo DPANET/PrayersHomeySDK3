@@ -7,5 +7,9 @@
   },
   "1.0.2": {
     "en": "Publish the app with SDK3"
+  },
+  "1.1.0":{
+    "end":"SDK3 Support and added more new triggers"
   }
+
 }

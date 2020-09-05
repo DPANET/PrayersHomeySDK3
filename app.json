@@ -43,7 +43,7 @@
       {
         "id": "prayer_trigger_specific",
         "title": {
-          "en": "Trigger to a specific prayer time"
+          "en": "Specific Prayer"
         },
         "tokens": [
           {
@@ -103,7 +103,7 @@
       {
         "id": "prayer_trigger_all",
         "title": {
-          "en": "Trigger to all prayers time"
+          "en": "All Prayers"
         },
         "tokens": [
           {
@@ -125,7 +125,7 @@
       {
         "id": "prayer_trigger_before_after_specific",
         "title": {
-          "en": "Trigger before/after specific prayer time"
+          "en": "Before or After Prayer"
         },
         "tokens": [
           {
@@ -232,7 +232,7 @@
       {
         "id": "athan_action",
         "title": {
-          "en": "Play athan sound"
+          "en": "Play Athan"
         },
         "args": [
           {
