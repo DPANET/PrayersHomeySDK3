@@ -346,7 +346,7 @@ export class PrayersAppManager {
             //retry every date until the prayer refresh task is done.
             .catch((err) => {
                 console.log(err);
-                if(this._refreshTrials<MAX_TRIALS)
+                if(this._refreshTrials<=MAX_TRIALS)
                 {
                     this._refreshTrials+=1;
                     let date: Date = prayerlib.DateUtil.addDay(1, startDate);
@@ -371,7 +371,7 @@ export class PrayersAppManager {
             this._refreshTrials =0;
         } catch (err) {
             console.log(err);
-            if(this._refreshTrials<MAX_TRIALS)
+            if(this._refreshTrials<=MAX_TRIALS)
             {
                 this._refreshTrials+=1;
                 let date: Date = prayerlib.DateUtil.addDay(1, startDate);
