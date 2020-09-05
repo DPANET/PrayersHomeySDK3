@@ -45,3 +45,15 @@ export class WrongAuthenticationTokenException extends HttpException
     super(404,'Authentication Token Missing');
   }
 }
+export class UpcomingPrayerNotFoundException extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "UpcomingPrayerNotFoundException";
+  }
+}
+export class PrayerProviderNotStaterd extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "UpcomingPrayerNotFoundException";
+  }
+}

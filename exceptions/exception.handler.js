@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WrongAuthenticationTokenException = exports.AuthenticationTokenMissingException = exports.PostNotFoundException = exports.WrongCredentialsException = exports.UserWithThatEmailAlreadyExistsException = exports.HttpException = void 0;
 class HttpException extends Error {
     constructor(status, message) {
         super(message);
@@ -37,3 +36,17 @@ class WrongAuthenticationTokenException extends HttpException {
     }
 }
 exports.WrongAuthenticationTokenException = WrongAuthenticationTokenException;
+class UpcomingPrayerNotFoundException extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "UpcomingPrayerNotFoundException";
+    }
+}
+exports.UpcomingPrayerNotFoundException = UpcomingPrayerNotFoundException;
+class PrayerProviderNotStaterd extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "UpcomingPrayerNotFoundException";
+    }
+}
+exports.PrayerProviderNotStaterd = PrayerProviderNotStaterd;

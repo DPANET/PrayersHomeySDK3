@@ -31,9 +31,16 @@ export class PrayersAppManager {
     private _configEventListener: ConfigEventListener;
     private _configEventProvider: ConfigEventProvider;
     private _prayerConditionTriggerEventProvider: PrayerConditionTriggerEventProvider;
+    public get prayerConditionTriggerEventProvider(): PrayerConditionTriggerEventProvider {
+        return this._prayerConditionTriggerEventProvider;
+    }
+    public set prayerConditionTriggerEventProvider(value: PrayerConditionTriggerEventProvider) {
+        this._prayerConditionTriggerEventProvider = value;
+    }
     private _prayerConditionTriggerEventListener: PrayerConditionTriggerEventListener;
     private _prayersEventProviders: Array<prayerlib.ITimerObservable<any>>;
     private _prayerConditionTriggerConditions: Array<ITriggerCondition>;
+    private _refreshTrials;
     // private _coinfigFilePath:string;
     private _configProvider: prayerlib.IConfigProvider
     public get prayerEventProvider(): PrayersEventProvider {
@@ -79,10 +86,12 @@ export class PrayersAppManager {
             console.log("InitApp is running")
             this._prayerAppManger._homey = homey;
             this._prayerAppManger._configProvider = configProvider;
+            this._prayerAppManger._refreshTrials =0;
             appmanager.initPrayersEvents();
             appmanager.initEvents();
             console.log(prayerlib.DateUtil.getNowTime())
             console.log(appmanager._prayerManager.getUpcomingPrayer());
+            
         }
         catch (err) {
             sentry.captureException(err);
@@ -198,7 +207,7 @@ export class PrayersAppManager {
                 await this._prayerEventProvider.startProvider();
             }
             else {
-                await this.prayerEventProvider.stopProvider();
+                await this._prayerEventProvider.stopProvider();
             }
         } catch (err) {
             console.log(err);
@@ -213,7 +222,7 @@ export class PrayersAppManager {
             let timeZone: string = this._prayerManager.getPrayerTimeZone().timeZoneId;
             let prayerTimeZone: string = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
             this._homeyPrayersTriggerAll
-                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName })
+                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName,prayerTime: prayerTime })
                 .then(() => console.log('event all run'))
                 .catch((err) => {
                     this.prayerEventProvider.stopProvider();
@@ -222,7 +231,7 @@ export class PrayersAppManager {
                 });
 
             this._homeyPrayersTriggerSpecific
-                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName })
+                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName,prayerTime:prayerTime })
                 .then(() => console.log('event specific run'))
                 .catch((err) => {
                     this.prayerEventProvider.stopProvider();
@@ -332,13 +341,20 @@ export class PrayersAppManager {
             .then(async (value) => {
                 this._prayersEventProviders.forEach(async (provider: ITimerObservable<any>) => await provider.startProvider(value));
                 //this._prayerManager = value;
+                this._refreshTrials =0;
             })
             //retry every date until the prayer refresh task is done.
             .catch((err) => {
                 console.log(err);
-                sentry.captureException(err);
-                let date: Date = prayerlib.DateUtil.addDay(1, startDate);
-                this.scheduleRefresh(date);
+                if(this._refreshTrials<MAX_TRIALS)
+                {
+                    this._refreshTrials+=1;
+                    let date: Date = prayerlib.DateUtil.addDay(1, startDate);
+                    this.scheduleRefresh(date);
+                }
+                else{
+                    sentry.captureException(err);
+                }
             });
     }
     public async refreshPrayerManagerByConfig() {
@@ -352,12 +368,21 @@ export class PrayersAppManager {
                 // .setLocationByCoordinates(Homey.ManagerGeolocation.getLatitude(), Homey.ManagerGeolocation.getLongitude())
                 .createPrayerTimeManager();
             this._prayersEventProviders.forEach(async (provider: ITimerObservable<any>) => await provider.startProvider(this._prayerManager));
+            this._refreshTrials =0;
         } catch (err) {
             console.log(err);
-            sentry.captureException(err);
-            let date: Date = prayerlib.DateUtil.addDay(1, startDate);
-            this.scheduleRefresh(date);
+            if(this._refreshTrials<MAX_TRIALS)
+            {
+                this._refreshTrials+=1;
+                let date: Date = prayerlib.DateUtil.addDay(1, startDate);
+                this.scheduleRefresh(date);
+            }
+            else{
+                sentry.captureException(err);
+            }
+
         }
     }
 }
+const MAX_TRIALS:number = 2;
 export var appmanager: PrayersAppManager = PrayersAppManager.prayerAppManger;

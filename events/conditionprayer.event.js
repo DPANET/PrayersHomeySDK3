@@ -1,25 +1,12 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PrayerConditionTriggerEventListener = exports.PrayerConditionTriggerEventProvider = exports.TriggerPrayerEventBuilder = void 0;
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const prayers_lib_1 = require("@dpanet/prayers-lib");
 const observables_extenstion_1 = require("./observables.extenstion");
@@ -28,6 +15,8 @@ const RxOp = __importStar(require("rxjs/operators"));
 const chrono = __importStar(require("chrono-node"));
 const ramda = __importStar(require("ramda"));
 const util = __importStar(require("util"));
+const exception_handler_1 = require("../exceptions/exception.handler");
+const sentry = __importStar(require("@sentry/node"));
 var DurationTypes;
 (function (DurationTypes) {
     DurationTypes["Seconds"] = "seconds";
@@ -50,9 +39,12 @@ class TriggerPrayerEventBuilder {
     }
     getPrayerEventCalculated(onDate) {
         try {
+            let prayerTiming = this.upcomingPrayerTime(this.prayerName, onDate);
+            if (prayers_lib_1.isNullOrUndefined(prayerTiming))
+                throw new exception_handler_1.UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passeded");
             console.log(this.prayerName);
             console.log(this.upcomingPrayerTime(this.prayerName, onDate));
-            let calculatedDate = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`, this.upcomingPrayerTime(this.prayerName, onDate).prayerTime);
+            let calculatedDate = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`, prayerTiming.prayerName);
             return {
                 upcomingPrayerTime: this.upcomingPrayerTime(this.prayerName, onDate),
                 prayerTimeCalculated: calculatedDate,
@@ -64,7 +56,8 @@ class TriggerPrayerEventBuilder {
             };
         }
         catch (error) {
-            throw new Error("getParyer Calculation resulted in null " + error.message);
+            throw error;
+            //  throw new UpcomingPrayerNotFoundException("getParyer Calculation resulted in null " + error.message);
         }
     }
 }
@@ -113,7 +106,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             }
         }
         catch (err) {
-            throw new Error("Star Provider Failed \n" + err.message);
+            throw new exception_handler_1.PrayerProviderNotStaterd("Star Provider Failed \n" + err.message);
         }
     }
     async stopProvider() {
@@ -123,13 +116,13 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             }
         }
         catch (err) {
-            throw new Error("Stop Provider Failed \n" + err.message);
+            throw new exception_handler_1.PrayerProviderNotStaterd("Stop Provider Failed \n" + err.message);
         }
     }
     initSchedulersObservables(fromDate) {
         let cronTimerObservable = observables_extenstion_1.cronTimer("2 0 * * *", fromDate);
         let schedulePrayersObservable = (conditions, fromDate) => Rx.from(conditions).pipe(RxOp.distinctUntilChanged(), RxOp.map((condition) => condition.getPrayerEventCalculated(fromDate)), RxOp.tap((event) => { if (prayers_lib_1.isNullOrUndefined(event.upcomingPrayerTime))
-            throw new Error("Upcoming Prayer is Null"); }), RxOp.filter((event) => event.prayerTimeCalculated >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))));
+            throw new exception_handler_1.UpcomingPrayerNotFoundException("Upcoming Prayer is Null"); }), RxOp.filter((event) => event.prayerTimeCalculated >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))));
         this._schedulePrayersObservable = cronTimerObservable
             .pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, date)));
     }
@@ -144,8 +137,13 @@ class PrayerConditionTriggerEventListener {
     }
     onError(error) {
         console.log(error.message);
-        this._prayerAppManager.prayerEventProvider.stopProvider();
-        this._prayerAppManager.refreshPrayerManagerByDate();
+        this._prayerAppManager.prayerConditionTriggerEventProvider.stopProvider();
+        if (error instanceof exception_handler_1.UpcomingPrayerNotFoundException) {
+            this._prayerAppManager.refreshPrayerManagerByDate();
+        }
+        else {
+            sentry.captureException(error);
+        }
     }
     onNext(value) {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);

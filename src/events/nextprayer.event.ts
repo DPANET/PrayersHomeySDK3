@@ -2,8 +2,9 @@ import * as prayerlib from '@dpanet/prayers-lib';
 import * as manager from '../controllers/homey.controller.';
 import * as Rx from "rxjs";
 import * as RxOp from "rxjs/operators";
-import { isNullOrUndefined } from 'util';
-
+import { isNullOrUndefined } from '@dpanet/prayers-lib';
+import { UpcomingPrayerNotFoundException } from "../exceptions/exception.handler"
+import * as sentry from "@sentry/node";
 export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib.IPrayersTiming>
 {
 
@@ -12,7 +13,7 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
         this._prayerManager = prayerManager;
         this._upcomingPrayerSourceObservable = Rx.defer(() => Rx.timer(this.getUpcomingPrayerTime()).pipe(RxOp.mapTo(this.getUpcomingPrayer())));
         this._validatePrayerTimeObservable = Rx.iif(() => !isNullOrUndefined(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable,
-            Rx.throwError(new Error("Reached the end of Prayers")));
+            Rx.throwError(new UpcomingPrayerNotFoundException("Reached the end of Prayers")));
         this.runNextPrayerSchedule();
         //this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
     }
@@ -45,14 +46,13 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
     public async startProvider(prayerManager?: prayerlib.IPrayerManager): Promise<void> {
         if (!isNullOrUndefined(prayerManager))
             this._prayerManager = prayerManager;
-        if (!isNullOrUndefined(this._upcomingPrayerSubscription))
-        {
-            if ( this._upcomingPrayerSubscription.closed) 
-            this._upcomingPrayerSubscription.unsubscribe();
+        if (!isNullOrUndefined(this._upcomingPrayerSubscription)) {
+            if (!this._upcomingPrayerSubscription.closed)
+                this._upcomingPrayerSubscription.unsubscribe();
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
             console.log('subscribed to next prayer provider');
         }
-        else{
+        else {
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
             console.log('subscribed to next prayer provider');
 
@@ -60,8 +60,7 @@ export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib
 
     }
     public async stopProvider(): Promise<void> {
-        if (!isNullOrUndefined(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed)
-        {
+        if (!isNullOrUndefined(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed) {
             console.log('stopping prayer event provider')
             this._upcomingPrayerSubscription.unsubscribe();
         }
@@ -89,8 +88,13 @@ export class PrayersEventListener implements prayerlib.IObserver<prayerlib.IPray
     onError(error: Error): void {
         console.log(error.message);
         this._prayerAppManager.prayerEventProvider.stopProvider();
-        this._prayerAppManager.refreshPrayerManagerByDate();
-        //sentry.captureException(error);
+
+        if (error instanceof UpcomingPrayerNotFoundException) {
+            this._prayerAppManager.refreshPrayerManagerByDate();
+        }
+        else
+         {sentry.captureException(error);
+         }
     }
     onNext(value: prayerlib.IPrayersTiming): void {
         this._prayerAppManager.triggerNextPrayerEvent(value.prayerName, value.prayerTime);

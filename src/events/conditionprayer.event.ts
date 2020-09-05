@@ -8,6 +8,8 @@ import * as chrono from "chrono-node";
 import * as ramda from "ramda";
 import * as manager from '../controllers/homey.controller.';
 import * as util from "util"
+import { UpcomingPrayerNotFoundException, PrayerProviderNotStaterd } from "../exceptions/exception.handler"
+import * as sentry from "@sentry/node";
 enum DurationTypes {
     Seconds = "seconds",
     Minutes = "minutes",
@@ -62,10 +64,13 @@ export class TriggerPrayerEventBuilder implements ITriggerCondition {
     }
     getPrayerEventCalculated(onDate: Date): ITriggerEvent {
         try {
+            let prayerTiming:prayerlib.IPrayersTiming = this.upcomingPrayerTime(this.prayerName, onDate);
+            if(isNullOrUndefined(prayerTiming))
+            throw new UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passeded");
             console.log(this.prayerName);
             console.log(this.upcomingPrayerTime(this.prayerName,onDate));
             let calculatedDate: Date = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`,
-                this.upcomingPrayerTime(this.prayerName, onDate).prayerTime);
+                prayerTiming.prayerName);
 
             return {
                 upcomingPrayerTime: this.upcomingPrayerTime(this.prayerName, onDate),
@@ -79,7 +84,8 @@ export class TriggerPrayerEventBuilder implements ITriggerCondition {
             }
         } catch (error) {
 
-            throw new Error("getParyer Calculation resulted in null " + error.message);
+            throw error;
+          //  throw new UpcomingPrayerNotFoundException("getParyer Calculation resulted in null " + error.message);
         }
     }
     prayerDurationTime: number;
@@ -144,7 +150,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             }
         }
         catch (err) {
-            throw new Error("Star Provider Failed \n" + err.message);
+            throw new PrayerProviderNotStaterd("Star Provider Failed \n" + err.message);
         }
     }
     public async stopProvider(): Promise<void> {
@@ -154,7 +160,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             }
         }
         catch (err) {
-            throw new Error("Stop Provider Failed \n" + err.message);
+            throw new PrayerProviderNotStaterd("Stop Provider Failed \n" + err.message);
         }
     }
     public initSchedulersObservables(fromDate: Date) {
@@ -164,7 +170,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             Rx.from(conditions).pipe(
                 RxOp.distinctUntilChanged(),
                 RxOp.map((condition: ITriggerCondition): ITriggerEvent => condition.getPrayerEventCalculated(fromDate)),
-                RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new Error("Upcoming Prayer is Null") }),
+                RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new UpcomingPrayerNotFoundException("Upcoming Prayer is Null") }),
                 RxOp.filter((event: ITriggerEvent) => event.prayerTimeCalculated >= DateUtil.getNowTime()),
                 RxOp.tap(console.log),
                 RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event)))
@@ -186,8 +192,13 @@ export class PrayerConditionTriggerEventListener implements prayerlib.IObserver<
     }
     onError(error: Error): void {
         console.log(error.message);
-        this._prayerAppManager.prayerEventProvider.stopProvider();
-        this._prayerAppManager.refreshPrayerManagerByDate();
+        this._prayerAppManager.prayerConditionTriggerEventProvider.stopProvider();
+        if (error instanceof UpcomingPrayerNotFoundException) {
+            this._prayerAppManager.refreshPrayerManagerByDate();
+        }
+        else
+         {sentry.captureException(error);
+         }
     }
     onNext(value: ITriggerEvent): void {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);
