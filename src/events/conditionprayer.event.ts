@@ -202,7 +202,6 @@ export class PrayerConditionTriggerEventListener implements prayerlib.IObserver<
     }
     onNext(value: ITriggerEvent): void {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);
-        console.log("On Next Prayer" + value)
         this._prayerAppManager.triggerConditionPrayerEvent(value);
     }
 }

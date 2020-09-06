@@ -60,16 +60,13 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
             if (!this._upcomingPrayerSubscription.closed)
                 this._upcomingPrayerSubscription.unsubscribe();
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
-            console.log('subscribed to next prayer provider');
         }
         else {
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
-            console.log('subscribed to next prayer provider');
         }
     }
     async stopProvider() {
         if (!prayers_lib_1.isNullOrUndefined(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed) {
-            console.log('stopping prayer event provider');
             this._upcomingPrayerSubscription.unsubscribe();
         }
     }
@@ -77,7 +74,7 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
         this._upcomingPrayerControllerObservable = this._upcomingPrayerSourceObservable.pipe(RxOp.expand(() => this._validatePrayerTimeObservable), RxOp.scan((accum, curr) => ({ ...accum, ...curr })), 
         //takeWhile((prayerTime: prayerlib.IPrayersTiming) => !isNullOrUndefined(prayerTime)),
         // startWith(this.getUpcomingPrayer()),
-        RxOp.finalize(() => console.log('completiong of subscriptioin')));
+        RxOp.finalize(() => console.log('completiong of subscription')));
     }
 }
 exports.PrayersEventProvider = PrayersEventProvider;

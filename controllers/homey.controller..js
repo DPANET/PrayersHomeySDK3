@@ -165,6 +165,7 @@ class PrayersAppManager {
     async registerNextPrayerEvent() {
         try {
             this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
+                console.log('Register Run Listere run ');
                 return true;
             });
             this._homeyPrayersTriggerSpecific
@@ -192,8 +193,6 @@ class PrayersAppManager {
             let triggerSpecificArgumentValues = new Array();
             triggerAllArgumentValues = await this._homeyPrayersTriggerAll.getArgumentValues();
             triggerSpecificArgumentValues = await this._homeyPrayersTriggerSpecific.getArgumentValues();
-            console.log("number of registered nextPrayer All listener is " + triggerAllArgumentValues.length);
-            console.log("number of registered nextPrayer specific listener is " + triggerSpecificArgumentValues.length);
             if (triggerAllArgumentValues.length > 0 || triggerSpecificArgumentValues.length > 0) {
                 await this._prayerEventProvider.startProvider();
             }
@@ -213,7 +212,7 @@ class PrayersAppManager {
             let timeZone = this._prayerManager.getPrayerTimeZone().timeZoneId;
             let prayerTimeZone = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
             this._homeyPrayersTriggerAll
-                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName, prayerTime: prayerTime })
+                .trigger({ "prayerName": prayerName, "prayerTime": timeZone }, { "prayerName": prayerName, "prayerTime": timeZone })
                 .then(() => console.log('event all run'))
                 .catch((err) => {
                 this.prayerEventProvider.stopProvider();
@@ -221,7 +220,7 @@ class PrayersAppManager {
                 console.log(err);
             });
             this._homeyPrayersTriggerSpecific
-                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName, prayerTime: prayerTime })
+                .trigger({ "prayerName": prayerName, "prayerTime": timeZone }, { "prayerName": prayerName, "prayerTime": timeZone })
                 .then(() => console.log('event specific run'))
                 .catch((err) => {
                 this.prayerEventProvider.stopProvider();
@@ -260,7 +259,6 @@ class PrayersAppManager {
             let triggerPrayerEventBuilder;
             // let conditions: Array<ITriggerCondition> = new Array<ITriggerCondition>();
             argumentValues = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
-            console.log("number of registered before and after listener is " + argumentValues.length);
             if (!util_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
                 this._prayerConditionTriggerEventProvider.stopProvider();
                 if (this._prayersEventProviders.includes(this._prayerConditionTriggerEventProvider)) {
@@ -279,8 +277,6 @@ class PrayersAppManager {
                         prayerName: condition.prayerName,
                         upcomingPrayerTime: this._prayerManager.getPrayerTime.bind(this._prayerManager)
                     });
-                    console.log(triggerPrayerEventBuilder.upcomingPrayerTime(triggerPrayerEventBuilder.prayerName, triggerPrayerEventBuilder.prayerFromDate));
-                    console.log(triggerPrayerEventBuilder.getPrayerEventCalculated(prayers_lib_1.DateUtil.getNowTime()));
                     this._prayerConditionTriggerConditions.push(triggerPrayerEventBuilder);
                 });
                 this._prayerConditionTriggerEventProvider = new conditionprayer_event_1.PrayerConditionTriggerEventProvider(this._prayerManager, prayers_lib_1.DateUtil.getNowDate(), this._prayerConditionTriggerConditions);
@@ -304,7 +300,7 @@ class PrayersAppManager {
     triggerConditionPrayerEvent(triggerConditionEvent) {
         try {
             this._homeyPrayersTriggerBeforAfterSpecific
-                .trigger({ prayerName: triggerConditionEvent.prayerName, prayerTimeCalculated: triggerConditionEvent.prayerTimeCalculated }, triggerConditionEvent)
+                .trigger({ "prayerName": triggerConditionEvent.prayerName, "prayerTimeCalculated": triggerConditionEvent.prayerTimeCalculated.getDay() }, triggerConditionEvent)
                 .then(() => console.log('prayer_trigger_before_after_specific'))
                 .catch((err) => {
                 this._prayerConditionTriggerEventProvider.stopProvider();

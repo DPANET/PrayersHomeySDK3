@@ -180,6 +180,7 @@ export class PrayersAppManager {
     private async registerNextPrayerEvent() {
         try {
             this._homeyPrayersTriggerAll.registerRunListener(async (args, state) => {
+                console.log('Register Run Listere run ')
                 return true;
             });
             this._homeyPrayersTriggerSpecific
@@ -209,8 +210,6 @@ export class PrayersAppManager {
             let triggerSpecificArgumentValues: Array<any> = new Array<any>();
             triggerAllArgumentValues = await this._homeyPrayersTriggerAll.getArgumentValues();
             triggerSpecificArgumentValues = await this._homeyPrayersTriggerSpecific.getArgumentValues();
-            console.log("number of registered nextPrayer All listener is " + triggerAllArgumentValues.length);
-            console.log("number of registered nextPrayer specific listener is " + triggerSpecificArgumentValues.length);
 
             if (triggerAllArgumentValues.length > 0 || triggerSpecificArgumentValues.length > 0) {
                 await this._prayerEventProvider.startProvider();
@@ -231,7 +230,7 @@ export class PrayersAppManager {
             let timeZone: string = this._prayerManager.getPrayerTimeZone().timeZoneId;
             let prayerTimeZone: string = prayerlib.DateUtil.getDateByTimeZone(prayerTime, timeZone);
             this._homeyPrayersTriggerAll
-                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName,prayerTime: prayerTime })
+                .trigger({ "prayerName": prayerName, "prayerTime": timeZone }, { "prayerName": prayerName,"prayerTime": timeZone })
                 .then(() => console.log('event all run'))
                 .catch((err) => {
                     this.prayerEventProvider.stopProvider();
@@ -240,7 +239,7 @@ export class PrayersAppManager {
                 });
 
             this._homeyPrayersTriggerSpecific
-                .trigger({ prayerName: prayerName, prayerTime: prayerTime }, { prayerName: prayerName,prayerTime:prayerTime })
+                .trigger({ "prayerName": prayerName, "prayerTime": timeZone }, { "prayerName": prayerName,"prayerTime":timeZone })
                 .then(() => console.log('event specific run'))
                 .catch((err) => {
                     this.prayerEventProvider.stopProvider();
@@ -279,7 +278,6 @@ export class PrayersAppManager {
             let triggerPrayerEventBuilder: TriggerPrayerEventBuilder ;
             // let conditions: Array<ITriggerCondition> = new Array<ITriggerCondition>();
             argumentValues = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
-            console.log("number of registered before and after listener is " + argumentValues.length);
             if (!isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
                 this._prayerConditionTriggerEventProvider.stopProvider();
                 if (this._prayersEventProviders.includes(this._prayerConditionTriggerEventProvider)) {
@@ -323,7 +321,7 @@ export class PrayersAppManager {
         try {
 
             this._homeyPrayersTriggerBeforAfterSpecific
-                .trigger({ prayerName: triggerConditionEvent.prayerName, prayerTimeCalculated: triggerConditionEvent.prayerTimeCalculated }, triggerConditionEvent)
+                .trigger({ "prayerName": triggerConditionEvent.prayerName, "prayerTimeCalculated": triggerConditionEvent.prayerTimeCalculated.getDay() }, triggerConditionEvent)
                 .then(() => console.log('prayer_trigger_before_after_specific'))
                 .catch((err) => {
                     this._prayerConditionTriggerEventProvider.stopProvider();

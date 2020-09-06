@@ -160,7 +160,6 @@ class PrayerConditionTriggerEventListener {
     }
     onNext(value) {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);
-        console.log("On Next Prayer" + value);
         this._prayerAppManager.triggerConditionPrayerEvent(value);
     }
 }
