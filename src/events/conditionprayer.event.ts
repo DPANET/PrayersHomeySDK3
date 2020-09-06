@@ -66,11 +66,11 @@ export class TriggerPrayerEventBuilder implements ITriggerCondition {
         try {
             let prayerTiming:prayerlib.IPrayersTiming = this.upcomingPrayerTime(this.prayerName, onDate);
             if(isNullOrUndefined(prayerTiming))
-            throw new UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passeded");
+            throw new UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passed");
             console.log(this.prayerName);
             console.log(this.upcomingPrayerTime(this.prayerName,onDate));
             let calculatedDate: Date = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`,
-                prayerTiming.prayerName);
+                prayerTiming.prayerTime);
 
             return {
                 upcomingPrayerTime: this.upcomingPrayerTime(this.prayerName, onDate),
@@ -171,7 +171,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
                 RxOp.distinctUntilChanged(),
                 RxOp.map((condition: ITriggerCondition): ITriggerEvent => condition.getPrayerEventCalculated(fromDate)),
                 RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new UpcomingPrayerNotFoundException("Upcoming Prayer is Null") }),
-                RxOp.filter((event: ITriggerEvent) => event.prayerTimeCalculated >= DateUtil.getNowTime()),
+                RxOp.filter((event: ITriggerEvent) => new Date(event.prayerTimeCalculated) >= DateUtil.getNowTime()),
                 RxOp.tap(console.log),
                 RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event)))
             );
@@ -202,6 +202,7 @@ export class PrayerConditionTriggerEventListener implements prayerlib.IObserver<
     }
     onNext(value: ITriggerEvent): void {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);
+        console.log("On Next Prayer" + value)
         this._prayerAppManager.triggerConditionPrayerEvent(value);
     }
 }

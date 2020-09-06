@@ -1,12 +1,25 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.appmanager = exports.PrayersAppManager = void 0;
 //const debug = require('debug')(process.env.DEBUG);
 const config = require("nconf");
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
@@ -255,6 +268,7 @@ class PrayersAppManager {
                     this._prayersEventProviders = ramda.without([this._prayerConditionTriggerEventProvider], this._prayersEventProviders);
                 }
             }
+            this._prayerConditionTriggerConditions = [];
             if (argumentValues.length > 0) {
                 argumentValues.forEach((condition) => {
                     triggerPrayerEventBuilder = new conditionprayer_event_1.TriggerPrayerEventBuilder({
@@ -265,7 +279,7 @@ class PrayersAppManager {
                         prayerName: condition.prayerName,
                         upcomingPrayerTime: this._prayerManager.getPrayerTime.bind(this._prayerManager)
                     });
-                    console.log("prayer time by date:" + this.prayerManager.getPrayerTime(prayerlib.PrayersName.ASR, prayers_lib_1.DateUtil.getNowTime()));
+                    console.log(triggerPrayerEventBuilder.upcomingPrayerTime(triggerPrayerEventBuilder.prayerName, triggerPrayerEventBuilder.prayerFromDate));
                     console.log(triggerPrayerEventBuilder.getPrayerEventCalculated(prayers_lib_1.DateUtil.getNowTime()));
                     this._prayerConditionTriggerConditions.push(triggerPrayerEventBuilder);
                 });

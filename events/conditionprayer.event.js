@@ -1,12 +1,25 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PrayerConditionTriggerEventListener = exports.PrayerConditionTriggerEventProvider = exports.TriggerPrayerEventBuilder = void 0;
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const prayers_lib_1 = require("@dpanet/prayers-lib");
 const observables_extenstion_1 = require("./observables.extenstion");
@@ -41,10 +54,10 @@ class TriggerPrayerEventBuilder {
         try {
             let prayerTiming = this.upcomingPrayerTime(this.prayerName, onDate);
             if (prayers_lib_1.isNullOrUndefined(prayerTiming))
-                throw new exception_handler_1.UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passeded");
+                throw new exception_handler_1.UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passed");
             console.log(this.prayerName);
             console.log(this.upcomingPrayerTime(this.prayerName, onDate));
-            let calculatedDate = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`, prayerTiming.prayerName);
+            let calculatedDate = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`, prayerTiming.prayerTime);
             return {
                 upcomingPrayerTime: this.upcomingPrayerTime(this.prayerName, onDate),
                 prayerTimeCalculated: calculatedDate,
@@ -122,7 +135,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
     initSchedulersObservables(fromDate) {
         let cronTimerObservable = observables_extenstion_1.cronTimer("2 0 * * *", fromDate);
         let schedulePrayersObservable = (conditions, fromDate) => Rx.from(conditions).pipe(RxOp.distinctUntilChanged(), RxOp.map((condition) => condition.getPrayerEventCalculated(fromDate)), RxOp.tap((event) => { if (prayers_lib_1.isNullOrUndefined(event.upcomingPrayerTime))
-            throw new exception_handler_1.UpcomingPrayerNotFoundException("Upcoming Prayer is Null"); }), RxOp.filter((event) => event.prayerTimeCalculated >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))));
+            throw new exception_handler_1.UpcomingPrayerNotFoundException("Upcoming Prayer is Null"); }), RxOp.filter((event) => new Date(event.prayerTimeCalculated) >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))));
         this._schedulePrayersObservable = cronTimerObservable
             .pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, date)));
     }
@@ -147,6 +160,7 @@ class PrayerConditionTriggerEventListener {
     }
     onNext(value) {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);
+        console.log("On Next Prayer" + value);
         this._prayerAppManager.triggerConditionPrayerEvent(value);
     }
 }

@@ -287,7 +287,7 @@ export class PrayersAppManager {
                     this._prayersEventProviders = ramda.without([this._prayerConditionTriggerEventProvider], this._prayersEventProviders);
                 }
             }
-            
+            this._prayerConditionTriggerConditions=[];
             if (argumentValues.length > 0) {
                 argumentValues.forEach((condition: ITriggerCondition) => {
                     triggerPrayerEventBuilder=  new TriggerPrayerEventBuilder({
@@ -298,9 +298,6 @@ export class PrayersAppManager {
                         prayerName: condition.prayerName,
                         upcomingPrayerTime: this._prayerManager.getPrayerTime.bind(this._prayerManager)
                     });
-                    console.log("prayer time by date:" + this.prayerManager.getPrayerTime(prayerlib.PrayersName.ASR,DateUtil.getNowTime()))
-                    console.log(triggerPrayerEventBuilder.getPrayerEventCalculated(DateUtil.getNowTime()));
-                    
                     this._prayerConditionTriggerConditions.push(triggerPrayerEventBuilder);
                 });
                 

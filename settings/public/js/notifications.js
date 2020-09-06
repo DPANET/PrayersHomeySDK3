@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.loadNotification = exports.notify = void 0;
 const noty_1 = __importDefault(require("noty"));
 function notify(type, message) {
     let noty = loadNotification();
