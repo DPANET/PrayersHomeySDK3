@@ -71,7 +71,7 @@ export class TriggerPrayerEventBuilder implements ITriggerCondition {
             console.log(this.upcomingPrayerTime(this.prayerName,onDate));
             let calculatedDate: Date = chrono.casual.parseDate(`${this.prayerDurationTime} ${this.prayerDurationType} ${this.prayerAfterBefore} now`,
                 prayerTiming.prayerTime);
-
+            console.log("calculated Date: " +calculatedDate)
             return {
                 upcomingPrayerTime: this.upcomingPrayerTime(this.prayerName, onDate),
                 prayerTimeCalculated: calculatedDate,
@@ -133,6 +133,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
         super.removeListener(observer);
     }
     public notifyObservers(eventType: prayerlib.EventsType, prayerTriggerEvent: ITriggerEvent, error?: Error): void {
+        //console.log('notify observer '+ prayerTriggerEvent)
         super.notifyObservers(eventType, prayerTriggerEvent, error);
     }
     public async startProvider(prayerManager?: any): Promise<void> {
@@ -173,7 +174,8 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
                 RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new UpcomingPrayerNotFoundException("Upcoming Prayer is Null") }),
                 RxOp.filter((event: ITriggerEvent) => new Date(event.prayerTimeCalculated) >= DateUtil.getNowTime()),
                 RxOp.tap(console.log),
-                RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event)))
+                RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))),
+                RxOp.finalize(()=> console.log("Completed Inner Subscription Condition Prayers"))
             );
 
         this._schedulePrayersObservable = cronTimerObservable
@@ -202,6 +204,7 @@ export class PrayerConditionTriggerEventListener implements prayerlib.IObserver<
     }
     onNext(value: ITriggerEvent): void {
         //this._prayerAppManager.triggerEvent(value.prayerName, value.\\);
+        //console.log("On Next "+value);
         this._prayerAppManager.triggerConditionPrayerEvent(value);
     }
 }
