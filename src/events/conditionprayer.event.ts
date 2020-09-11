@@ -9,7 +9,7 @@ import * as ramda from "ramda";
 import * as manager from '../controllers/homey.controller.';
 import * as util from "util"
 import { UpcomingPrayerNotFoundException, PrayerProviderNotStaterdException } from "../exceptions/exception.handler"
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index";
 enum DurationTypes {
     Seconds = "seconds",
     Minutes = "minutes",

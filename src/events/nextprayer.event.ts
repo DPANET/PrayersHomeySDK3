@@ -4,7 +4,7 @@ import * as Rx from "rxjs";
 import * as RxOp from "rxjs/operators";
 import { isNullOrUndefined } from '@dpanet/prayers-lib';
 import { UpcomingPrayerNotFoundException } from "../exceptions/exception.handler"
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index"
 export class PrayersEventProvider extends prayerlib.TimerEventProvider<prayerlib.IPrayersTiming>
 {
 

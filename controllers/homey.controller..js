@@ -27,8 +27,7 @@ const nextprayer_event_1 = require("../events/nextprayer.event");
 const prayerrefresh_event_1 = require("../events/prayerrefresh.event");
 const config_event_1 = require("../events/config.event");
 const conditionprayer_event_1 = require("../events/conditionprayer.event");
-const util_1 = require("util");
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 const exception_handler_1 = require("../exceptions/exception.handler");
 const prayers_lib_1 = require("@dpanet/prayers-lib");
 const ramda = __importStar(require("ramda"));
@@ -49,7 +48,7 @@ class PrayersAppManager {
         this._prayerEventProvider = value;
     }
     static get prayerAppManger() {
-        if (!util_1.isNullOrUndefined(PrayersAppManager._prayerAppManger))
+        if (!prayers_lib_1.isNullOrUndefined(PrayersAppManager._prayerAppManger))
             return PrayersAppManager._prayerAppManger;
         else {
             PrayersAppManager._prayerAppManger = new PrayersAppManager();
@@ -259,7 +258,7 @@ class PrayersAppManager {
             let triggerPrayerEventBuilder;
             // let conditions: Array<ITriggerCondition> = new Array<ITriggerCondition>();
             argumentValues = await this._homeyPrayersTriggerBeforAfterSpecific.getArgumentValues();
-            if (!util_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
+            if (!prayers_lib_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
                 this._prayerConditionTriggerEventProvider.stopProvider();
                 if (this._prayersEventProviders.includes(this._prayerConditionTriggerEventProvider)) {
                     // console.log("removing instance of register condition");
@@ -291,7 +290,7 @@ class PrayersAppManager {
         }
         catch (err) {
             console.log(err);
-            if (!util_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
+            if (!prayers_lib_1.isNullOrUndefined(this._prayerConditionTriggerEventProvider)) {
                 this._prayerConditionTriggerEventProvider.stopProvider();
                 if (this._prayersEventProviders.includes(this._prayerConditionTriggerEventProvider)) {
                     this._prayersEventProviders = ramda.without([this._prayerConditionTriggerEventProvider], this._prayersEventProviders);

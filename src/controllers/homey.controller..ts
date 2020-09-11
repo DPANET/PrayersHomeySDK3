@@ -6,10 +6,9 @@ import { PrayersRefreshEventProvider, PrayerRefreshEventListener } from '../even
 import { ConfigEventProvider, ConfigEventListener } from '../events/config.event';
 import { PrayerConditionTriggerEventProvider, PrayerConditionTriggerEventListener, ITriggerEvent, ITriggerCondition, TriggerPrayerEventBuilder } from '../events/conditionprayer.event';
 import Homey from 'homey';
-import { isNullOrUndefined } from 'util';
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index"
 import {PrayerManagerNotStaterdException} from "../exceptions/exception.handler";
-import { ITimerObservable, DateUtil } from '@dpanet/prayers-lib';
+import { ITimerObservable, DateUtil,isNullOrUndefined } from '@dpanet/prayers-lib';
 import * as ramda from "ramda";
 sentry.init({ dsn: config.get("DSN") });
 //const to = require('await-to-js').default;

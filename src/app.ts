@@ -6,7 +6,7 @@ import * as manager from "./controllers/homey.controller.";
 import prayersController from "./controllers/prayers.controller";
 import HomeyConfigurator, {ConfigSettingsKeys} from "./configurations/configuration.controller";
 import { IPrayersView, IPrayersViewRow } from "./controllers/controllers.interface";
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index";
 import * as prayerlib from "@dpanet/prayers-lib";
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {

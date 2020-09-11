@@ -21,7 +21,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigEventListener = exports.ConfigEventProvider = void 0;
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 class ConfigEventProvider extends prayerlib.EventProvider {
     //  private _chokidar: chokidar.FSWatcher;
     constructor(homey) {

@@ -23,7 +23,7 @@ exports.PrayerRefreshEventListener = exports.PrayersRefreshEventProvider = void 
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const cron = __importStar(require("cron"));
 const prayers_lib_1 = require("@dpanet/prayers-lib");
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 class PrayersRefreshEventProvider extends prayerlib.EventProvider {
     constructor(prayerManager) {
         super();

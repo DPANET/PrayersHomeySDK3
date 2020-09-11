@@ -26,7 +26,7 @@ exports.ValidationMiddleware = void 0;
 const nconf_1 = __importDefault(require("nconf"));
 const debug = require('debug')('app:router');
 const exceptionHandler = __importStar(require("../exceptions/exception.handler"));
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 sentry.init({ dsn: nconf_1.default.get("DSN") });
 class ValidationMiddleware {
     constructor() {

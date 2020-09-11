@@ -1,7 +1,7 @@
 import * as prayerlib from "@dpanet/prayers-lib";
 import Homey from "homey";
 import * as manager from '../controllers/homey.controller.';
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index"
 export class ConfigEventProvider extends prayerlib.EventProvider<string>
 {
     private _homey: Homey.Homey;

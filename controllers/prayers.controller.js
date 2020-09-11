@@ -27,7 +27,7 @@ const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 const moment_1 = __importDefault(require("moment"));
 //import { NextFunction, NextHandleFunction } from "connect";
 const exception_handler_1 = require("../exceptions/exception.handler");
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 const validationController = __importStar(require("../middlewares/validations.middleware"));
 const validators = __importStar(require("../validators/validations"));
 const retry = __importStar(require("async-retry"));

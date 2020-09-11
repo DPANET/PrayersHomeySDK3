@@ -25,7 +25,7 @@ const Rx = __importStar(require("rxjs"));
 const RxOp = __importStar(require("rxjs/operators"));
 const prayers_lib_1 = require("@dpanet/prayers-lib");
 const exception_handler_1 = require("../exceptions/exception.handler");
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 class PrayersEventProvider extends prayerlib.TimerEventProvider {
     constructor(prayerManager) {
         super();

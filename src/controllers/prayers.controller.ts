@@ -6,7 +6,7 @@ import moment from "moment";
 import  momentTZ from "moment-timezone";
 //import { NextFunction, NextHandleFunction } from "connect";
 import { HttpException } from "../exceptions/exception.handler";
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index";
 import * as validationController from "../middlewares/validations.middleware"
 import * as validators from "../validators/validations";
 import * as retry from "async-retry";

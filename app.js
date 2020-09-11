@@ -29,7 +29,7 @@ config.file('env.json');
 const manager = __importStar(require("./controllers/homey.controller."));
 const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
 const configuration_controller_1 = __importDefault(require("./configurations/configuration.controller"));
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 const prayerlib = __importStar(require("@dpanet/prayers-lib"));
 sentry.init({ dsn: config.get("DSN") });
 class PrayersApp extends Homey.App {

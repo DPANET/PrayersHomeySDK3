@@ -2,7 +2,7 @@ import * as prayerlib from '@dpanet/prayers-lib';
 import * as cron from 'cron';
 import {isNullOrUndefined} from "@dpanet/prayers-lib";
 import * as manager from '../controllers/homey.controller.';
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index"
 export class PrayersRefreshEventProvider extends prayerlib.EventProvider<prayerlib.IPrayerManager>
 {
     private _prayerManager: prayerlib.IPrayerManager;

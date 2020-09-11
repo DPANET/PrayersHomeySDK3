@@ -29,7 +29,7 @@ const chrono = __importStar(require("chrono-node"));
 const ramda = __importStar(require("ramda"));
 const util = __importStar(require("util"));
 const exception_handler_1 = require("../exceptions/exception.handler");
-const sentry = __importStar(require("@sentry/node"));
+const sentry = __importStar(require("@sentry/node/dist/index"));
 var DurationTypes;
 (function (DurationTypes) {
     DurationTypes["Seconds"] = "seconds";

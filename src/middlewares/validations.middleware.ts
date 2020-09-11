@@ -4,7 +4,7 @@ const debug = require('debug')('app:router');
 import * as exceptionHandler from '../exceptions/exception.handler';
 
 import * as validators from '../validators/validations';
-import * as sentry from "@sentry/node";
+import * as sentry from "@sentry/node/dist/index"
 sentry.init({ dsn: config.get("DSN") });
 export const enum ParameterType {
     query = 0,
