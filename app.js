@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -36,7 +36,7 @@ class PrayersApp extends Homey.App {
     async onInit() {
         try {
             this.log(` Prayers Alert App is running! `);
-            this.initalizeConfig();
+            await this.initalizeConfig();
             this._prayersController = new prayers_controller_1.default(this._homeyConfigurator);
             await this._prayersController.initializePrayerManger();
             manager.PrayersAppManager.initApp(this.homey, this._homeyConfigurator);

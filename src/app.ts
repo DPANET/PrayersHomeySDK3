@@ -17,7 +17,7 @@ class PrayersApp extends Homey.App {
     try {
 
       this.log(` Prayers Alert App is running! `);
-      this.initalizeConfig();
+      await this.initalizeConfig();
       this._prayersController = new prayersController(this._homeyConfigurator);
        await this._prayersController.initializePrayerManger();
        manager.PrayersAppManager.initApp(this.homey,this._homeyConfigurator);

@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -138,8 +138,13 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
         let cronTimerObservable = observables_extenstion_1.cronTimer("2 0 * * *", fromDate);
         let schedulePrayersObservable = (conditions, fromDate) => Rx.from(conditions).pipe(RxOp.distinctUntilChanged(), RxOp.map((condition) => condition.getPrayerEventCalculated(fromDate)), RxOp.tap((event) => { if (prayers_lib_1.isNullOrUndefined(event.upcomingPrayerTime))
             throw new exception_handler_1.UpcomingPrayerNotFoundException("Upcoming Prayer is Null"); }), RxOp.filter((event) => new Date(event.prayerTimeCalculated) >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))), RxOp.finalize(() => console.log("Completed Inner Subscription Condition Prayers")));
+        //schedule remaing of the day event trigger conditions
+        schedulePrayersObservable(this._triggerConditions, fromDate);
+        // schedule tomorrow first trigger conditions
+        schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, fromDate));
+        // schedule recurring trigger conditions every other day.
         this._schedulePrayersObservable = cronTimerObservable
-            .pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, date)));
+            .pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, date))));
     }
 }
 exports.PrayerConditionTriggerEventProvider = PrayerConditionTriggerEventProvider;

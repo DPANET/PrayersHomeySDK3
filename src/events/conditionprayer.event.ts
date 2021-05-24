@@ -178,8 +178,18 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
                 RxOp.finalize(()=> console.log("Completed Inner Subscription Condition Prayers"))
             );
 
+        //schedule remaing of the day event trigger conditions
+        schedulePrayersObservable(this._triggerConditions,fromDate);
+        
+        // schedule tomorrow first trigger conditions
+        schedulePrayersObservable(this._triggerConditions,DateUtil.addDay(1,fromDate));
+        
+        // schedule recurring trigger conditions every other day.
         this._schedulePrayersObservable = cronTimerObservable
-            .pipe(RxOp.switchMap((date: Date) => schedulePrayersObservable(this._triggerConditions, date)));
+            .pipe(RxOp.switchMap((date: Date) => schedulePrayersObservable(this._triggerConditions, DateUtil.addDay(1,date))));
+
+
+
     }
 }
 
