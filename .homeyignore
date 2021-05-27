@@ -2,3 +2,4 @@ src/*
 node_modules/@types/*
 .vscode/*
 .git
+tsconfig.json

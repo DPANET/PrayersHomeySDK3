@@ -167,7 +167,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
     public initSchedulersObservables(fromDate: Date) {
 
         let cronTimerObservable: Rx.Observable<Date> = cronTimer("2 0 * * *", fromDate);
-        let schedulePrayersObservable: Function = (conditions: Array<ITriggerCondition>, fromDate: Date): Rx.Observable<ITriggerEvent> =>
+        let schedulePrayersObservable:Function = (conditions: Array<ITriggerCondition>, fromDate: Date): Rx.Observable<ITriggerEvent> =>
             Rx.from(conditions).pipe(
                 RxOp.distinctUntilChanged(),
                 RxOp.map((condition: ITriggerCondition): ITriggerEvent => condition.getPrayerEventCalculated(fromDate)),
@@ -179,14 +179,16 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             );
 
         //schedule remaing of the day event trigger conditions
-        schedulePrayersObservable(this._triggerConditions,fromDate);
+        let schedulePrayerObservableRemaining: Rx.Observable<any> = schedulePrayersObservable(this._triggerConditions,fromDate);
         
         // schedule tomorrow first trigger conditions
-        schedulePrayersObservable(this._triggerConditions,DateUtil.addDay(1,fromDate));
+        let schedulePrayerObservableFirstDay: Rx.Observable<any>= schedulePrayersObservable(this._triggerConditions,DateUtil.addDay(1,fromDate));
         
-        // schedule recurring trigger conditions every other day.
-        this._schedulePrayersObservable = cronTimerObservable
-            .pipe(RxOp.switchMap((date: Date) => schedulePrayersObservable(this._triggerConditions, DateUtil.addDay(1,date))));
+        // schedule recurring trigger conditions every day.
+        let schedulePrayerObservableEveryOtherDay: Rx.Observable<any> = cronTimerObservable.pipe(RxOp.switchMap((date: Date) => schedulePrayersObservable(this._triggerConditions, DateUtil.addDay(1,date))));
+        
+        // merge observables
+        this._schedulePrayersObservable = Rx.merge(schedulePrayerObservableRemaining,schedulePrayerObservableEveryOtherDay);
 
 
 
