@@ -19,5 +19,8 @@
   },
   "1.1.3": {
     "en": "Updated the before and after events logic"
+  },
+  "1.1.4": {
+    "en": "Fixed before and after bug"
   }
 }
