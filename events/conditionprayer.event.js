@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -53,7 +57,7 @@ class TriggerPrayerEventBuilder {
     getPrayerEventCalculated(onDate) {
         try {
             let prayerTiming = this.upcomingPrayerTime(this.prayerName, onDate);
-            if (prayers_lib_1.isNullOrUndefined(prayerTiming))
+            if ((0, prayers_lib_1.isNullOrUndefined)(prayerTiming))
                 throw new exception_handler_1.UpcomingPrayerNotFoundException("Prayer Time Not Found from Parameter Passed");
             console.log(this.prayerName);
             console.log(this.upcomingPrayerTime(this.prayerName, onDate));
@@ -109,9 +113,9 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
     }
     async startProvider(prayerManager) {
         try {
-            if (!prayers_lib_1.isNullOrUndefined(prayerManager))
+            if (!(0, prayers_lib_1.isNullOrUndefined)(prayerManager))
                 this._prayerManager = prayerManager;
-            if (!prayers_lib_1.isNullOrUndefined(this._schedulePrayersSubscription)) {
+            if (!(0, prayers_lib_1.isNullOrUndefined)(this._schedulePrayersSubscription)) {
                 if (!this._schedulePrayersSubscription.closed)
                     this._schedulePrayersSubscription.unsubscribe();
                 this._schedulePrayersSubscription = this._schedulePrayersObservable.subscribe(this._prayerTimeObserver);
@@ -126,7 +130,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
     }
     async stopProvider() {
         try {
-            if (!prayers_lib_1.isNullOrUndefined(this._schedulePrayersSubscription) && !this._schedulePrayersSubscription.closed) {
+            if (!(0, prayers_lib_1.isNullOrUndefined)(this._schedulePrayersSubscription) && !this._schedulePrayersSubscription.closed) {
                 this._schedulePrayersSubscription.unsubscribe();
             }
         }
@@ -135,15 +139,30 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
         }
     }
     initSchedulersObservables(fromDate) {
-        let cronTimerObservable = observables_extenstion_1.cronTimer("2 0 * * *", fromDate);
-        let schedulePrayersObservable = (conditions, fromDate) => Rx.from(conditions).pipe(RxOp.distinctUntilChanged(), RxOp.map((condition) => condition.getPrayerEventCalculated(fromDate)), RxOp.tap((event) => { if (prayers_lib_1.isNullOrUndefined(event.upcomingPrayerTime))
+        let SchedulingType;
+        (function (SchedulingType) {
+            SchedulingType["INIT"] = "Init";
+            SchedulingType["RECURRINGG"] = "Recurring";
+        })(SchedulingType || (SchedulingType = {}));
+        let cronTimerObservable = (0, observables_extenstion_1.cronTimer)("2 0 * * *", fromDate);
+        // let schedulePrayersObservableInit:Function = (conditions: Array<ITriggerCondition>, onDate: Date,schedulingType:SchedulingType): Rx.Observable<ITriggerEvent> =>
+        //     Rx.from(conditions).pipe(
+        //         RxOp.distinctUntilChanged(),
+        //         RxOp.map((condition: ITriggerCondition): ITriggerEvent =>  schedulingType == SchedulingType.INIT ? condition.getPrayerEventCalculated(onDate):condition.getPrayerEventCalculated(DateUtil.addDay(1,onDate)) ,
+        //         RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new UpcomingPrayerNotFoundException("Upcoming Prayer is Null") }),
+        //         RxOp.filter((event: ITriggerEvent) => new Date(event.prayerTimeCalculated) >= DateUtil.getNowTime()),
+        //         RxOp.tap(console.log),
+        //         RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))),
+        //         RxOp.finalize(()=> console.log("Completed Inner Subscription Condition Prayers"))
+        //     );
+        let schedulePrayersObservable = (conditions, onDate, schedulingType) => Rx.from(conditions).pipe(RxOp.distinctUntilChanged(), RxOp.map((condition) => schedulingType == SchedulingType.INIT ? condition.getPrayerEventCalculated(onDate) : condition.getPrayerEventCalculated(prayers_lib_1.DateUtil.addDay(1, onDate))), RxOp.tap((event) => { if ((0, prayers_lib_1.isNullOrUndefined)(event.upcomingPrayerTime))
             throw new exception_handler_1.UpcomingPrayerNotFoundException("Upcoming Prayer is Null"); }), RxOp.filter((event) => new Date(event.prayerTimeCalculated) >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))), RxOp.finalize(() => console.log("Completed Inner Subscription Condition Prayers")));
         //schedule remaing of the day event trigger conditions
-        let schedulePrayerObservableRemaining = schedulePrayersObservable(this._triggerConditions, fromDate);
+        let schedulePrayerObservableRemaining = schedulePrayersObservable(this._triggerConditions, fromDate, SchedulingType.INIT);
         // schedule tomorrow first trigger conditions
         let schedulePrayerObservableFirstDay = schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, fromDate));
         // schedule recurring trigger conditions every day.
-        let schedulePrayerObservableEveryOtherDay = cronTimerObservable.pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, date))));
+        let schedulePrayerObservableEveryOtherDay = cronTimerObservable.pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, fromDate, SchedulingType.RECURRINGG)));
         // merge observables
         this._schedulePrayersObservable = Rx.merge(schedulePrayerObservableRemaining, schedulePrayerObservableEveryOtherDay);
     }

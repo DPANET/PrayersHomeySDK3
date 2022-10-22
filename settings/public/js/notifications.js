@@ -27,7 +27,7 @@ function loadNotification() {
         },
         closeWith: ['click', 'button'],
         modal: false,
-        killer: false,
+        killer: false, // [boolean] if true closes all notifications and shows itself
     });
 }
 exports.loadNotification = loadNotification;

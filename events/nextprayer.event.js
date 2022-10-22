@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -36,7 +40,7 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
         };
         this._prayerManager = prayerManager;
         this._upcomingPrayerSourceObservable = Rx.defer(() => Rx.timer(this.getUpcomingPrayerTime()).pipe(RxOp.mapTo(this.getUpcomingPrayer())));
-        this._validatePrayerTimeObservable = Rx.iif(() => !prayers_lib_1.isNullOrUndefined(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable, Rx.throwError(new exception_handler_1.UpcomingPrayerNotFoundException("Reached the end of Prayers")));
+        this._validatePrayerTimeObservable = Rx.iif(() => !(0, prayers_lib_1.isNullOrUndefined)(this.getUpcomingPrayer()), this._upcomingPrayerSourceObservable, Rx.throwError(new exception_handler_1.UpcomingPrayerNotFoundException("Reached the end of Prayers")));
         this.runNextPrayerSchedule();
         //this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
     }
@@ -54,9 +58,9 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
     getUpcomingPrayer() { return this._prayerManager.getUpcomingPrayer(); }
     ;
     async startProvider(prayerManager) {
-        if (!prayers_lib_1.isNullOrUndefined(prayerManager))
+        if (!(0, prayers_lib_1.isNullOrUndefined)(prayerManager))
             this._prayerManager = prayerManager;
-        if (!prayers_lib_1.isNullOrUndefined(this._upcomingPrayerSubscription)) {
+        if (!(0, prayers_lib_1.isNullOrUndefined)(this._upcomingPrayerSubscription)) {
             if (!this._upcomingPrayerSubscription.closed)
                 this._upcomingPrayerSubscription.unsubscribe();
             this._upcomingPrayerSubscription = this._upcomingPrayerControllerObservable.subscribe(this._prayerTimeObserver);
@@ -66,7 +70,7 @@ class PrayersEventProvider extends prayerlib.TimerEventProvider {
         }
     }
     async stopProvider() {
-        if (!prayers_lib_1.isNullOrUndefined(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed) {
+        if (!(0, prayers_lib_1.isNullOrUndefined)(this._upcomingPrayerSubscription) && !this._upcomingPrayerSubscription.closed) {
             this._upcomingPrayerSubscription.unsubscribe();
         }
     }

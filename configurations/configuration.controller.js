@@ -54,10 +54,10 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
         this._homey = homey;
     }
     async createDefaultConfig(id) {
-        if (!prayers_lib_1.isNullOrUndefined(this._homey.settings)) {
+        if (!(0, prayers_lib_1.isNullOrUndefined)(this._homey.settings)) {
             try {
-                this._homey.settings.set("prayerConfig" /* PrayersConfigKey */, prayerConfigFE);
-                this._homey.settings.set("locationConfig" /* LocationConfigKey */, locationConfigPE);
+                this._homey.settings.set("prayerConfig" /* ConfigSettingsKeys.PrayersConfigKey */, prayerConfigFE);
+                this._homey.settings.set("locationConfig" /* ConfigSettingsKeys.LocationConfigKey */, locationConfigPE);
             }
             catch (err) {
                 return Promise.reject(ConfigErrorMessages.SAVE_FAILED);
@@ -73,7 +73,7 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
     }
     async getPrayerConfig(config) {
         try {
-            return Promise.resolve(this._homey.settings.get("prayerConfig" /* PrayersConfigKey */));
+            return Promise.resolve(this._homey.settings.get("prayerConfig" /* ConfigSettingsKeys.PrayersConfigKey */));
         }
         catch (err) {
             return Promise.reject(ConfigErrorMessages.FILE_NOT_FOUND);
@@ -84,8 +84,8 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
             let original = await this.getPrayerConfig();
             let updated;
             updated = super.mergePrayerConfig(original, prayerConfigs);
-            if (!prayers_lib_1.isNullOrUndefined(updated)) {
-                this._homey.settings.set("prayerConfig" /* PrayersConfigKey */, updated);
+            if (!(0, prayers_lib_1.isNullOrUndefined)(updated)) {
+                this._homey.settings.set("prayerConfig" /* ConfigSettingsKeys.PrayersConfigKey */, updated);
             }
             else {
                 return Promise.reject(ConfigErrorMessages.SAVE_FAILED);
@@ -98,7 +98,7 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
     }
     async getLocationConfig(id) {
         try {
-            return Promise.resolve(this._homey.settings.get("locationConfig" /* LocationConfigKey */));
+            return Promise.resolve(this._homey.settings.get("locationConfig" /* ConfigSettingsKeys.LocationConfigKey */));
         }
         catch (err) {
             return Promise.reject(ConfigErrorMessages.FILE_NOT_FOUND);
@@ -109,8 +109,8 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
             let original = await this.getLocationConfig();
             let updated;
             updated = super.mergeLocationConfig(original, locationConfig);
-            if (!prayers_lib_1.isNullOrUndefined(updated)) {
-                this._homey.settings.set("locationConfig" /* LocationConfigKey */, updated);
+            if (!(0, prayers_lib_1.isNullOrUndefined)(updated)) {
+                this._homey.settings.set("locationConfig" /* ConfigSettingsKeys.LocationConfigKey */, updated);
             }
             else {
                 return Promise.reject(ConfigErrorMessages.SAVE_FAILED);
@@ -125,9 +125,9 @@ class HomeyConfigurator extends prayers_lib_1.ConfigProvider {
         let prayerConfig;
         let locationConfig;
         try {
-            prayerConfig = this._homey.settings.get("prayerConfig" /* PrayersConfigKey */);
-            locationConfig = this._homey.settings.get("locationConfig" /* LocationConfigKey */);
-            if (!prayers_lib_1.isNullOrUndefined(prayerConfig) && !prayers_lib_1.isNullOrUndefined(locationConfig)) {
+            prayerConfig = this._homey.settings.get("prayerConfig" /* ConfigSettingsKeys.PrayersConfigKey */);
+            locationConfig = this._homey.settings.get("locationConfig" /* ConfigSettingsKeys.LocationConfigKey */);
+            if (!(0, prayers_lib_1.isNullOrUndefined)(prayerConfig) && !(0, prayers_lib_1.isNullOrUndefined)(locationConfig)) {
                 return Promise.resolve({
                     prayerConfig: prayerConfigFE,
                     locationConfig: locationConfigPE

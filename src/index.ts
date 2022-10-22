@@ -12,6 +12,7 @@ import * as RxOp from "rxjs/operators";
 import * as ramda from "ramda";
 import moment from "moment";
 import cron from "cron-converter";
+import { date } from '@hapi/joi';
 
 async function init(): Promise<void> {
     let configProvider: prayerlib.IConfigProvider = prayerlib.ConfigProviderFactory.createConfigProviderFactory(prayerlib.ClientConfigurator);
@@ -26,16 +27,16 @@ async function init(): Promise<void> {
 }
 let prayers: Array<prayerlib.IPrayers> =
     [{
-        prayersDate: new Date(),
+        prayersDate:  DateUtil.getNowTime() ,
         prayerTime: [
-            { prayerName: prayerlib.PrayersName.FAJR, prayerTime: moment(new Date()).add(10, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.SUNRISE, prayerTime: moment(new Date()).add(20, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.ISHA, prayerTime: moment(new Date()).add(70, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.DHUHR, prayerTime: moment(new Date()).add(30, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.ASR, prayerTime: moment(new Date()).add(40, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.SUNSET, prayerTime: moment(new Date()).add(50, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.MAGHRIB, prayerTime: moment(new Date()).add(60, "seconds").toDate() },
-            { prayerName: prayerlib.PrayersName.MIDNIGHT, prayerTime: moment(new Date()).add(80, "seconds").toDate() }
+            { prayerName: prayerlib.PrayersName.FAJR, prayerTime: moment(DateUtil.getNowTime()).add(10, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.SUNRISE, prayerTime: moment(DateUtil.getNowTime()).add(20, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.ISHA, prayerTime: moment(DateUtil.getNowTime()).add(70, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.DHUHR, prayerTime: moment(DateUtil.getNowTime()).add(30, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.ASR, prayerTime: moment(DateUtil.getNowTime()).add(40, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.SUNSET, prayerTime: moment(DateUtil.getNowTime()).add(50, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.MAGHRIB, prayerTime: moment(DateUtil.getNowTime()).add(60, "seconds").toDate() },
+            { prayerName: prayerlib.PrayersName.MIDNIGHT, prayerTime: moment(DateUtil.getNowTime()).add(80, "seconds").toDate() }
         ]
     }
     ];
@@ -44,7 +45,7 @@ function getPrayersByDate(date: Date): prayerlib.IPrayers {
     return ramda.find(fnDayMatch, prayers);
 }
 function getPrayerTime(prayerName: prayerlib.PrayersName, prayerDate?: Date): prayerlib.IPrayersTiming {
-    prayerDate = (isNullOrUndefined(prayerDate) ? new Date() : prayerDate);
+    prayerDate = (isNullOrUndefined(prayerDate) ? DateUtil.getNowTime() : prayerDate);
 
     let prayersByDate: prayerlib.IPrayers = getPrayersByDate(prayerDate);
 
@@ -188,15 +189,15 @@ class TriggerPrayerEventBuilder implements ITriggerCondition {
 
 async function conditionPipe() {
     let conditionOne: ITriggerCondition = new TriggerPrayerEventBuilder({
-        prayerName: prayerlib.PrayersName.ASR,
-        prayerDurationTime: 1,
+        prayerName: prayerlib.PrayersName.ISHA,
+        prayerDurationTime: 5,
         prayerAfterBefore: DurationAfterBefore.After,
-        prayerDurationType: DurationTypes.Minutes,
+        prayerDurationType: DurationTypes.Seconds,
         upcomingPrayerTime: getPrayerTime
     });
     let conditionTwo: ITriggerCondition = new TriggerPrayerEventBuilder({
-        prayerName: prayerlib.PrayersName.FAJR,
-        prayerDurationTime: 5,
+        prayerName: prayerlib.PrayersName.ASR,
+        prayerDurationTime: 30,
         prayerAfterBefore: DurationAfterBefore.Before,
         prayerDurationType: DurationTypes.Seconds,
         upcomingPrayerTime: getPrayerTime
@@ -207,24 +208,32 @@ async function conditionPipe() {
         , ramda.descend(ramda.prop('prayerDurationType'))
         , ramda.descend(ramda.prop('prayerDurationTime'))
     ]);
-
-    let sortedConditions: Array<ITriggerCondition> = new Array(conditionOne, conditionTwo, conditionOne, conditionTwo);
+    console.log("Welcome");
+    let sortedConditions: Array<ITriggerCondition> = new Array(conditionOne, conditionTwo);
     sortedConditions = sortWith(sortedConditions);
-    let cronTimerObservable: Rx.Observable<Date> = cronTimer("2 0 * * *", DateUtil.getNowDate());
+    let cronTimerObservable: Rx.Observable<Date> = cronTimer("*/1 * * * *",DateUtil.getNowTime());
+   
+   
     let schedulePrayersObservable: Function = (conditions: Array<ITriggerCondition>, fromDate: Date): Rx.Observable<ITriggerEvent> =>
         Rx.from(conditions).pipe(
+            RxOp.tap(()=> {console.log("Started")}),
             RxOp.distinctUntilChanged(),
             RxOp.map((condition: ITriggerCondition): ITriggerEvent => condition.getPrayerEventCalculated(fromDate)),
             RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new Error("Upcoming Prayer is Null") }),
             RxOp.filter((event: ITriggerEvent) => event.prayerTimeCalculated >= DateUtil.getNowTime()),
-            RxOp.tap(console.log),
-            RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event)))
+            RxOp.tap((x)=>{console.log("prayername : " + x.prayerName +" Prayer Time " +  x.prayerTimeCalculated)}),
+
+            RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))),
+          //  RxOp.tap((x)=>{console.log(x);console.log("\n After Filter Running ***************************")})
+
         );
 
-    let combinedObservable: Rx.Observable<any> = cronTimerObservable
-        .pipe(
-            RxOp.switchMap((date: Date) => schedulePrayersObservable(sortedConditions, date)));
+        // Restore from merge map to switchMap  
+    // let combinedObservable: Rx.Observable<any> = cronTimerObservable
+    //     .pipe(
+    //         RxOp.mergeMap((date: Date) => schedulePrayersObservable(sortedConditions, date)));
 
+let combinedObservable:Rx.Observable<any> =   schedulePrayersObservable(sortedConditions, getPrayerTime(prayerlib.PrayersName.FAJR).prayerTime);
     let subscription: Rx.Subscription = combinedObservable.subscribe({
         next: (x) => console.log(x),
         error: console.log,
@@ -242,7 +251,15 @@ async function conditionPipe() {
 //console.log(getUpcomingPrayer());
 //task();
 conditionPipe();
-//generateEvent();
+
+function generateEvent(cronText: string, fromDate?: Date)
+{
+    let schedule: cron.Seeker = cronDateGenerator(cronText, isNullOrUndefined(fromDate) ? new Date() : fromDate);
+    console.log(schedule.date.toDate())
+    console.log(schedule.next());
+
+}
+//generateEvent("0 2 * * *",new Date());
 
 function cronDateGenerator(cronText: string, fromDate: Date): cron.Seeker {
     let croneExpression: cron = new cron();
