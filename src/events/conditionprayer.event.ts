@@ -198,7 +198,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
         let schedulePrayerObservableFirstDay: Rx.Observable<any>= schedulePrayersObservable(this._triggerConditions,DateUtil.addDay(1,fromDate));
         
         // schedule recurring trigger conditions every day.
-        let schedulePrayerObservableEveryOtherDay: Rx.Observable<any> = cronTimerObservable.pipe(RxOp.switchMap((date: Date) => schedulePrayersObservable(this._triggerConditions,fromDate, SchedulingType.RECURRINGG)));
+        let schedulePrayerObservableEveryOtherDay: Rx.Observable<any> = cronTimerObservable.pipe(RxOp.switchMap((date: Date) => schedulePrayersObservable(this._triggerConditions,date, SchedulingType.RECURRINGG)));
         
         // merge observables
         this._schedulePrayersObservable = Rx.merge(schedulePrayerObservableRemaining,schedulePrayerObservableEveryOtherDay);
