@@ -31,5 +31,8 @@
   },
   "1.1.7": {
     "en": "Fixed before and after prayer event bug"
+  },
+  "1.1.8": {
+    "en": "Before and After Flow Bug Fix"
   }
 }
