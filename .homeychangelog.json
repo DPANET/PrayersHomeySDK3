@@ -34,5 +34,8 @@
   },
   "1.1.8": {
     "en": "Before and After Flow Bug Fix"
+  },
+  "1.1.9": {
+    "en": "Fixed Before and After Event Scheduling"
   }
 }
