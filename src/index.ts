@@ -250,7 +250,22 @@ let combinedObservable:Rx.Observable<any> =   schedulePrayersObservable(sortedCo
 //pipe();
 //console.log(getUpcomingPrayer());
 //task();
-conditionPipe();
+function dateToCron(date:Date):String
+{
+    
+    let minutes: number = date.getUTCMinutes();
+    let seconds:number = date.getUTCSeconds();
+    let hours:number =date.getUTCHours();
+
+    return ( "".concat(minutes.toString()," ",hours.toString()," * * *"));
+}
+//conditionPipe();
+let f =()=>{
+    let date:Date =DateUtil.addMinutes(DateUtil.getNowTime(),2);
+    console.log(date);
+    console.log(dateToCron(date));
+}
+f();
 
 function generateEvent(cronText: string, fromDate?: Date)
 {

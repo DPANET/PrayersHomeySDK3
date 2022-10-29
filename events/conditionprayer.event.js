@@ -138,13 +138,21 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             throw new exception_handler_1.PrayerProviderNotStaterdException("Stop Provider Failed \n" + err.message);
         }
     }
+    dateToCronObservable(fromDate) {
+        let cronTimerObservable;
+        let minutes = fromDate.getUTCMinutes();
+        let seconds = fromDate.getUTCSeconds();
+        let hours = fromDate.getUTCHours();
+        let schedule = "".concat(minutes.toString(), " ", hours.toString(), " * * *");
+        return (0, observables_extenstion_1.cronTimer)(schedule, fromDate);
+    }
     initSchedulersObservables(fromDate) {
         let SchedulingType;
         (function (SchedulingType) {
             SchedulingType["INIT"] = "Init";
             SchedulingType["RECURRINGG"] = "Recurring";
         })(SchedulingType || (SchedulingType = {}));
-        let cronTimerObservable = (0, observables_extenstion_1.cronTimer)("2 0 * * *", fromDate);
+        let cronTimerObservable; // = cronTimer("2 0 * * *", fromDate);
         // let schedulePrayersObservableInit:Function = (conditions: Array<ITriggerCondition>, onDate: Date,schedulingType:SchedulingType): Rx.Observable<ITriggerEvent> =>
         //     Rx.from(conditions).pipe(
         //         RxOp.distinctUntilChanged(),
@@ -161,6 +169,8 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
         let schedulePrayerObservableRemaining = schedulePrayersObservable(this._triggerConditions, fromDate, SchedulingType.INIT);
         // schedule tomorrow first trigger conditions
         let schedulePrayerObservableFirstDay = schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, fromDate));
+        // cron schedulers
+        cronTimerObservable = this.dateToCronObservable(prayers_lib_1.DateUtil.addMinutes(fromDate, 2));
         // schedule recurring trigger conditions every day.
         let schedulePrayerObservableEveryOtherDay = cronTimerObservable.pipe(RxOp.switchMap((date) => schedulePrayersObservable(this._triggerConditions, date, SchedulingType.RECURRINGG)));
         // merge observables
