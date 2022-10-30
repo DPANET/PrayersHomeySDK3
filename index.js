@@ -207,16 +207,22 @@ async function conditionPipe() {
 //console.log(getUpcomingPrayer());
 //task();
 function dateToCron(date) {
-    let minutes = date.getUTCMinutes();
+    let minutes = date.getMinutes();
     let seconds = date.getUTCSeconds();
-    let hours = date.getUTCHours();
+    let hours = date.getHours();
     return ("".concat(minutes.toString(), " ", hours.toString(), " * * *"));
 }
 //conditionPipe();
 let f = () => {
-    let date = prayers_lib_1.DateUtil.addMinutes(prayers_lib_1.DateUtil.getNowTime(), 2);
+    let date = prayers_lib_1.DateUtil.addMinutes(new Date(), 2);
     console.log(date);
-    console.log(dateToCron(date));
+    let coronExpression = dateToCron(date);
+    console.log(coronExpression);
+    let schedule = cronDateGenerator(coronExpression, date);
+    console.log(schedule.date.toString());
+    console.log(schedule.now.toString());
+    console.log(schedule.next().toString());
+    console.log(schedule.now.toString());
 };
 f();
 function generateEvent(cronText, fromDate) {
