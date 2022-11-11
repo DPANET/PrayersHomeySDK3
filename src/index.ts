@@ -231,9 +231,11 @@ async function conditionPipe() {
         // Restore from merge map to switchMap  
     // let combinedObservable: Rx.Observable<any> = cronTimerObservable
     //     .pipe(
-    //         RxOp.mergeMap((date: Date) => schedulePrayersObservable(sortedConditions, date)));
+    //         RxOp.switchMap((date: Date) => schedulePrayersObservable(sortedConditions, date)));
 
-let combinedObservable:Rx.Observable<any> =   schedulePrayersObservable(sortedConditions, getPrayerTime(prayerlib.PrayersName.FAJR).prayerTime);
+    let combinedObservable:Rx.Observable<any> =     cronTimerObservable.pipe(RxOp.tap(console.log));
+    
+    //schedulePrayersObservable(sortedConditions, getPrayerTime(prayerlib.PrayersName.FAJR).prayerTime);
     let subscription: Rx.Subscription = combinedObservable.subscribe({
         next: (x) => console.log(x),
         error: console.log,
@@ -259,7 +261,7 @@ function dateToCron(date:Date):string
 
     return ( "".concat(minutes.toString()," ",hours.toString()," * * *"));
 }
-//conditionPipe();
+conditionPipe();
 let f =()=>{
     let date:Date =DateUtil.addMinutes(new Date(),2);
     console.log(date);
@@ -272,7 +274,7 @@ let f =()=>{
     console.log(schedule.next().toString())
     console.log(schedule.now.toString());
 }
-f();
+//f();
 
 function generateEvent(cronText: string, fromDate?: Date)
 {
