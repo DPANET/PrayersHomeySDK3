@@ -40,5 +40,8 @@
   },
   "1.1.10": {
     "en": "Fixed before and after event bug"
+  },
+  "1.1.11": {
+    "en": "Stabilize Before and After Event"
   }
 }
