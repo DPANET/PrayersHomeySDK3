@@ -198,7 +198,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
                // RxOp.tap((x)=>console.log("the scheduling type is : "+ schedulingType + " and the value of calculation :")),
                 //RxOp.tap(console.log),
                 RxOp.tap((event: ITriggerEvent) => { if (isNullOrUndefined(event.upcomingPrayerTime)) throw new UpcomingPrayerNotFoundException("Upcoming Prayer is Null") }),
-                RxOp.filter((event: ITriggerEvent) =>event.prayerTimeCalculated >= DateUtil.getNowTime()),
+                RxOp.filter((event: ITriggerEvent) => event.prayerTimeCalculated >= DateUtil.getNowTime()),
                 RxOp.tap(console.log),
                 RxOp.mergeMap((event: ITriggerEvent) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))),
                 RxOp.finalize(()=> console.log("Completed Inner Subscription Condition Prayers"))
