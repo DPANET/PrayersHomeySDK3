@@ -29,7 +29,7 @@
     "chrono-node": "^2.1.8",
     "cron": "^1.8.2",
     "cron-converter": "^1.0.0",
-    "moment-timezone": "^0.5.31",
+    "moment-timezone": "^0.5.35",
     "nconf": "^0.10.0",
     "noty": "^3.2.0-beta",
     "ramda": "^0.27.1",
