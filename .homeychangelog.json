@@ -49,5 +49,8 @@
   },
   "1.1.13": {
     "en": "Added new prayer calcuation method Dubai"
+  },
+  "1.1.14": {
+    "en": "Patch fix to the prayers api crashing the app"
   }
 }
