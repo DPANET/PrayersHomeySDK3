@@ -52,5 +52,8 @@
   },
   "1.1.14": {
     "en": "Patch fix to the prayers api crashing the app"
+  },
+  "1.1.15": {
+    "en": "Fixed app to run in new Homey"
   }
 }
