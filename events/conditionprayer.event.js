@@ -153,7 +153,7 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
             SchedulingType["INIT"] = "Init";
             SchedulingType["RECURRINGG"] = "Recurring";
         })(SchedulingType || (SchedulingType = {}));
-        let cronTimerObservable = (0, observables_extenstion_1.cronTimer)("2 0 * * *", fromDate);
+        let cronTimerObservable = (0, observables_extenstion_1.cronTimer)("2 0 * * *", prayers_lib_1.DateUtil.getNowDate());
         // let schedulePrayersObservableInit:Function = (conditions: Array<ITriggerCondition>, onDate: Date,schedulingType:SchedulingType): Rx.Observable<ITriggerEvent> =>
         //     Rx.from(conditions).pipe(
         //         RxOp.distinctUntilChanged(),
@@ -170,9 +170,9 @@ class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventProvider {
         RxOp.tap((event) => { if ((0, prayers_lib_1.isNullOrUndefined)(event.upcomingPrayerTime))
             throw new exception_handler_1.UpcomingPrayerNotFoundException("Upcoming Prayer is Null"); }), RxOp.filter((event) => event.prayerTimeCalculated >= prayers_lib_1.DateUtil.getNowTime()), RxOp.tap(console.log), RxOp.mergeMap((event) => Rx.timer(event.prayerTimeCalculated).pipe(RxOp.mapTo(event))), RxOp.finalize(() => console.log("Completed Inner Subscription Condition Prayers")));
         //schedule remaing of the day event trigger conditions
-        let schedulePrayerObservableRemaining = schedulePrayersObservable(this._triggerConditions, fromDate, SchedulingType.INIT);
+        let schedulePrayerObservableRemaining = schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.getNowTime(), SchedulingType.INIT);
         // schedule tomorrow first trigger conditions
-        let schedulePrayerObservableFirstDay = schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, fromDate), SchedulingType.INIT);
+        let schedulePrayerObservableFirstDay = schedulePrayersObservable(this._triggerConditions, prayers_lib_1.DateUtil.addDay(1, prayers_lib_1.DateUtil.getNowDate()), SchedulingType.INIT);
         // cron schedulers on Everyday at specific time
         // cronTimerObservable=this.dateToCronObservable(DateUtil.addMinutes(fromDate,2));
         // schedule recurring trigger conditions every day.

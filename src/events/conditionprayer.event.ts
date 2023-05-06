@@ -180,7 +180,7 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             INIT = "Init",
             RECURRINGG = "Recurring"
         }
-        let cronTimerObservable: Rx.Observable<Date> = cronTimer("2 0 * * *", fromDate);
+        let cronTimerObservable: Rx.Observable<Date> = cronTimer("2 0 * * *", DateUtil.getNowDate());
         // let schedulePrayersObservableInit:Function = (conditions: Array<ITriggerCondition>, onDate: Date,schedulingType:SchedulingType): Rx.Observable<ITriggerEvent> =>
         //     Rx.from(conditions).pipe(
         //         RxOp.distinctUntilChanged(),
@@ -205,10 +205,10 @@ export class PrayerConditionTriggerEventProvider extends prayerlib.TimerEventPro
             );
 
         //schedule remaing of the day event trigger conditions
-        let schedulePrayerObservableRemaining: Rx.Observable<any> = schedulePrayersObservable(this._triggerConditions,fromDate,SchedulingType.INIT);
+        let schedulePrayerObservableRemaining: Rx.Observable<any> = schedulePrayersObservable(this._triggerConditions,DateUtil.getNowTime(),SchedulingType.INIT);
         
         // schedule tomorrow first trigger conditions
-        let schedulePrayerObservableFirstDay: Rx.Observable<any>= schedulePrayersObservable(this._triggerConditions,DateUtil.addDay(1,fromDate),SchedulingType.INIT);
+        let schedulePrayerObservableFirstDay: Rx.Observable<any>= schedulePrayersObservable(this._triggerConditions,DateUtil.addDay(1,DateUtil.getNowDate()),SchedulingType.INIT);
         
         // cron schedulers on Everyday at specific time
        // cronTimerObservable=this.dateToCronObservable(DateUtil.addMinutes(fromDate,2));
