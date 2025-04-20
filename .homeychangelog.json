@@ -55,5 +55,8 @@
   },
   "1.1.15": {
     "en": "Fixed app to run in new Homey"
+  },
+  "1.1.16": {
+    "en": "Update Google Api location api"
   }
 }
