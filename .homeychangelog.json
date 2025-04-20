@@ -58,5 +58,8 @@
   },
   "1.1.16": {
     "en": "Update Google Api location api"
+  },
+  "1.1.17": {
+    "en": "App api fix"
   }
 }
