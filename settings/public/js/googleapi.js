@@ -9,7 +9,7 @@ var componentForm = {
 var autocomplete;
 async function getKey()
 {
-  let key ="AIzaSyA5GrhcCCagH3cmtW16YUWykSGePygsC84";
+  let key ="AIzaSyDRFzYIGVH_bYomwO0-f63mwc7PLaLZzu8";
 let data;
   await $.ajax({
     url: `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`,
