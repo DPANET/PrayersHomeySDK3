@@ -1,6 +1,6 @@
 {
-  "name": "com.dpanet.adhan-alert",
-  "version": "1.0.0",
+  "name": "com.prayerssapp",
+  "version": "2.0.0",
   "description": "Islamic audio hub with prayer times and Flow triggers for Homey Pro",
   "main": "app.js",
   "scripts": {

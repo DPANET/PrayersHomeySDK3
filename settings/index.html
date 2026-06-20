@@ -636,7 +636,6 @@
       <h2>Speaker groups</h2>
       <p class="hint">Each group plays simultaneously on all its speakers. Rename groups freely — they appear by name in Flow autocomplete.</p>
       <div id="zones-list"></div>
-      <datalist id="surah-list"></datalist>
       <button class="btn btn-ghost btn-sm" id="btn-add-zone" style="margin-top:8px">+ Add speaker group</button>
       <div style="margin-top:14px">
         <button class="btn btn-primary btn-full" id="btn-save-zones">Save groups</button>
@@ -661,7 +660,7 @@
   <div class="tab-panel" id="tab-prayer-audio">
     <div class="card">
       <h2>Per-prayer audio</h2>
-      <p class="hint">Override volume or adhan type for individual prayers.</p>
+      <p class="hint">Override volume, adhan type, or Quran reciter for individual prayers. <strong>Adhan type</strong> applies to groups set to Full/Short adhan. <strong>Reciter override</strong> applies to groups set to Quran recitation. <strong>Silent</strong> suppresses all audio for that prayer while still firing Flow triggers.</p>
       <div id="prayer-audio-list"></div>
       <div style="margin-top:14px">
         <div class="field">
@@ -1024,12 +1023,8 @@ const CONTENT_TYPES = [
   {v:'Silent (Flow only)',l:'Silent'},
 ];
 let _groups = [];
-(function() {
-  const dl = document.getElementById('surah-list');
-  if (dl) SURAHS.forEach((n, i) => { if (i) { const o = document.createElement('option'); o.value = i + ' – ' + n; dl.appendChild(o); } });
-})();
 
-function surahLabel(n) { n = parseInt(n)||1; return SURAHS[n] ? n+' – '+SURAHS[n] : String(n); }
+
 
 function renderGroups() {
   const container = document.getElementById('zones-list');
@@ -1061,12 +1056,16 @@ function renderGroups() {
                color:${on?'var(--blue-dk)':'var(--text2)'}">${escHtml(l)}</button>`;
     }).join('');
 
+    const surahNum = parseInt(group.surahNumber)||1;
     const surahSection = ct === 'Quran recitation' ? `
       <div style="margin-top:12px">
         <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px">Surah</div>
-        <input type="text" list="surah-list" value="${escHtml(surahLabel(group.surahNumber||1))}"
-          placeholder="Search by name or number…" data-gidx="${i}" data-field="surahSearch"
-          style="width:100%;padding:10px 12px;font-size:14px;border:1px solid #93c5fd;border-radius:8px;background:var(--blue-lt);color:var(--blue-dk)" />
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" min="1" max="114" value="${surahNum}"
+            data-gidx="${i}" data-field="surahNumber"
+            style="width:72px;padding:9px 10px;font-size:14px;border:1px solid #93c5fd;border-radius:8px;background:var(--blue-lt);color:var(--blue-dk);text-align:center" />
+          <span id="surah-name-${i}" style="font-size:14px;color:var(--blue-dk);font-weight:500">${escHtml(SURAHS[surahNum]||'')}</span>
+        </div>
       </div>` : '';
 
     const urlSection = ct === 'Custom URL' ? `
@@ -1146,7 +1145,7 @@ function renderGroups() {
       const field = e.target.dataset.field;
       if (isNaN(gi) || !field) return;
       let v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-      if (field === 'surahSearch') { const m = v.match(/^(\d+)/); _groups[gi].surahNumber = m ? parseInt(m[1]) : 1; return; }
+      if (field === 'surahNumber') { _groups[gi].surahNumber = Math.min(114, Math.max(1, parseInt(v)||1)); return; }
       if (field === 'volume') v = e.target.value === '' ? null : (parseInt(v) || null);
       if (si !== null) {
         if (field === 'speakerId') {
@@ -1167,10 +1166,12 @@ function renderGroups() {
       }
     });
     el.addEventListener('input', e => {
-      if (e.target.dataset.field === 'surahSearch') {
+      if (e.target.dataset.field === 'surahNumber') {
         const gi = parseInt(e.target.dataset.gidx);
-        const m = e.target.value.match(/^(\d+)/);
-        if (m && _groups[gi]) _groups[gi].surahNumber = parseInt(m[1]);
+        const n = Math.min(114, Math.max(1, parseInt(e.target.value)||1));
+        if (_groups[gi]) _groups[gi].surahNumber = n;
+        const label = document.getElementById('surah-name-' + gi);
+        if (label) label.textContent = SURAHS[n] || '';
       }
     });
   });
@@ -1307,13 +1308,16 @@ document.getElementById('btn-save-prayer-audio').addEventListener('click', () =>
 
 // ─── Advanced tab ─────────────────────────────────────────────────────────────
 document.getElementById('btn-save-advanced').addEventListener('click', () => {
-  Homey.set('audioConfig',{
-    nightMode:     checked('adv-nightMode'),
-    quietStart:    val('adv-quietStart'),
-    quietEnd:      val('adv-quietEnd'),
-    quietVol:      parseInt(val('adv-quietVol'))||25,
-    globalReciter: val('global-reciter'),
-  },()=>{});
+  Homey.get('audioConfig', (err, existing) => {
+    const merged = Object.assign({}, existing || {}, {
+      nightMode:     checked('adv-nightMode'),
+      quietStart:    val('adv-quietStart'),
+      quietEnd:      val('adv-quietEnd'),
+      quietVol:      parseInt(val('adv-quietVol'))||25,
+      globalReciter: val('global-reciter'),
+    });
+    Homey.set('audioConfig', merged, () => {});
+  });
   Homey.set('morningAdhkar',{enabled:checked('adv-morningEnabled'),delayMin:parseInt(val('adv-morningDelay'))||0},()=>{});
   Homey.set('eveningAdhkar',{enabled:checked('adv-eveningEnabled'),delayMin:parseInt(val('adv-eveningDelay'))||0},()=>{});
   Homey.set('advanced',{appEnabled:checked('adv-appEnabled')},err=>{
