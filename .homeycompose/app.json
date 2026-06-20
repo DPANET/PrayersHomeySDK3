@@ -1,0 +1,36 @@
+{
+  "id": "com.prayerssapp",
+  "version": "2.0.0",
+  "compatibility": ">=12.1.0",
+  "sdk": 3,
+  "platforms": ["local"],
+  "name": { "en": "Prayers Alert" },
+  "description": { "en": "Islamic audio hub with prayer times and Flow triggers" },
+  "category": ["tools"],
+  "tags": {
+    "en": ["prayer", "adhan", "quran", "islamic", "fajr", "isha", "asr", "maghrib", "dhuhr"]
+  },
+  "permissions": [
+    "homey:manager:geolocation",
+    "homey:manager:api"
+  ],
+  "images": {
+    "small": "/assets/images/small.jpg",
+    "large": "/assets/images/large.jpg"
+  },
+  "brandColor": "#1B6B3A",
+  "author": { "name": "dpanet", "email": "dpanet@gmail.com" },
+  "api": {
+    "previewTimes":    { "method": "GET",  "path": "/previewTimes"    },
+    "searchCity":      { "method": "GET",  "path": "/searchCity"      },
+    "getSpeakers":     { "method": "GET",  "path": "/speakers"        },
+    "getLocation":     { "method": "GET",  "path": "/location"        },
+    "getReciters":     { "method": "GET",  "path": "/reciters"        },
+    "getStatus":       { "method": "GET",  "path": "/status"          },
+    "testAudio":       { "method": "POST", "path": "/testAudio"       },
+    "diagnosePlayback":{ "method": "GET",  "path": "/diagnosePlayback"},
+    "reschedule":      { "method": "POST", "path": "/reschedule"      },
+    "stopAudio":       { "method": "POST", "path": "/stopAudio"       },
+    "widgetData":      { "method": "GET",  "path": "/widgetData"      }
+  }
+}

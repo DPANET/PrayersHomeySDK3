@@ -1,5 +1,9 @@
-src/*
-node_modules/@types/*
-.vscode/*
+node_modules
 .git
-tsconfig.json
+.vscode
+*.log
+test
+assets/screenshots
+README.md
+env.json.example
+.gitattributes

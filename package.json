@@ -1,57 +1,21 @@
 {
-  "name": "@dpanet/prayers",
-  "version": "1.1.0",
-  "description": "Homey App to track prayers events based on your location",
+  "name": "com.dpanet.adhan-alert",
+  "version": "1.0.0",
+  "description": "Islamic audio hub with prayer times and Flow triggers for Homey Pro",
   "main": "app.js",
-  "author": {
-    "name": "Omar B."
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "tsc",
-    "bundlejs": "browserify settings/public/js/settings.js settings/public/js/notifications.js -p [tinyify] > settings/public/js/bundle.js -v --m --im --ignore crypto --ignore @google/maps",
-    "public:copy": "copyfiles --up 4 node_modules/@dpanet/prayerswebapp/lib/public/**/*.* settings/",
-    "html:copy": "copyfiles --f  node_modules/@dpanet/prayerswebapp/lib/**/*.html settings/",
-    "images:copy": "copyfiles -u 1 src/images/**/* lib/",
-    "start:server": "node --inspect lib/app.js",
-    "athom:development": "athom app run",
-    "athom:production": "athom app install",
-    "start": "npm run compile && npm run bundlejs",
-    "publish": "npm run compile && npm run public:copy && npm run html:copy && npm run athom:production"
+    "start": "node app.js",
+    "test": "node test/run-tests.js"
   },
   "dependencies": {
-    "@arrows/composition": "^1.2.2",
-    "@dpanet/prayers-lib": "^1.12.5",
-    "@google/maps": "^1.1.3",
-    "@hapi/joi": "^17.1.1",
-    "@sentry/node": "^5.20.1",
-    "async-retry": "^1.3.1",
-    "chrono-node": "^2.1.8",
-    "cron": "^1.8.2",
-    "cron-converter": "^1.0.0",
-    "moment-timezone": "^0.5.31",
-    "nconf": "^0.10.0",
-    "noty": "^3.2.0-beta",
-    "ramda": "^0.27.1",
-    "rxjs": "^6.6.3"
+    "homey": "*",
+    "adhan-extended": "*",
+    "hijri-date": "^0.2.2",
+    "homey-api": "*"
   },
-  "devDependencies": {
-    "@types/async-retry": "^1.4.2",
-    "@types/cron": "^1.7.2",
-    "@types/cron-converter": "^1.0.0",
-    "@types/datatables.net": "^1.10.19",
-    "@types/daterangepicker": "^3.1.1",
-    "@types/hapi__joi": "^17.1.4",
-    "@types/jquery": "^3.5.1",
-    "@types/nconf": "^0.10.0",
-    "@types/node": "^14.0.27",
-    "@types/ramda": "^0.27.14",
-    "@types/request": "^2.48.1",
-    "@types/request-promise-native": "^1.0.16",
-    "tinyify": "^3.0.0"
+  "engines": {
+    "node": ">=22"
   },
-  "directories": {
-    "settings": "settings"
-  },
-  "browser": {}
+  "author": "dpanet",
+  "license": "MIT"
 }

@@ -1,97 +1,98 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+'use strict';
+
+const Homey           = require('homey');
+const { HomeyAPI }    = require('homey-api');
+const PrayerScheduler = require('./lib/PrayerScheduler');
+const AudioRouter     = require('./lib/AudioRouter');
+const HijriCalendar   = require('./lib/HijriCalendar');
+const triggerMatches  = require('./lib/triggerMatch');
+const Logger          = require('./lib/Logger');
+
+class App extends Homey.App {
+  async onInit() {
+    this.logger = new Logger(this.homey);
+
+    this._migrateSettings();
+
+    // homey-api: cross-app device access (requires "homey:manager:api" permission)
+    this.homeyApi = await HomeyAPI.createAppAPI({ homey: this.homey });
+
+    this.audioRouter = new AudioRouter(this.homey);
+    this.scheduler   = new PrayerScheduler(this.homey);
+
+    this._registerTriggers();
+    this._registerConditions();
+    this._registerActions();
+    await this.scheduler.init();
+
+    const appEnv = process.env.APP_ENV ? JSON.parse(process.env.APP_ENV) : (this.homey.env || {});
+    const mapsKey = appEnv.GOOGLE_MAPS_KEY || '';
+    if (mapsKey) this.homey.settings.set('googleMapsKey', mapsKey);
+
+    this.logger.log('Prayers Alert v2 started');
+  }
+
+  // Convert old app (1.x) settings keys to new format on first run.
+  _migrateSettings() {
+    const oldPrayer = this.homey.settings.get('prayerConfig');
+    const oldLoc    = this.homey.settings.get('locationConfig');
+    if (!oldPrayer && !oldLoc) return;
+
+    if (oldPrayer) {
+      const calc = this.homey.settings.get('calculation') || {};
+      if (!calc.method && oldPrayer.calculationMethod) calc.method = oldPrayer.calculationMethod;
+      if (!calc.madhab && oldPrayer.madhab)            calc.madhab = oldPrayer.madhab;
+      this.homey.settings.set('calculation', calc);
+      this.homey.settings.unset('prayerConfig');
     }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-console.log("I'm Running**************");
-const Homey = require("homey");
-const config = require("nconf");
-config.file('env.json');
-const manager = __importStar(require("./controllers/homey.controller."));
-const prayers_controller_1 = __importDefault(require("./controllers/prayers.controller"));
-const configuration_controller_1 = __importDefault(require("./configurations/configuration.controller"));
-const sentry = __importStar(require("@sentry/node/dist/index"));
-const prayerlib = __importStar(require("@dpanet/prayers-lib"));
-sentry.init({ dsn: config.get("DSN") });
-class PrayersApp extends Homey.App {
-    async onInit() {
-        try {
-            this.log(` Prayers Alert App is running! `);
-            await this.initalizeConfig();
-            this._prayersController = new prayers_controller_1.default(this._homeyConfigurator);
-            await this._prayersController.initializePrayerManger();
-            manager.PrayersAppManager.initApp(this.homey, this._homeyConfigurator);
-            this.log('I ran successfully');
+
+    if (oldLoc) {
+      const loc = this.homey.settings.get('location') || {};
+      if (!loc.lat && oldLoc.lat)   loc.lat = String(oldLoc.lat);
+      if (!loc.lng && oldLoc.lng)   loc.lng = String(oldLoc.lng);
+      if (!loc.city && oldLoc.city) loc.city = oldLoc.city;
+      loc.useHomeyLoc = false;
+      this.homey.settings.set('location', loc);
+      this.homey.settings.unset('locationConfig');
+    }
+  }
+
+  _registerTriggers() {
+    // prayer_trigger_all — fires for every prayer, no condition needed.
+    this.homey.flow.getTriggerCard('prayer_trigger_all')
+      .registerRunListener(async () => true);
+
+    // prayer_trigger_specific — state carries { prayerName }, arg must match.
+    this.homey.flow.getTriggerCard('prayer_trigger_specific')
+      .registerRunListener(async (args, state) => args.prayerName === state.prayerName);
+
+    // prayer_trigger_before_after_specific — full match on old arg names.
+    this.homey.flow.getTriggerCard('prayer_trigger_before_after_specific')
+      .registerRunListener(async (args, state) => triggerMatches(args, state));
+  }
+
+  _registerConditions() {
+    const hijri = new HijriCalendar();
+
+    this.homey.flow.getConditionCard('is_ramadan')
+      .registerRunListener(() => hijri.isRamadan());
+
+    this.homey.flow.getConditionCard('is_laylah_al_qadr')
+      .registerRunListener(() => hijri.isLaylahAlQadr());
+  }
+
+  _registerActions() {
+    // athan_action — plays adhan on all enabled speaker groups.
+    this.homey.flow.getActionCard('athan_action')
+      .registerRunListener(async (args) => {
+        const athanType = args.athan_dropdown === 'athan_full' ? 'Full adhan' : 'Short adhan';
+        const groups = (this.homey.settings.get('speakerGroups') || []).filter(g => g.enabled !== false);
+        for (const group of groups) {
+          try { await this.audioRouter.playAdhan(group, athanType, group.volume || 70); }
+          catch (e) { this.logger.error('athan_action', e, { group: group.name }); }
         }
-        catch (err) {
-            sentry.captureException(err);
-            this.log(err);
-        }
-    }
-    getPrayersAdjustments() {
-        return this._prayersController.router.getPrayersAdjustments();
-    }
-    getPrayersSettings() {
-        return this._prayersController.router.getPrayersSettings();
-    }
-    getPrayers() {
-        //console.log(util.inspect(this._prayersController.router.getPrayers(), {showHidden: false, depth: null}))
-        //console.log(this._prayersController.router.getPrayers());
-        return this._prayersController.router.getPrayers();
-    }
-    getPrayersView() {
-        return this._prayersController.router.getPrayersView();
-    }
-    async getPrayersByCalculation(config) {
-        return await this._prayersController.router.getPrayersByCalculation(config);
-    }
-    async loadSettings() {
-        return await this._prayersController.router.loadSettings();
-    }
-    async setPrayersByCalculation(config) {
-        return await this._prayersController.router.setPrayersByCalculation(config);
-    }
-    getPrayersLocationSettings() {
-        return this._prayersController.router.getPrayersLocationSettings();
-    }
-    async searchLocation(locationConfig) {
-        return await this._prayersController.router.searchLocation(locationConfig);
-    }
-    async initalizeConfig() {
-        //fs.copySync(Homey.env.NODE_CONFIG_DIR, Homey.env.CONFIG_FOLDER_PATH, { overwrite: false });
-        try {
-            //  this.homey.settings.unset(ConfigSettingsKeys.LocationConfigKey);
-            //this.homey.settings.unset(ConfigSettingsKeys.PrayersConfigKey);
-            this._homeyConfigurator = prayerlib.ConfigProviderFactory.createConfigProviderFactory(configuration_controller_1.default, this.homey);
-            this._iConfig = await this._homeyConfigurator.getConfig();
-        }
-        catch (err) {
-            // await this._homeyConfigurator.createDefaultConfig()
-            console.log(err);
-        }
-    }
+      });
+  }
 }
-module.exports = PrayersApp;
+
+module.exports = App;

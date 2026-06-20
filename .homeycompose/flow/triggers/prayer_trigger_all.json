@@ -1,0 +1,19 @@
+{
+  "id": "prayer_trigger_all",
+  "title": { "en": "At any prayer time" },
+  "hint": { "en": "Fires at every prayer time (Fajr, Dhuhr, Asr, Maghrib, Isha). Use the Prayer Name and Prayer Time tags in your Then cards." },
+  "tokens": [
+    {
+      "name": "prayerName",
+      "type": "string",
+      "title": { "en": "Prayer Name" },
+      "example": { "en": "Fajr" }
+    },
+    {
+      "name": "prayerTime",
+      "type": "string",
+      "title": { "en": "Prayer Time" },
+      "example": { "en": "05:38" }
+    }
+  ]
+}

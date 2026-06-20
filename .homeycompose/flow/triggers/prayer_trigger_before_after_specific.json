@@ -1,0 +1,62 @@
+{
+  "id": "prayer_trigger_before_after_specific",
+  "title": { "en": "Before or After Prayer" },
+  "titleFormatted": { "en": "[[prayerAfterBefore]] [[prayerName]] by [[prayerDurationTime]] [[prayerDurationType]]" },
+  "hint": { "en": "Fires before or after a prayer time. Use the Prayer Name and Alert Time tags in your Then cards." },
+  "args": [
+    {
+      "name": "prayerAfterBefore",
+      "type": "dropdown",
+      "title": { "en": "Before or after" },
+      "values": [
+        { "id": "Before", "title": { "en": "Before" } },
+        { "id": "After",  "title": { "en": "After"  } }
+      ]
+    },
+    {
+      "name": "prayerName",
+      "type": "dropdown",
+      "title": { "en": "Prayer" },
+      "values": [
+        { "id": "Fajr",    "title": { "en": "Fajr"    } },
+        { "id": "Sunrise", "title": { "en": "Sunrise"  } },
+        { "id": "Dhuhr",   "title": { "en": "Dhuhr"   } },
+        { "id": "Asr",     "title": { "en": "Asr"     } },
+        { "id": "Maghrib", "title": { "en": "Maghrib"  } },
+        { "id": "Isha",    "title": { "en": "Isha"    } }
+      ]
+    },
+    {
+      "name": "prayerDurationTime",
+      "type": "number",
+      "title": { "en": "Number" },
+      "placeholder": { "en": "0" },
+      "min": 0,
+      "max": 1440
+    },
+    {
+      "name": "prayerDurationType",
+      "type": "dropdown",
+      "title": { "en": "Unit" },
+      "values": [
+        { "id": "seconds", "title": { "en": "second(s)" } },
+        { "id": "minutes", "title": { "en": "minute(s)" } },
+        { "id": "hours",   "title": { "en": "hour(s)"   } }
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "prayerName",
+      "type": "string",
+      "title": { "en": "Prayer Name" },
+      "example": { "en": "Fajr" }
+    },
+    {
+      "name": "prayerTimeCalculated",
+      "type": "string",
+      "title": { "en": "Alert Time" },
+      "example": { "en": "05:28" }
+    }
+  ]
+}

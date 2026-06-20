@@ -1,0 +1,35 @@
+{
+  "id": "prayer_trigger_specific",
+  "title": { "en": "Specific Prayer" },
+  "titleFormatted": { "en": "At [[prayerName]]" },
+  "hint": { "en": "Fires at the selected prayer time. Use the Prayer Name and Prayer Time tags in your Then cards." },
+  "args": [
+    {
+      "name": "prayerName",
+      "type": "dropdown",
+      "title": { "en": "Prayer" },
+      "values": [
+        { "id": "Fajr",    "title": { "en": "Fajr"    } },
+        { "id": "Sunrise", "title": { "en": "Sunrise"  } },
+        { "id": "Dhuhr",   "title": { "en": "Dhuhr"   } },
+        { "id": "Asr",     "title": { "en": "Asr"     } },
+        { "id": "Maghrib", "title": { "en": "Maghrib"  } },
+        { "id": "Isha",    "title": { "en": "Isha"    } }
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "prayerName",
+      "type": "string",
+      "title": { "en": "Prayer Name" },
+      "example": { "en": "Fajr" }
+    },
+    {
+      "name": "prayerTime",
+      "type": "string",
+      "title": { "en": "Prayer Time" },
+      "example": { "en": "05:38" }
+    }
+  ]
+}

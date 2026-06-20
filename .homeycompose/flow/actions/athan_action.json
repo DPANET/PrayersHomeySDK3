@@ -1,0 +1,17 @@
+{
+  "id": "athan_action",
+  "title": { "en": "Play Adhan" },
+  "titleFormatted": { "en": "Play [[athan_dropdown]] adhan on all speakers" },
+  "hint": { "en": "Plays the adhan on all enabled speaker groups configured in the app settings." },
+  "args": [
+    {
+      "name": "athan_dropdown",
+      "type": "dropdown",
+      "title": { "en": "Adhan type" },
+      "values": [
+        { "id": "athan_short", "title": { "en": "Short" } },
+        { "id": "athan_full",  "title": { "en": "Full"  } }
+      ]
+    }
+  ]
+}

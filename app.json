@@ -1,109 +1,102 @@
 {
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.prayerssapp",
-  "version": "1.1.18",
-  "compatibility": " >=5.0.0",
+  "version": "2.0.0",
+  "compatibility": ">=12.1.0",
   "sdk": 3,
-  "brandColor": "#2698DD",
+  "platforms": [
+    "local"
+  ],
   "name": {
     "en": "Prayers Alert"
   },
   "description": {
-    "en": "Trigger muslim prayers timing events based on your location"
+    "en": "Islamic audio hub with prayer times and Flow triggers"
   },
-  "category": "tools",
+  "category": [
+    "tools"
+  ],
   "tags": {
     "en": [
       "prayer",
-      "prayers",
-      "muslim",
-      "timing",
-      "time",
-      "islam",
+      "adhan",
       "quran",
-      "alarm"
+      "islamic",
+      "fajr",
+      "isha",
+      "asr",
+      "maghrib",
+      "dhuhr"
     ]
   },
-  "images": {
-    "large": "assets/images/large.jpg",
-    "small": "assets/images/small.jpg"
-  },
-  "homepage": "https://github.com/DPANET/PrayersHomeySDK3",
   "permissions": [
-    "homey:manager:speech-output"
+    "homey:manager:geolocation",
+    "homey:manager:api"
   ],
-  "author": {
-    "email": "dpanet@hotmail.com",
-    "name": "Omar"
+  "images": {
+    "small": "/assets/images/small.jpg",
+    "large": "/assets/images/large.jpg"
   },
-  "bugs": {
-    "url": "https://github.com/DPANET/PrayersHomeySDK3/issues"
+  "brandColor": "#1B6B3A",
+  "author": {
+    "name": "dpanet",
+    "email": "dpanet@gmail.com"
+  },
+  "api": {
+    "previewTimes": {
+      "method": "GET",
+      "path": "/previewTimes"
+    },
+    "searchCity": {
+      "method": "GET",
+      "path": "/searchCity"
+    },
+    "getSpeakers": {
+      "method": "GET",
+      "path": "/speakers"
+    },
+    "getLocation": {
+      "method": "GET",
+      "path": "/location"
+    },
+    "getReciters": {
+      "method": "GET",
+      "path": "/reciters"
+    },
+    "getStatus": {
+      "method": "GET",
+      "path": "/status"
+    },
+    "testAudio": {
+      "method": "POST",
+      "path": "/testAudio"
+    },
+    "diagnosePlayback": {
+      "method": "GET",
+      "path": "/diagnosePlayback"
+    },
+    "reschedule": {
+      "method": "POST",
+      "path": "/reschedule"
+    },
+    "stopAudio": {
+      "method": "POST",
+      "path": "/stopAudio"
+    },
+    "widgetData": {
+      "method": "GET",
+      "path": "/widgetData"
+    }
   },
   "flow": {
     "triggers": [
       {
-        "id": "prayer_trigger_specific",
-        "title": {
-          "en": "Specific Prayer"
-        },
-        "tokens": [
-          {
-            "name": "prayerName",
-            "type": "string",
-            "title": {
-              "en": "Prayer Name"
-            }
-          },
-          {
-            "name": "prayerTime",
-            "type": "string",
-            "title": {
-              "en": "Prayer Time"
-            }
-          }
-        ],
-        "args": [
-          {
-            "type": "dropdown",
-            "name": "prayerName",
-            "values": [
-              {
-                "id": "Fajr",
-                "label": {
-                  "en": "Fajr"
-                }
-              },
-              {
-                "id": "Dhuhr",
-                "label": {
-                  "en": "Dhuhr"
-                }
-              },
-              {
-                "id": "Asr",
-                "label": {
-                  "en": "Asr"
-                }
-              },
-              {
-                "id": "Maghrib",
-                "label": {
-                  "en": "Maghrib"
-                }
-              },
-              {
-                "id": "Isha",
-                "label": {
-                  "en": "Isha"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
         "id": "prayer_trigger_all",
         "title": {
-          "en": "All Prayers"
+          "en": "At any prayer time"
+        },
+        "hint": {
+          "en": "Fires at every prayer time (Fajr, Dhuhr, Asr, Maghrib, Isha). Use the Prayer Name and Prayer Time tags in your Then cards."
         },
         "tokens": [
           {
@@ -111,6 +104,9 @@
             "type": "string",
             "title": {
               "en": "Prayer Name"
+            },
+            "example": {
+              "en": "Fajr"
             }
           },
           {
@@ -118,6 +114,9 @@
             "type": "string",
             "title": {
               "en": "Prayer Time"
+            },
+            "example": {
+              "en": "05:38"
             }
           }
         ]
@@ -127,12 +126,128 @@
         "title": {
           "en": "Before or After Prayer"
         },
+        "titleFormatted": {
+          "en": "[[prayerAfterBefore]] [[prayerName]] by [[prayerDurationTime]] [[prayerDurationType]]"
+        },
+        "hint": {
+          "en": "Fires before or after a prayer time. Use the Prayer Name and Alert Time tags in your Then cards."
+        },
+        "args": [
+          {
+            "name": "prayerAfterBefore",
+            "type": "dropdown",
+            "title": {
+              "en": "Before or after"
+            },
+            "values": [
+              {
+                "id": "Before",
+                "title": {
+                  "en": "Before"
+                }
+              },
+              {
+                "id": "After",
+                "title": {
+                  "en": "After"
+                }
+              }
+            ]
+          },
+          {
+            "name": "prayerName",
+            "type": "dropdown",
+            "title": {
+              "en": "Prayer"
+            },
+            "values": [
+              {
+                "id": "Fajr",
+                "title": {
+                  "en": "Fajr"
+                }
+              },
+              {
+                "id": "Sunrise",
+                "title": {
+                  "en": "Sunrise"
+                }
+              },
+              {
+                "id": "Dhuhr",
+                "title": {
+                  "en": "Dhuhr"
+                }
+              },
+              {
+                "id": "Asr",
+                "title": {
+                  "en": "Asr"
+                }
+              },
+              {
+                "id": "Maghrib",
+                "title": {
+                  "en": "Maghrib"
+                }
+              },
+              {
+                "id": "Isha",
+                "title": {
+                  "en": "Isha"
+                }
+              }
+            ]
+          },
+          {
+            "name": "prayerDurationTime",
+            "type": "number",
+            "title": {
+              "en": "Number"
+            },
+            "placeholder": {
+              "en": "0"
+            },
+            "min": 0,
+            "max": 1440
+          },
+          {
+            "name": "prayerDurationType",
+            "type": "dropdown",
+            "title": {
+              "en": "Unit"
+            },
+            "values": [
+              {
+                "id": "seconds",
+                "title": {
+                  "en": "second(s)"
+                }
+              },
+              {
+                "id": "minutes",
+                "title": {
+                  "en": "minute(s)"
+                }
+              },
+              {
+                "id": "hours",
+                "title": {
+                  "en": "hour(s)"
+                }
+              }
+            ]
+          }
+        ],
         "tokens": [
           {
             "name": "prayerName",
             "type": "string",
             "title": {
               "en": "Prayer Name"
+            },
+            "example": {
+              "en": "Fajr"
             }
           },
           {
@@ -140,115 +255,145 @@
             "type": "string",
             "title": {
               "en": "Alert Time"
+            },
+            "example": {
+              "en": "05:28"
             }
           }
-        ],
+        ]
+      },
+      {
+        "id": "prayer_trigger_specific",
+        "title": {
+          "en": "Specific Prayer"
+        },
+        "titleFormatted": {
+          "en": "At [[prayerName]]"
+        },
+        "hint": {
+          "en": "Fires at the selected prayer time. Use the Prayer Name and Prayer Time tags in your Then cards."
+        },
         "args": [
           {
-            "type": "dropdown",
-            "name": "prayerAfterBefore",
-            "values": [
-              {
-                "id": "Before",
-                "label": {
-                  "en": "Before"
-                }
-              },
-              {
-                "id": "After",
-                "label": {
-                  "en": "After"
-                }
-              }
-            ]
-          },
-          {
-            "type": "dropdown",
             "name": "prayerName",
+            "type": "dropdown",
+            "title": {
+              "en": "Prayer"
+            },
             "values": [
               {
                 "id": "Fajr",
-                "label": {
+                "title": {
                   "en": "Fajr"
                 }
               },
               {
+                "id": "Sunrise",
+                "title": {
+                  "en": "Sunrise"
+                }
+              },
+              {
                 "id": "Dhuhr",
-                "label": {
+                "title": {
                   "en": "Dhuhr"
                 }
               },
               {
                 "id": "Asr",
-                "label": {
+                "title": {
                   "en": "Asr"
                 }
               },
               {
                 "id": "Maghrib",
-                "label": {
+                "title": {
                   "en": "Maghrib"
                 }
               },
               {
                 "id": "Isha",
-                "label": {
+                "title": {
                   "en": "Isha"
                 }
               }
             ]
-          },
+          }
+        ],
+        "tokens": [
           {
-            "type": "number",
-            "name": "prayerDurationTime",
-            "min": 0,
-            "step": 1,
-            "placeholder": {
-              "en": "Set duration in number >=0"
+            "name": "prayerName",
+            "type": "string",
+            "title": {
+              "en": "Prayer Name"
+            },
+            "example": {
+              "en": "Fajr"
             }
           },
           {
-            "type": "dropdown",
-            "name": "prayerDurationType",
-            "values": [
-              {
-                "id": "seconds",
-                "label": {
-                  "en": "second(s)"
-                }
-              },
-              {
-                "id": "minutes",
-                "label": {
-                  "en": "minute(s)"
-                }
-              },
-              {
-                "id": "hours",
-                "label": {
-                  "en": "hour(s)"
-                }
-              }
-            ]
+            "name": "prayerTime",
+            "type": "string",
+            "title": {
+              "en": "Prayer Time"
+            },
+            "example": {
+              "en": "05:38"
+            }
           }
         ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "is_laylah_al_qadr",
+        "title": {
+          "en": "It is Laylah Al-Qadr"
+        },
+        "titleFormatted": {
+          "en": "It !{{is|is not}} Laylah Al-Qadr (Night of Power)"
+        }
+      },
+      {
+        "id": "is_ramadan",
+        "title": {
+          "en": "It is Ramadan"
+        },
+        "titleFormatted": {
+          "en": "It !{{is|is not}} Ramadan"
+        }
       }
     ],
     "actions": [
       {
         "id": "athan_action",
         "title": {
-          "en": "Play Athan"
+          "en": "Play Adhan"
+        },
+        "titleFormatted": {
+          "en": "Play [[athan_dropdown]] adhan on all speakers"
+        },
+        "hint": {
+          "en": "Plays the adhan on all enabled speaker groups configured in the app settings."
         },
         "args": [
           {
-            "type": "dropdown",
             "name": "athan_dropdown",
+            "type": "dropdown",
+            "title": {
+              "en": "Adhan type"
+            },
             "values": [
               {
                 "id": "athan_short",
-                "label": {
+                "title": {
                   "en": "Short"
+                }
+              },
+              {
+                "id": "athan_full",
+                "title": {
+                  "en": "Full"
                 }
               }
             ]
@@ -256,52 +401,5 @@
         ]
       }
     ]
-  },
-  "api": {
-    "getPrayersAdjustments": {
-      "method": "get",
-      "path": "/PrayerManager/PrayersAdjustments",
-      "public": true
-    },
-    "getPrayersSettings": {
-      "method": "get",
-      "path": "/PrayerManager/PrayersSettings",
-      "public": true
-    },
-    "getPrayers": {
-      "method": "get",
-      "path": "/PrayerManager/Prayers",
-      "public": true
-    },
-    "getPrayersView": {
-      "method": "get",
-      "path": "/PrayerManager/PrayersView",
-      "public": true
-    },
-    "getPrayersByCalculation": {
-      "method": "get",
-      "path": "/PrayerManager/PrayersByCalculation",
-      "public": true
-    },
-    "loadSettings": {
-      "method": "get",
-      "path": "/PrayerManager/LoadSettings",
-      "public": true
-    },
-    "setPrayersByCalculation": {
-      "method": "post",
-      "path": "/PrayerManager/PrayersByCalculation",
-      "public": true
-    },
-    "getPrayersLocationSettings": {
-      "method": "get",
-      "path": "/PrayerManager/PrayersLocationSettings",
-      "public": true
-    },
-    "searchLocation": {
-      "method": "get",
-      "path": "/PrayerManager/SearchLocation",
-      "public": true
-    }
   }
 }
