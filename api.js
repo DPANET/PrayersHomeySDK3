@@ -138,7 +138,7 @@ module.exports = {
     const devices = await homey.app.homeyApi.devices.getDevices();
     return Object.values(devices)
       .filter(d => d.capabilities?.some(c => ['volume_set', 'speaker_playing', 'speaker_next'].includes(c)))
-      .map(d => ({ id: d.id, name: d.name, zone: d.zoneName || d.zone }));
+      .map(d => ({ id: d.id, name: d.name, zone: d.zone?.name || d.zone || '' }));
   },
 
   // GET /location
