@@ -398,7 +398,7 @@
         <button class="tab-btn" data-tab="location">Location</button>
         <button class="tab-btn" data-tab="calculation">Calculation</button>
         <button class="tab-btn" data-tab="zones">Speaker groups</button>
-        <button class="tab-btn" data-tab="prayer-audio">Per-prayer</button>
+        <button class="tab-btn" data-tab="prayer-audio">Quiet Prayers</button>
         <button class="tab-btn" data-tab="advanced">Advanced</button>
       </div>
     </div>
@@ -659,15 +659,9 @@
   <!-- ========== TAB: PER-PRAYER AUDIO ========== -->
   <div class="tab-panel" id="tab-prayer-audio">
     <div class="card">
-      <h2>Per-prayer audio</h2>
-      <p class="hint">Override volume, adhan type, or Quran reciter for individual prayers. <strong>Adhan type</strong> applies to groups set to Full/Short adhan. <strong>Reciter override</strong> applies to groups set to Quran recitation. <strong>Silent</strong> suppresses all audio for that prayer while still firing Flow triggers.</p>
+      <h2>Quiet Prayers</h2>
+      <p class="hint">Lower the volume for specific prayers — handy for early Fajr or late Isha. When <strong>Quiet</strong> is on, that prayer plays at the reduced volume you set instead of the speaker group's normal volume.</p>
       <div id="prayer-audio-list"></div>
-      <div style="margin-top:14px">
-        <div class="field">
-          <label>Global reciter</label>
-          <select id="global-reciter"></select>
-        </div>
-      </div>
       <button class="btn btn-primary btn-full" id="btn-save-prayer-audio">Save</button>
       <div id="prayer-audio-status" class="info-bar" style="margin-top:10px"></div>
     </div>
@@ -725,6 +719,14 @@
       <div class="field">
         <label>Delay after Asr (minutes)</label>
         <input type="number" id="adv-eveningDelay" min="0" max="120" placeholder="0" />
+      </div>
+    </div>
+    <div class="card">
+      <h2>Quran recitation</h2>
+      <div class="field">
+        <label>Default reciter</label>
+        <select id="global-reciter"></select>
+        <p class="hint" style="margin-top:6px">Applied to all Quran speaker groups.</p>
       </div>
     </div>
     <div class="card">
@@ -1252,57 +1254,49 @@ function renderPrayerAudio() {
   const container = document.getElementById('prayer-audio-list');
   container.innerHTML = '';
   PRAYERS.forEach(p => {
-    const cfg = _prayerAudio[p] || {};
+    const cfg   = _prayerAudio[p] || {};
+    const quiet = !!cfg.quiet;
+    const vol   = cfg.volume ?? 25;
     const div = document.createElement('div');
     div.className = 'prayer-section-item';
     div.innerHTML = `
-      <strong>${p}</strong>
-      <div class="field-row" style="margin-top:10px">
-        <div class="field">
-          <label>Adhan type</label>
-          <select data-prayer="${p}" data-field="adhanType">
-            <option value="Full adhan"         ${cfg.adhanType==='Full adhan'?'selected':''}>Full adhan</option>
-            <option value="Short adhan"        ${cfg.adhanType==='Short adhan'?'selected':''}>Short adhan</option>
-            <option value="Silent (Flow only)" ${cfg.adhanType==='Silent (Flow only)'?'selected':''}>Silent (Flow only)</option>
-          </select>
-        </div>
-        <div class="field" style="max-width:100px">
-          <label>Volume %</label>
-          <input type="number" min="0" max="100" value="${cfg.volume??70}" data-prayer="${p}" data-field="volume" />
-        </div>
-        <div class="field">
-          <label>Reciter override</label>
-          <select data-prayer="${p}" data-field="reciter">
-            <option value="">— global —</option>
-            ${window._reciterOptions||''}
-          </select>
-        </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <strong style="flex:1">${p}</strong>
+        <span style="font-size:13px;color:var(--text2)">Quiet</span>
+        <label class="toggle" style="flex-shrink:0">
+          <input type="checkbox" ${quiet?'checked':''} data-prayer="${p}" data-field="quiet" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div data-vol-wrap="${p}" style="${quiet?'':'display:none'};display:${quiet?'flex':'none'};align-items:center;gap:10px;margin-top:10px">
+        <span style="font-size:13px;color:var(--text2)">Reduced volume %</span>
+        <input type="number" min="0" max="100" value="${vol}" data-prayer="${p}" data-field="volume" style="width:80px" />
       </div>`;
     container.appendChild(div);
   });
-  container.querySelectorAll('input,select').forEach(el => {
+  container.querySelectorAll('input').forEach(el => {
     el.addEventListener('change', e => {
       const prayer = e.target.dataset.prayer;
       const field  = e.target.dataset.field;
       if (!prayer || !field) return;
       _prayerAudio[prayer] = _prayerAudio[prayer] || {};
-      _prayerAudio[prayer][field] = field==='volume' ? parseInt(e.target.value)||70 : e.target.value;
+      if (field === 'quiet') {
+        const on = e.target.checked;
+        _prayerAudio[prayer].quiet = on;
+        if (on) { if (_prayerAudio[prayer].volume == null) _prayerAudio[prayer].volume = 25; }
+        else    { _prayerAudio[prayer].volume = null; }
+        const wrap = container.querySelector(`[data-vol-wrap="${prayer}"]`);
+        if (wrap) wrap.style.display = on ? 'flex' : 'none';
+      } else if (field === 'volume') {
+        _prayerAudio[prayer].volume = Math.min(100, Math.max(0, parseInt(e.target.value)||0));
+      }
     });
-    if (el.tagName==='SELECT' && el.dataset.field==='reciter') {
-      const saved = (_prayerAudio[el.dataset.prayer]||{}).reciter;
-      if (saved) el.value = saved;
-    }
   });
 }
 document.getElementById('btn-save-prayer-audio').addEventListener('click', () => {
-  Homey.set('prayerAudio', _prayerAudio, () => {});
-  // Merge globalReciter into existing audioConfig to avoid overwriting nightMode settings
-  Homey.get('audioConfig', (err, existing) => {
-    const merged = Object.assign({}, existing || {}, { globalReciter: val('global-reciter') });
-    Homey.set('audioConfig', merged, err2 => {
-      if (err2) return showStatus('prayer-audio-status', 'Error: ' + err2.message, 'error');
-      showStatus('prayer-audio-status', 'Saved!', 'success');
-    });
+  Homey.set('prayerAudio', _prayerAudio, err => {
+    if (err) return showStatus('prayer-audio-status', 'Error: ' + err.message, 'error');
+    showStatus('prayer-audio-status', 'Saved!', 'success');
   });
 });
 
@@ -1385,7 +1379,6 @@ function onHomeyReady(Homey) {
     _prayerAudio = pa || {};
     Homey.api('GET', '/reciters', null, (err2, reciters) => {
       const opts = (reciters||[]).map(r=>`<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
-      window._reciterOptions = opts;
       const sel = document.getElementById('global-reciter');
       if (sel) { sel.innerHTML = opts; if (_pendingGlobalReciter) sel.value = _pendingGlobalReciter; }
       renderPrayerAudio();
