@@ -1,14 +1,35 @@
 {
   "id": "com.prayerssapp",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "compatibility": ">=12.1.0",
   "sdk": 3,
-  "platforms": ["local"],
-  "name": { "en": "Prayers Alert" },
-  "description": { "en": "Prayer times, adhan audio, Quran recitation, Hijri calendar and Flow automation for Muslim households" },
-  "category": ["tools"],
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Prayers Alert"
+  },
+  "description": {
+    "en": "Prayer times, adhan audio, Quran recitation, Hijri calendar and Flow automation for Muslim households"
+  },
+  "category": [
+    "tools"
+  ],
   "tags": {
-    "en": ["prayer", "adhan", "quran", "islamic", "fajr", "isha", "asr", "maghrib", "dhuhr", "hijri", "ramadan", "eid"]
+    "en": [
+      "prayer",
+      "adhan",
+      "quran",
+      "islamic",
+      "fajr",
+      "isha",
+      "asr",
+      "maghrib",
+      "dhuhr",
+      "hijri",
+      "ramadan",
+      "eid"
+    ]
   },
   "permissions": [
     "homey:manager:geolocation"
@@ -18,13 +39,34 @@
     "large": "/assets/images/large.jpg"
   },
   "brandColor": "#1B6B3A",
-  "author": { "name": "dpanet", "email": "dpanet@gmail.com" },
+  "author": {
+    "name": "dpanet",
+    "email": "dpanet@gmail.com"
+  },
   "api": {
-    "previewTimes":    { "method": "GET",  "path": "/previewTimes"    },
-    "searchCity":      { "method": "GET",  "path": "/searchCity"      },
-    "getLocation":     { "method": "GET",  "path": "/location"        },
-    "getStatus":       { "method": "GET",  "path": "/status"          },
-    "reschedule":      { "method": "POST", "path": "/reschedule"      },
-    "widgetData":      { "method": "GET",  "path": "/widgetData"      }
+    "previewTimes": {
+      "method": "GET",
+      "path": "/previewTimes"
+    },
+    "searchCity": {
+      "method": "GET",
+      "path": "/searchCity"
+    },
+    "getLocation": {
+      "method": "GET",
+      "path": "/location"
+    },
+    "getStatus": {
+      "method": "GET",
+      "path": "/status"
+    },
+    "reschedule": {
+      "method": "POST",
+      "path": "/reschedule"
+    },
+    "widgetData": {
+      "method": "GET",
+      "path": "/widgetData"
+    }
   }
 }

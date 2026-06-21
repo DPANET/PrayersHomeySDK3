@@ -4,6 +4,11 @@ All notable changes to Prayers Alert are documented here.
 
 ---
 
+## [2.2.1] — 2026-06-21
+
+### Added
+- `README.txt` for Homey App Store listing
+
 ## [2.2.0] — 2026-06-21
 
 ### Added
