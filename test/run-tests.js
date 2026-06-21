@@ -15,12 +15,20 @@ const LIB  = path.join(__dirname, '..', 'lib');
 const ROOT = path.join(__dirname, '..');
 
 const adhan           = require('adhan-extended');
+// In this repo `require('homey')` resolves to the homey-cli (package main is
+// bin/homey.js), which runs a yargs parser and exits 1 on load. The real SDK
+// (Homey.App / Homey.env) is injected by the Homey runtime on-device. For the
+// onInit replay in section 12, pre-seed the require cache with a stub so that
+// app.js's `require('homey')` returns it instead of executing the CLI.
+const _homeyPath = require.resolve('homey');
+require.cache[_homeyPath] = { id: _homeyPath, filename: _homeyPath, loaded: true, exports: { App: class {}, env: {} } };
 const PrayerScheduler = require(path.join(LIB, 'PrayerScheduler'));
 const HijriScheduler  = require(path.join(LIB, 'HijriScheduler'));
 const AudioRouter     = require(path.join(LIB, 'AudioRouter'));
 const HijriCalendar   = require(path.join(LIB, 'HijriCalendar'));
 const triggerMatches  = require(path.join(LIB, 'triggerMatch'));
 const apiHandlers     = require(path.join(ROOT, 'api'));
+const App             = require(path.join(ROOT, 'app'));
 const { createMockHomey, withFrozenNow, MockDevice } = require('./mockHomey');
 
 // ── assert framework ──────────────────────────────────────────────────────────
@@ -299,6 +307,40 @@ section('4. Edge cases — end of month, midnight boundary, freshness, early-fir
     check('4q. speakerGroups change does NOT schedule rebuild', env.scheduler._debounce === null);
     env.scheduler._onSettingChanged('location');
     check('4r. location change DOES schedule rebuild', env.scheduler._debounce !== null);
+  });
+
+  // Boot-cooldown catch-up: a legit change suppressed in the 90s window is still
+  // applied by a one-shot catch-up reconcile (the additive heartbeat can't fix coords).
+  await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
+    const env = makeEnv({ settings: {} });
+    await env.scheduler.init();
+    check('4s. boot catch-up timer armed after init', !!env.scheduler._bootCatchup);
+
+    // A real location change lands inside the cooldown → suppressed, not debounced…
+    env.scheduler._onSettingChanged('location');
+    check('4t. event inside cooldown is suppressed (no debounce armed)', env.scheduler._debounce === null);
+    check('4u. …but recorded for catch-up', env.scheduler._suppressedDuringBoot === true);
+
+    // Spy on destructive runs, then fire the catch-up timer at the end of the window.
+    let destructiveRuns = 0;
+    const origRun = env.scheduler._run.bind(env.scheduler);
+    env.scheduler._run = (d) => { if (d) destructiveRuns++; return origRun(d); };
+    clock.now += 90 * 1000;
+    await env.t.timers.fireById(env.scheduler._bootCatchup);
+    check('4v. catch-up runs one destructive reschedule for the suppressed change', destructiveRuns === 1);
+    check('4w. suppressed flag cleared after catch-up', env.scheduler._suppressedDuringBoot === false);
+  });
+
+  // Quiet boot (no suppressed change) → catch-up is a no-op (no needless rebuild).
+  await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
+    const env = makeEnv({ settings: {} });
+    await env.scheduler.init();
+    let destructiveRuns = 0;
+    const origRun = env.scheduler._run.bind(env.scheduler);
+    env.scheduler._run = (d) => { if (d) destructiveRuns++; return origRun(d); };
+    clock.now += 90 * 1000;
+    await env.t.timers.fireById(env.scheduler._bootCatchup);
+    check('4x. quiet boot → catch-up does not rebuild', destructiveRuns === 0);
   });
 }
 
@@ -654,6 +696,21 @@ section('10. HijriScheduler — flow-usage gating + correct trigger state keys')
     check('10d. occasion wired → only occasion timers (no day/specific/month leak)',
       cKeys.length > 0 && cKeys.every(k => k.startsWith('occ_')));
   });
+
+  // Finding 2 fix: a single-day occasion fires "starts" and "ends" a full day
+  // apart (was: same instant at 00:01 on the anchor day).
+  const eid = new HijriCalendar({}).nextOccurrence(12, 10);   // Eid al-Adha (single day)
+  await withFrozenNow(eid.getTime() - 3 * 86400000, async () => {
+    const d = makeHijri({ hijriConfig: {} }, { islamic_occasion_event: [{ occasion: 'eid_al_adha', event: 'ends' }] });
+    await d.hijri.init();
+    const entries = [...d.hijri._timers.entries()];
+    const starts = entries.find(([k]) => k.startsWith('occ_starts@eid_al_adha'));
+    const ends   = entries.find(([k]) => k.startsWith('occ_ends@eid_al_adha'));
+    check('10e. single-day occasion arms both starts and ends', !!starts && !!ends);
+    check('10f. starts and ends are a full day apart (not the same instant)',
+      !!starts && !!ends && (ends[1].fireAt - starts[1].fireAt) > 12 * 3600000,
+      starts && ends ? `delta=${Math.round((ends[1].fireAt - starts[1].fireAt) / 3600000)}h` : 'missing timer');
+  });
 }
 
 // ============================================================================
@@ -671,6 +728,90 @@ section('11. API — searchCity guard + widgetData shape');
       Array.isArray(w.prayers) && w.prayers.length === 6 &&
       w.prayers.every(p => /^\d{2}:\d{2}$/.test(p.time) && 'passed' in p && 'isNext' in p));
     check('11c. widgetData includes hijriDate info', w.hijriDate && 'day' in w.hijriDate);
+  });
+}
+
+// ============================================================================
+section('12. onInit integration — full boot sequence wires & fires end-to-end');
+// ============================================================================
+{
+  // Replays the REAL app.js onInit against the mock so the whole sequence is
+  // covered: migrate → instantiate → register run-listeners → scheduler.init →
+  // hijri.init → googleMapsKey. Then a prayer time arrives and a flow fires.
+  function bootApp(homey) {
+    const app = Object.create(App.prototype);
+    app.homey = homey;
+    app.log   = (...a) => homey._test.logs.push(a.join(' '));
+    app.error = (...a) => homey._test.errors.push(a.join(' '));
+    app.manifest = { id: 'com.prayerssapp', version: '2.2.1' };
+    homey.app = app;
+    return app;
+  }
+
+  await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
+    const homey = createMockHomey({
+      settings: {
+        prayerConfig:   { calculationMethod: 'Egyptian', madhab: 'Hanafi' }, // v1 keys
+        locationConfig: { lat: 21.4225, lng: 39.8262, city: 'Makkah' },      // v1 keys
+        audioPrefs:     { fullUrl: 'https://t.com/full.mp3', volumes: { Dhuhr: 0.6 } },
+      },
+      geo: { lat: 21.4225, lng: 39.8262 },
+    });
+    const app = bootApp(homey);
+    homey.flow.getTriggerCard('prayer_trigger_before_after_specific')
+      .setArgumentValues([{ prayerAfterBefore: 'After', prayerName: 'Dhuhr', prayerDurationTime: 5, prayerDurationType: 'minutes' }]);
+
+    await app.onInit();   // ── the real boot sequence ──
+
+    const s = app.scheduler, TC = homey._test.triggerCards, SC = homey._test.simpleCards;
+
+    // Migration ran before scheduling, using the migrated values.
+    const calc = homey.settings.get('calculation');
+    check('12a. v1 settings migrated before first schedule (Egyptian/Hanafi, Makkah)',
+      calc.method === 'Egyptian' && calc.madhab === 'Hanafi' &&
+      homey.settings.get('location').city === 'Makkah' &&
+      homey.settings.get('prayerConfig') === undefined);
+
+    // Prayer events initialized.
+    check('12b. 18 audio + 3 before/after timers armed at boot',
+      s.lastRun.audio.length === 18 && s.lastRun.flows.length === 3);
+    check('12c. heartbeat + boot catch-up armed', !!s._heartbeat && !!s._bootCatchup);
+
+    // Events wired: all trigger + condition run-listeners registered.
+    check('12d. all 9 trigger cards + 2 condition cards have run-listeners',
+      ['prayer_trigger_all','prayer_trigger_specific','prayer_trigger_before_after_specific',
+       'hijri_month_event','hijri_day_of_month','hijri_specific_date','hijri_date_offset',
+       'islamic_occasion_event','islamic_occasion_offset'].every(id => !!TC[id]._runListener) &&
+      !!SC['is_islamic_occasion']._runListener && !!SC['prayer_name_is']._runListener);
+
+    check('12e. HijriScheduler initialized (heartbeat armed)', !!app.hijriScheduler._heartbeat);
+    check('12f. boot is stable — googleMapsKey did not suppress a reschedule', s._suppressedDuringBoot === false);
+
+    // After init: a prayer time arrives → prayer_trigger_all + _specific fire correctly.
+    const dhuhr = s.lastRun.audio.find(a => a.prayer === 'Dhuhr' && a.dayEpoch === s._dayEpoch(0));
+    clock.now = dhuhr.fireAt;
+    await homey._test.timers.fireById(dhuhr.id);
+    const callAll = TC['prayer_trigger_all'].triggerCalls.find(c => c.tokens.prayerName === 'Dhuhr');
+    check('12g. prayer_trigger_all fired with audio token + state.prayerName',
+      !!callAll && callAll.tokens.adhan_full === 'https://t.com/full.mp3' && callAll.state.prayerName === 'Dhuhr');
+    check('12h. prayer_trigger_specific fired with state{prayerName}',
+      TC['prayer_trigger_specific'].triggerCalls.some(c => c.state.prayerName === 'Dhuhr'));
+
+    // The flow WOULD actually run: evaluate run-listeners the way Homey does.
+    check('12i. Dhuhr flow runs, Asr flow does not (run-listener filtering)',
+      (await TC['prayer_trigger_specific']._runListener({ prayerName: 'Dhuhr' }, { prayerName: 'Dhuhr' })) === true &&
+      (await TC['prayer_trigger_specific']._runListener({ prayerName: 'Asr' },  { prayerName: 'Dhuhr' })) === false);
+    check('12j. prayer_name_is condition branches on carried state',
+      SC['prayer_name_is']._runListener({ prayerName: 'Dhuhr' }, callAll.state) === true);
+
+    // Before/After offset flow fires with legacy tokens.
+    const baOcc = s.lastRun.flows.find(f => f.prayer === 'Dhuhr' && f.dayEpoch === s._dayEpoch(0));
+    clock.now = baOcc.fireAt;
+    await homey._test.timers.fireById(baOcc.id);
+    const baCall = TC['prayer_trigger_before_after_specific'].triggerCalls[0];
+    check('12k. before/after offset flow fires at Dhuhr+5min with legacy tokens',
+      !!baCall && baCall.tokens.prayerName === 'Dhuhr' &&
+      Math.abs(baOcc.fireAt - (dhuhr.fireAt + 5 * 60000)) < 1000);
   });
 }
 
