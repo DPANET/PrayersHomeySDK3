@@ -19,5 +19,8 @@
   },
   "2.2.7": {
     "en": "update settings and widget support"
+  },
+  "2.3.0": {
+    "en": "Fixed init problems "
   }
 }
