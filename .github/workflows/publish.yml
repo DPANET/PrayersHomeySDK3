@@ -19,27 +19,32 @@ on:
         type: string
         required: true
 
-# Needed so the version step can commit the bump, push, and create a release.
-permissions:
-  contents: write
-
 jobs:
-  publish:
-    name: Validate, version & publish
+  # Run our unit tests on the host runner. Kept separate from publish so the
+  # host node_modules (glibc) never leak into the Athom Docker actions (musl) —
+  # e.g. the `sharp` native module would otherwise fail to load in-container.
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
 
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Run tests
-        run: npm test
+  publish:
+    name: Validate, version & publish
+    needs: test
+    runs-on: ubuntu-latest
+    # Needed so the version step can commit the bump, push, and create a release.
+    permissions:
+      contents: write
+    steps:
+      # Clean checkout only — the Athom actions install dependencies inside their
+      # own container, so we must NOT run `npm install` here.
+      - uses: actions/checkout@v4
 
       - name: Validate app (publish level)
         uses: athombv/github-action-homey-app-validate@master
