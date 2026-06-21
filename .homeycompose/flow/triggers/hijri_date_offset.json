@@ -1,0 +1,66 @@
+{
+  "id": "hijri_date_offset",
+  "title": { "en": "Before or after Hijri date" },
+  "titleFormatted": { "en": "[[when]] [[type]] [[beforeAfter]] [[day]] [[month]] Hijri" },
+  "hint": { "en": "Fires N days or weeks before or after a specific Hijri date. Use this for preparation reminders." },
+  "args": [
+    {
+      "name": "beforeAfter",
+      "type": "dropdown",
+      "title": { "en": "Before or after" },
+      "values": [
+        { "id": "Before", "title": { "en": "Before" } },
+        { "id": "After",  "title": { "en": "After" } }
+      ]
+    },
+    {
+      "name": "when",
+      "type": "number",
+      "title": { "en": "Number" },
+      "placeholder": { "en": "3" },
+      "min": 1,
+      "max": 30
+    },
+    {
+      "name": "type",
+      "type": "dropdown",
+      "title": { "en": "Unit" },
+      "values": [
+        { "id": "days",  "title": { "en": "day(s)" } },
+        { "id": "weeks", "title": { "en": "week(s)" } }
+      ]
+    },
+    {
+      "name": "day",
+      "type": "number",
+      "title": { "en": "Day" },
+      "placeholder": { "en": "10" },
+      "min": 1,
+      "max": 30
+    },
+    {
+      "name": "month",
+      "type": "dropdown",
+      "title": { "en": "Month" },
+      "values": [
+        { "id": "1",  "title": { "en": "Muharram" } },
+        { "id": "2",  "title": { "en": "Safar" } },
+        { "id": "3",  "title": { "en": "Rabi Al-Awwal" } },
+        { "id": "4",  "title": { "en": "Rabi Al-Thani" } },
+        { "id": "5",  "title": { "en": "Jumada Al-Awwal" } },
+        { "id": "6",  "title": { "en": "Jumada Al-Thani" } },
+        { "id": "7",  "title": { "en": "Rajab" } },
+        { "id": "8",  "title": { "en": "Sha'ban" } },
+        { "id": "9",  "title": { "en": "Ramadan" } },
+        { "id": "10", "title": { "en": "Shawwal" } },
+        { "id": "11", "title": { "en": "Dhul Qa'dah" } },
+        { "id": "12", "title": { "en": "Dhul Hijjah" } }
+      ]
+    }
+  ],
+  "tokens": [
+    { "name": "hijriDate",     "type": "string", "title": { "en": "Hijri date" }, "example": { "en": "10 Dhul Hijjah 1447" } },
+    { "name": "gregorianDate", "type": "string", "title": { "en": "Gregorian date" }, "example": { "en": "2025-06-06" } },
+    { "name": "anchorName",    "type": "string", "title": { "en": "Anchor date" }, "example": { "en": "10 Dhul Hijjah" } }
+  ]
+}

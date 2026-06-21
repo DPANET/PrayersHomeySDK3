@@ -1,8 +1,5 @@
-﻿{
-  "id": "prayer_times",
-  "name": {
-    "en": "Prayer Times"
-  },
+{
+  "name": { "en": "Prayer Times" },
   "width": 2,
-  "height": 1
+  "height": 2
 }

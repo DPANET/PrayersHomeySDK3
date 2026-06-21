@@ -1,0 +1,51 @@
+{
+  "id": "islamic_occasion_offset",
+  "title": { "en": "Before or after Islamic occasion" },
+  "titleFormatted": { "en": "[[when]] [[type]] [[beforeAfter]] [[occasion]]" },
+  "hint": { "en": "Fires N days or weeks before or after an Islamic occasion. Use this for preparation reminders like 'grocery shopping 3 days before Eid'." },
+  "args": [
+    {
+      "name": "beforeAfter",
+      "type": "dropdown",
+      "title": { "en": "Before or after" },
+      "values": [
+        { "id": "Before", "title": { "en": "Before" } },
+        { "id": "After",  "title": { "en": "After" } }
+      ]
+    },
+    {
+      "name": "when",
+      "type": "number",
+      "title": { "en": "Number" },
+      "placeholder": { "en": "3" },
+      "min": 1,
+      "max": 30
+    },
+    {
+      "name": "type",
+      "type": "dropdown",
+      "title": { "en": "Unit" },
+      "values": [
+        { "id": "days",  "title": { "en": "day(s)" } },
+        { "id": "weeks", "title": { "en": "week(s)" } }
+      ]
+    },
+    {
+      "name": "occasion",
+      "type": "dropdown",
+      "title": { "en": "Occasion" },
+      "values": [
+        { "id": "eid_al_fitr", "title": { "en": "Eid Al-Fitr" } },
+        { "id": "eid_al_adha", "title": { "en": "Eid Al-Adha" } },
+        { "id": "arafah",      "title": { "en": "Day of Arafah" } },
+        { "id": "ashura",      "title": { "en": "Ashura" } },
+        { "id": "mawlid",      "title": { "en": "Mawlid Al-Nabi" } }
+      ]
+    }
+  ],
+  "tokens": [
+    { "name": "occasionName",  "type": "string", "title": { "en": "Occasion name" }, "example": { "en": "Eid Al-Fitr" } },
+    { "name": "hijriDate",     "type": "string", "title": { "en": "Hijri date" }, "example": { "en": "1 Shawwal 1447" } },
+    { "name": "gregorianDate", "type": "string", "title": { "en": "Gregorian date" }, "example": { "en": "2025-03-30" } }
+  ]
+}

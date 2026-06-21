@@ -1,0 +1,8 @@
+{
+  "id": "hijri_new_year",
+  "title": { "en": "New Hijri year starts" },
+  "hint": { "en": "Fires once a year on 1 Muharram." },
+  "tokens": [
+    { "name": "hijriYear", "type": "number", "title": { "en": "Hijri year" }, "example": { "en": "1447" } }
+  ]
+}

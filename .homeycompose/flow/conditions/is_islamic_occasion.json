@@ -1,0 +1,23 @@
+{
+  "id": "is_islamic_occasion",
+  "title": { "en": "Islamic occasion is" },
+  "titleFormatted": { "en": "It !{{is|is not}} [[occasion]]" },
+  "hint": { "en": "Check if today falls on a named Islamic occasion. Use 'is not' to skip flows during a specific occasion." },
+  "args": [
+    {
+      "name": "occasion",
+      "type": "dropdown",
+      "title": { "en": "Occasion" },
+      "values": [
+        { "id": "ramadan",        "title": { "en": "Ramadan" } },
+        { "id": "last_10_nights", "title": { "en": "Last 10 nights of Ramadan" } },
+        { "id": "laylah_al_qadr","title": { "en": "Laylah Al-Qadr (Night of Power)" } },
+        { "id": "eid_al_fitr",   "title": { "en": "Eid Al-Fitr" } },
+        { "id": "eid_al_adha",   "title": { "en": "Eid Al-Adha" } },
+        { "id": "arafah",        "title": { "en": "Day of Arafah" } },
+        { "id": "ashura",        "title": { "en": "Ashura" } },
+        { "id": "mawlid",        "title": { "en": "Mawlid Al-Nabi" } }
+      ]
+    }
+  ]
+}

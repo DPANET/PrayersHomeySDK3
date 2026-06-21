@@ -1,0 +1,42 @@
+{
+  "id": "hijri_month_event",
+  "title": { "en": "Hijri month event" },
+  "titleFormatted": { "en": "Hijri month [[month]] [[event]]" },
+  "hint": { "en": "Fires when a Hijri month starts or ends. Choose 'Any month' to fire every month." },
+  "args": [
+    {
+      "name": "month",
+      "type": "dropdown",
+      "title": { "en": "Month" },
+      "values": [
+        { "id": "any",  "title": { "en": "Any month" } },
+        { "id": "1",   "title": { "en": "Muharram" } },
+        { "id": "2",   "title": { "en": "Safar" } },
+        { "id": "3",   "title": { "en": "Rabi Al-Awwal" } },
+        { "id": "4",   "title": { "en": "Rabi Al-Thani" } },
+        { "id": "5",   "title": { "en": "Jumada Al-Awwal" } },
+        { "id": "6",   "title": { "en": "Jumada Al-Thani" } },
+        { "id": "7",   "title": { "en": "Rajab" } },
+        { "id": "8",   "title": { "en": "Sha'ban" } },
+        { "id": "9",   "title": { "en": "Ramadan" } },
+        { "id": "10",  "title": { "en": "Shawwal" } },
+        { "id": "11",  "title": { "en": "Dhul Qa'dah" } },
+        { "id": "12",  "title": { "en": "Dhul Hijjah" } }
+      ]
+    },
+    {
+      "name": "event",
+      "type": "dropdown",
+      "title": { "en": "Event" },
+      "values": [
+        { "id": "starts", "title": { "en": "starts" } },
+        { "id": "ends",   "title": { "en": "ends" } }
+      ]
+    }
+  ],
+  "tokens": [
+    { "name": "hijriMonthName", "type": "string", "title": { "en": "Month name" }, "example": { "en": "Ramadan" } },
+    { "name": "hijriMonth",     "type": "number", "title": { "en": "Month number" }, "example": { "en": "9" } },
+    { "name": "hijriYear",      "type": "number", "title": { "en": "Hijri year" }, "example": { "en": "1447" } }
+  ]
+}

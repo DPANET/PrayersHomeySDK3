@@ -607,6 +607,20 @@
       </div>
       <h2 style="margin-top:20px">Hijri calendar</h2>
       <p class="hint">Different Islamic authorities may differ by 1 day at month boundaries. Pick the one your local mosque follows, then use the offset to fine-tune.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px" id="hijri-date-cards">
+        <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px">
+          <p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 4px 0">Today</p>
+          <p id="hijri-base-date" style="font-size:18px;font-weight:500;color:var(--color-text-primary);margin:0;line-height:1.2">—</p>
+          <p id="hijri-base-year" style="font-size:13px;color:var(--color-text-secondary);margin:4px 0 0 0"></p>
+        </div>
+        <div id="hijri-offset-card" style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;border:0.5px solid var(--color-border-tertiary)">
+          <p id="hijri-offset-label" style="font-size:12px;color:var(--color-text-secondary);margin:0 0 4px 0">With offset (0)</p>
+          <p id="hijri-offset-date" style="font-size:18px;font-weight:500;color:var(--color-text-primary);margin:0;line-height:1.2">—</p>
+          <p id="hijri-offset-year" style="font-size:13px;color:var(--color-text-secondary);margin:4px 0 0 0"></p>
+        </div>
+      </div>
+
       <div class="field">
         <label>Authority / method</label>
         <select id="hijri-method">
@@ -738,6 +752,15 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <div class="toggle-row" style="margin-top:12px">
+        <span>Exclude Sunrise from flow triggers
+          <span class="hint" style="display:block;font-size:12px;color:var(--color-text-muted,#888)">When enabled, Sunrise will not fire any Flow trigger events.</span>
+        </span>
+        <label class="toggle">
+          <input type="checkbox" id="adv-excludeSunrise" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
     <button class="btn btn-primary btn-full" id="btn-save-advanced">Save advanced settings</button>
     <div id="advanced-status" class="info-bar" style="margin-top:10px"></div>
@@ -821,9 +844,48 @@ function loadPrayerTimes() {
     if (err || !status) return;
     const info = status.hijriInfo;
     if (!info) return;
-    const months = ['','Muharram','Safar','Rabi I','Rabi II','Jumada I','Jumada II',
+    const MONTHS = ['','Muharram','Safar','Rabi I','Rabi II','Jumada I','Jumada II',
                     'Rajab',"Sha'ban",'Ramadan','Shawwal',"Dhul Qa'dah",'Dhul Hijjah'];
-    let txt = `Hijri: ${info.day} ${months[info.month] || info.month} ${info.year}`;
+    const DAYS_IN_MONTH = [0,30,29,30,29,30,29,30,29,30,29,30,29];
+
+    // info already has the offset applied — derive the raw base by subtracting it
+    const currentOffset = parseInt(document.getElementById('hijri-offset').value) || 0;
+    window._hijriBase = { day: info.day - currentOffset, month: info.month, year: info.year };
+
+    function addOffset(base, offset) {
+      let d = base.day + offset, m = base.month, y = base.year;
+      while (d > DAYS_IN_MONTH[m]) { d -= DAYS_IN_MONTH[m]; m++; if (m > 12) { m = 1; y++; } }
+      while (d < 1) { m--; if (m < 1) { m = 12; y--; } d += DAYS_IN_MONTH[m]; }
+      return { d, m, y };
+    }
+
+    function renderHijriCards() {
+      const offset = parseInt(document.getElementById('hijri-offset').value) || 0;
+      const base = window._hijriBase;
+      const baseAdj = addOffset(base, 0);
+      const withAdj = addOffset(base, offset);
+
+      document.getElementById('hijri-base-date').textContent = `${baseAdj.d} ${MONTHS[baseAdj.m]}`;
+      document.getElementById('hijri-base-year').textContent = `${baseAdj.y} AH`;
+
+      const sign = offset > 0 ? `+${offset}` : `${offset}`;
+      document.getElementById('hijri-offset-label').textContent = `With offset (${sign})`;
+      document.getElementById('hijri-offset-date').textContent = `${withAdj.d} ${MONTHS[withAdj.m]}`;
+      document.getElementById('hijri-offset-year').textContent = `${withAdj.y} AH`;
+
+      const card = document.getElementById('hijri-offset-card');
+      card.style.border = offset !== 0
+        ? '1.5px solid var(--color-border-info)'
+        : '0.5px solid var(--color-border-tertiary)';
+      card.style.opacity = offset !== 0 ? '1' : '0.55';
+    }
+
+    window._renderHijriCards = renderHijriCards;
+    renderHijriCards();
+    document.getElementById('hijri-offset').addEventListener('change', renderHijriCards);
+
+    // existing hijri-info badge in the location panel
+    let txt = `Hijri: ${info.day} ${MONTHS[info.month] || info.month} ${info.year}`;
     if (info.isRamadan)      txt += ' · Ramadan';
     if (info.isLaylahAlQadr) txt += ' · Laylah Al-Qadr';
     if (info.isEidAlFitr)    txt += ' · Eid Al-Fitr';
@@ -1247,7 +1309,7 @@ document.getElementById('btn-diagnose-copy').addEventListener('click', () => {
 });
 
 // ─── Per-Prayer Audio tab ─────────────────────────────────────────────────────
-const PRAYERS = ['Fajr','Dhuhr','Asr','Maghrib','Isha'];
+const PRAYERS = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
 let _prayerAudio = {};
 
 function renderPrayerAudio() {
@@ -1314,7 +1376,7 @@ document.getElementById('btn-save-advanced').addEventListener('click', () => {
   });
   Homey.set('morningAdhkar',{enabled:checked('adv-morningEnabled'),delayMin:parseInt(val('adv-morningDelay'))||0},()=>{});
   Homey.set('eveningAdhkar',{enabled:checked('adv-eveningEnabled'),delayMin:parseInt(val('adv-eveningDelay'))||0},()=>{});
-  Homey.set('advanced',{appEnabled:checked('adv-appEnabled')},err=>{
+  Homey.set('advanced',{appEnabled:checked('adv-appEnabled'),excludeSunrise:checked('adv-excludeSunrise')},err=>{
     if (err) return showStatus('advanced-status','Error: '+err.message,'error');
     showStatus('advanced-status','Advanced settings saved!','success');
   });
@@ -1410,6 +1472,7 @@ function onHomeyReady(Homey) {
   Homey.get('advanced', (err, adv) => {
     adv = adv || {};
     setChecked('adv-appEnabled', adv.appEnabled !== false);
+    setChecked('adv-excludeSunrise', !!adv.excludeSunrise);
     callReady();
   });
 }

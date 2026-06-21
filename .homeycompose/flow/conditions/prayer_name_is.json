@@ -1,0 +1,29 @@
+{
+  "id": "prayer_name_is",
+  "title": {
+    "en": "Prayer name is"
+  },
+  "titleFormatted": {
+    "en": "Prayer name !{{is|is not}} [[prayerName]]"
+  },
+  "hint": {
+    "en": "Check if the current prayer matches the selected prayer. Use 'is not' to exclude a specific prayer from your flow."
+  },
+  "args": [
+    {
+      "name": "prayerName",
+      "type": "dropdown",
+      "title": {
+        "en": "Prayer"
+      },
+      "values": [
+        { "id": "Fajr",    "title": { "en": "Fajr"    } },
+        { "id": "Sunrise", "title": { "en": "Sunrise"  } },
+        { "id": "Dhuhr",   "title": { "en": "Dhuhr"   } },
+        { "id": "Asr",     "title": { "en": "Asr"     } },
+        { "id": "Maghrib", "title": { "en": "Maghrib"  } },
+        { "id": "Isha",    "title": { "en": "Isha"    } }
+      ]
+    }
+  ]
+}
