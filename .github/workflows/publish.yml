@@ -1,0 +1,43 @@
+name: Publish to Homey App Store
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'app.js'
+      - 'api.js'
+      - 'lib/**'
+      - 'app.json'
+      - '.homeycompose/**'
+      - 'assets/**'
+      - 'settings/**'
+      - 'widgets/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --omit=dev
+
+      - name: Install Homey CLI
+        run: npm install -g homey
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish to App Store
+        run: homey app publish
+        env:
+          HOMEY_TOKEN: ${{ secrets.HOMEY_TOKEN }}
