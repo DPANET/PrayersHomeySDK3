@@ -12,11 +12,13 @@ const Logger           = require('./lib/Logger');
 class App extends Homey.App {
   async onInit() {
     this.logger = new Logger(this.homey);
+    this.logger.log('Prayers Alert: onInit starting…');
 
     this._migrateSettings();
 
     // homey-api: cross-app device access (requires "homey:manager:api" permission)
     this.homeyApi = await HomeyAPI.createAppAPI({ homey: this.homey });
+    this.logger.debug('HomeyAPI ready');
 
     this.audioRouter     = new AudioRouter(this.homey);
     this.scheduler       = new PrayerScheduler(this.homey);
@@ -24,9 +26,12 @@ class App extends Homey.App {
 
     this._registerTriggers();
     this._registerConditions();
-    this._registerActions();
+
     await this.scheduler.init();
+    this.logger.debug('PrayerScheduler ready');
+
     await this.hijriScheduler.init();
+    this.logger.debug('HijriScheduler ready');
 
     const appEnv = process.env.APP_ENV ? JSON.parse(process.env.APP_ENV) : (Homey.env || this.homey.env || {});
     const mapsKey = appEnv.GOOGLE_MAPS_KEY || appEnv.GOOGLE_PLACE_KEY || appEnv.GOOGLE_API_KEY || '';
@@ -40,6 +45,7 @@ class App extends Homey.App {
     const oldPrayer = this.homey.settings.get('prayerConfig');
     const oldLoc    = this.homey.settings.get('locationConfig');
     if (!oldPrayer && !oldLoc) return;
+    this.logger.log('Migrating v1.x settings…');
 
     if (oldPrayer) {
       const calc = this.homey.settings.get('calculation') || {};
@@ -58,9 +64,12 @@ class App extends Homey.App {
       this.homey.settings.set('location', loc);
       this.homey.settings.unset('locationConfig');
     }
+    this.logger.log('Settings migration complete');
   }
 
   _registerTriggers() {
+    this.logger.debug('Registering trigger run listeners…');
+
     // prayer_trigger_all — fires for every prayer, no condition needed.
     this.homey.flow.getTriggerCard('prayer_trigger_all')
       .registerRunListener(async () => true);
@@ -74,9 +83,6 @@ class App extends Homey.App {
       .registerRunListener(async (args, state) => triggerMatches(args, state));
 
     // ── Hijri calendar triggers ───────────────────────────────────────────────
-    this.homey.flow.getTriggerCard('hijri_new_year')
-      .registerRunListener(async () => true);
-
     this.homey.flow.getTriggerCard('hijri_month_event')
       .registerRunListener(async (args, state) =>
         (args.month === 'any' || args.month === String(state.month)) &&
@@ -100,14 +106,10 @@ class App extends Homey.App {
         args.type         === state.type
       );
 
-    this.homey.flow.getTriggerCard('ramadan_starts')
-      .registerRunListener(async () => true);
-
-    this.homey.flow.getTriggerCard('ramadan_ends')
-      .registerRunListener(async () => true);
-
-    this.homey.flow.getTriggerCard('islamic_occasion_starts')
-      .registerRunListener(async (args, state) => args.occasion === state.occasion);
+    this.homey.flow.getTriggerCard('islamic_occasion_event')
+      .registerRunListener(async (args, state) =>
+        args.occasion === state.occasion && args.event === state.event
+      );
 
     this.homey.flow.getTriggerCard('islamic_occasion_offset')
       .registerRunListener(async (args, state) =>
@@ -116,61 +118,31 @@ class App extends Homey.App {
         Number(args.when) === state.when &&
         args.type        === state.type
       );
+
+    this.logger.debug('Trigger run listeners registered');
   }
 
   _registerConditions() {
+    this.logger.debug('Registering condition run listeners…');
+
     this.homey.flow.getConditionCard('is_islamic_occasion')
       .registerRunListener((args) => {
-        const cfg = this.homey.settings.get('hijriConfig') || {};
-        return new HijriCalendar(cfg).isOccasion(args.occasion);
+        const cfg    = this.homey.settings.get('hijriConfig') || {};
+        const result = new HijriCalendar(cfg).isOccasion(args.occasion);
+        this.logger.debug(`Condition is_islamic_occasion [${args.occasion}] → ${result}`);
+        return result;
       });
 
     this.homey.flow.getConditionCard('prayer_name_is')
-      .registerRunListener((args, state) => state.prayerName === args.prayerName);
-  }
-
-  _registerActions() {
-    // play_audio_on_group — plays whatever the group is configured for.
-    const playGroupCard = this.homey.flow.getActionCard('play_audio_on_group');
-    playGroupCard.registerRunListener(async (args) => {
-      const groups = this.homey.settings.get('speakerGroups') || [];
-      const group = groups.find(g => g.id === args.group.id);
-      if (!group) throw new Error(`Speaker group not found: ${args.group.name}`);
-      await this.audioRouter.playGroup(group);
-    });
-    playGroupCard.getArgument('group').registerAutocompleteListener(async (query) => {
-      const groups = this.homey.settings.get('speakerGroups') || [];
-      return groups
-        .filter(g => !query || g.name.toLowerCase().includes(query.toLowerCase()))
-        .map(g => ({ id: g.id, name: g.name, description: g.contentType || '' }));
-    });
-
-    // stop_audio_on_group — stops playback on the selected group.
-    const stopGroupCard = this.homey.flow.getActionCard('stop_audio_on_group');
-    stopGroupCard.registerRunListener(async (args) => {
-      const groups = this.homey.settings.get('speakerGroups') || [];
-      const group = groups.find(g => g.id === args.group.id);
-      if (!group) throw new Error(`Speaker group not found: ${args.group.name}`);
-      await this.audioRouter.stopGroup(group);
-    });
-    stopGroupCard.getArgument('group').registerAutocompleteListener(async (query) => {
-      const groups = this.homey.settings.get('speakerGroups') || [];
-      return groups
-        .filter(g => !query || g.name.toLowerCase().includes(query.toLowerCase()))
-        .map(g => ({ id: g.id, name: g.name, description: g.contentType || '' }));
-    });
-
-    // athan_action — plays adhan on all enabled speaker groups.
-    this.homey.flow.getActionCard('athan_action')
-      .registerRunListener(async (args) => {
-        const athanType = args.athan_dropdown === 'athan_full' ? 'Full adhan' : 'Short adhan';
-        const groups = (this.homey.settings.get('speakerGroups') || []).filter(g => g.enabled !== false);
-        for (const group of groups) {
-          try { await this.audioRouter.playAdhan(group, athanType, group.volume || 70); }
-          catch (e) { this.logger.error('athan_action', e, { group: group.name }); }
-        }
+      .registerRunListener((args, state) => {
+        const result = state.prayerName === args.prayerName;
+        this.logger.debug(`Condition prayer_name_is [${args.prayerName}] state=[${state.prayerName}] → ${result}`);
+        return result;
       });
+
+    this.logger.debug('Condition run listeners registered');
   }
+
 }
 
 module.exports = App;
