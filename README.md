@@ -4,12 +4,12 @@
 
 [![Homey SDK](https://img.shields.io/badge/Homey_SDK-3-blue?style=flat-square)](https://apps.developer.homey.app)
 [![Platform](https://img.shields.io/badge/platform-local-informational?style=flat-square)](https://homey.app)
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen?style=flat-square)](https://github.com/DPANET/PrayersHomeySDK3)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen?style=flat-square)](https://github.com/DPANET/PrayersHomeySDK3)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
-Prayers Alert is a Homey Pro app that calculates accurate Islamic prayer times for your location and plays audio through any speaker in your home — adhan, Quran recitation, or adhkar playlists. Fully integrated with Homey Flow for automation.
+Prayers Alert is a Homey Pro app that calculates accurate Islamic prayer times for your location and delivers audio URLs as **Flow tags** at each prayer time. Your Flow picks which audio to cast — the app never touches a speaker directly, giving you full control over every speaker, volume, and sequence.
 
-> **v2.0.0** is a full rewrite to Homey SDK 3. All existing user flows built against v1.x are fully preserved — the original Flow card IDs and argument names are unchanged.
+> **v2.1.0** extends the audio token model with per-prayer volume, three custom URL slots, Adhkar URL, and a searchable Surah picker. All existing Flow card IDs and argument names remain unchanged from v1.x.
 
 ---
 
@@ -24,39 +24,42 @@ Prayers Alert is a Homey Pro app that calculates accurate Islamic prayer times f
 - Live **5-day preview** with adjustments applied
 - City search powered by OpenStreetMap Nominatim or manual coordinate entry
 - Hijri calendar display with automatic detection of Ramadan, Laylah Al-Qadr, Eid Al-Fitr, Eid Al-Adha
+- Sunrise included as a schedulable prayer time (can be excluded in Advanced)
 
-### 🔊 Audio
-- **Full adhan** and **Short adhan** playback
-- **Quran recitation** — 7 reciters with automatic CDN failover:
-  - Mishary Al-Afasy
-  - Abdul Basit
-  - Maher Al-Muaiqly
-  - Saud Al-Shuraim
-  - Nasser Al-Qatami
-  - Hani Ar-Rifai
-  - Mohammed Al-Minshawi
-- **Morning adhkar** playlist (after Fajr) — Ayatul Kursi, Al-Ikhlas
-- **Evening adhkar** playlist (after Asr) — Al-Falaq, An-Nas
-- Configurable delay before adhkar playback
-- **Night mode** — automatic volume reduction during configurable quiet hours
-- Per-prayer volume and reciter overrides
-- Direct Chromecast cast via Homey Web API — no Flow wiring needed for Google Cast devices
+### 🔊 Audio Tag Model
 
-### 📐 Speaker Groups
-- Multiple independent speaker groups — different rooms, different speakers, different content
-- Per-group: one or more speakers, content type, volume, and surah number for Quran
-- **Silent (Flow only)** mode — trigger Flows without playing audio
+At each prayer time the app fires a trigger card carrying **audio URL tags**. Your Flow's "cast a URL" action uses whichever tag you want — the app is a pure URL provider and never touches a speaker itself.
+
+| Tag | What it contains |
+|-----|-----------------|
+| `adhan_full` | Full adhan URL (default: islamcan.com azan1) |
+| `adhan_short` | Short adhan URL (default: islamcan.com azan2) |
+| `adhkar` | Adhkar / dhikr URL (default: Ayat al-Kursi, Alafasy) |
+| `quran` | Full-surah Quran URL — chosen reciter + surah |
+| `reciter` | Reciter name string |
+| `custom` | Custom URL 1 (user-defined) |
+| `custom2` | Custom URL 2 (user-defined) |
+| `custom3` | Custom URL 3 (user-defined) |
+| `volume` | Per-prayer volume % as a string (`"70"`) or `""` for device default |
+
+**7 Quran reciters** via mp3quran.net:
+- Mishary Al-Afasy
+- Abdul Basit
+- Maher Al-Muaiqly
+- Saud Al-Shuraim
+- Nasser Al-Qatami
+- Hani Ar-Rifai
+- Mohammed Al-Minshawi
 
 ### ⚡ Homey Flow Integration
 
 | Card type | Card ID | Description |
 |-----------|---------|-------------|
-| **Trigger** | `prayer_trigger_all` | Fires at every prayer time (tokens: `prayerName`, `prayerTime`) |
-| **Trigger** | `prayer_trigger_specific` | Fires for a chosen prayer (same tokens, filtered by name) |
-| **Trigger** | `prayer_trigger_before_after_specific` | Fires before or after a chosen prayer (tokens: `prayerName`, `prayerTimeCalculated`) |
+| **Trigger** | `prayer_trigger_all` | Fires at every prayer — tokens: all 9 audio tags + `prayerName`, `prayerTime` |
+| **Trigger** | `prayer_trigger_specific` | Fires for one chosen prayer — same tokens, filtered by name |
+| **Trigger** | `prayer_trigger_before_after_specific` | Fires before/after a chosen prayer — tokens: `prayerName`, `prayerTimeCalculated` |
 | **Condition** | `is_ramadan` | True during the month of Ramadan |
 | **Condition** | `is_laylah_al_qadr` | True on the 27th of Ramadan |
-| **Action** | `athan_action` | Plays Full or Short adhan on all enabled speaker groups |
 
 > All card IDs and argument names are identical to v1.x — existing user flows require no changes.
 
@@ -70,17 +73,17 @@ Prayers Alert is a Homey Pro app that calculates accurate Islamic prayer times f
 ### 🛡️ Reliability
 - Rolling 3-day schedule horizon — survives Homey restarts and sleep
 - Heartbeat reconciler every 30 minutes to self-heal missing timers
-- Stale-event guard — skips audio if fired significantly late (device was asleep)
+- Stale-event guard — skips trigger if fired significantly late (device was asleep)
 - Double-fire prevention via occurrence key tracking
 - DST-safe scheduling using calendar-date stepping
-- Settings migration from v1.x (`prayerConfig` → `calculation`, `locationConfig` → `location`) on first run
+- Settings migration from v1.x on first run
 
 ---
 
 ## Requirements
 
 - **Homey Pro** running Homey firmware ≥ 12.1.0
-- A Homey-compatible smart speaker (for audio playback)
+- A Homey-compatible smart speaker (for audio playback via Flow)
 - Internet access for audio CDN and city search
 
 ---
@@ -145,56 +148,70 @@ The main overview. Shows today's six prayer times in a live grid.
 
 Saving recalculates the full schedule immediately.
 
-### Tab 4 — Speaker Groups & Audio
+### Tab 4 — Audio
 
-Add one group per room. Each group maps one or more **speakers** to a **content type**:
+Configure the URLs that prayer trigger tags will carry. All fields pre-fill with working defaults — only change what you want to customise.
 
-| Content type | What plays |
-|--------------|-----------|
-| Full adhan | Standard adhan recording |
-| Short adhan | Shorter adhan recording |
-| Quran recitation | The surah number you specify, with the configured reciter |
-| Morning adhkar | Ayatul Kursi + Al-Ikhlas, played after Fajr |
-| Evening adhkar | Al-Falaq + An-Nas, played after Asr |
-| Silent (Flow only) | No audio — only fires the Flow trigger cards |
+| Field | Description |
+|-------|-------------|
+| Full adhan URL | Played via the `adhan_full` tag |
+| Short adhan URL | Played via the `adhan_short` tag |
+| Quran reciter | Dropdown — selects the mp3quran.net server |
+| Surah | Searchable by name or number — sets the `quran` tag URL |
+| Adhkar URL | Played via the `adhkar` tag (defaults to Ayat al-Kursi) |
+| Custom URL 1–3 | Free-form URLs passed via `custom`, `custom2`, `custom3` tags |
+| **Prayer Volume** | Per-prayer volume slider (0–100%) — drag to override, × to use device default |
 
-### Tab 5 — Per-Prayer
+**Surah search** — type a surah name (e.g. "ya") or number (e.g. "36") and pick from the filtered list. The selected surah name is shown; the number is stored and used to build the CDN URL at fire time.
 
-Override volume or reciter for individual prayers. Also sets the **Global reciter** used for all Quran groups unless overridden.
+**Per-prayer volume** — each prayer (Fajr through Isha + Sunrise) has an independent slider. A greyed-out slider means "use device default" — the `volume` tag will be blank. An active slider emits the configured percentage so your Flow can call "Set Volume" before casting.
 
-### Tab 6 — Advanced
+### Tab 5 — Advanced
 
-- **Night mode** — reduce volume to a quiet level between configurable hours (e.g. 22:00–06:00)
-- **Morning adhkar** — enable auto-play after Fajr with an optional delay in minutes
-- **Evening adhkar** — enable auto-play after Asr with an optional delay in minutes
 - **App enabled** toggle — pause all scheduling without uninstalling
+- **Exclude Sunrise** — suppress audio and Flow triggers at Sunrise
+- **Audio freshness** — maximum seconds late an audio trigger is allowed to fire (guards against playback after a long sleep)
 
 ---
 
 ## Flow Examples
 
-### Play adhan at Fajr
+### Play full adhan at any prayer time
+
 ```
-WHEN  Prayer time (any) — tokens: prayerName = Fajr
-THEN  (Prayers Alert handles playback automatically via speaker group config)
+WHEN  Any prayer time   [Full adhan URL] → Cast on living room speaker
+```
+
+### Set volume then cast — using per-prayer volume tag
+
+```
+WHEN  Any prayer time
+THEN  Set volume to [Volume %]
+THEN  Cast URL [Full adhan URL] on living room speaker
+```
+
+### Play different audio per prayer
+
+```
+WHEN  Specific Prayer → Fajr
+THEN  Cast URL [Adhkar URL] on bedroom speaker
+
+WHEN  Specific Prayer → Dhuhr
+THEN  Cast URL [Quran URL] on living room speaker
 ```
 
 ### Turn on bedroom light at Fajr only during Ramadan
+
 ```
 WHEN  Prayer time — 0 minutes Before Fajr
 AND   It is Ramadan
 THEN  Turn on Bedroom light
 ```
 
-### Lower thermostat after Isha
-```
-WHEN  Prayer time — 0 minutes After Isha
-THEN  Set thermostat to 19°C
-```
-
 ### Send a notification 15 minutes before Dhuhr
+
 ```
-WHEN  Prayer time — Before / After — 15 minutes — Dhuhr
+WHEN  Prayer time — Before / After — 15 minutes Before Dhuhr
 THEN  Send notification "Dhuhr in 15 minutes"
 ```
 
@@ -207,22 +224,24 @@ THEN  Send notification "Dhuhr in 15 minutes"
 npm test
 ```
 
-The test suite (`test/run-tests.js`) runs 86 checks against the real library code using a mocked Homey environment with a mutable clock, in-memory settings store, and Flow trigger simulation. It covers:
+The test suite (`test/run-tests.js`) runs **93 checks** against the real library code using a mocked Homey environment with a mutable clock, in-memory settings store, and Flow trigger simulation. Coverage includes:
 
 - Prayer time math (5 calc methods, Hanafi/Shafi Asr, ordering, bad-method fallback)
 - Scheduling: rolling 2-day window, additive heartbeat, before/after Flow triggers
 - Legacy trigger card firing (all three card IDs with original arg/token names)
 - Edge cases: end-of-month roll-over, midnight boundary, stale-event suppression, double-fire prevention
 - Hijri calendar: method offsets, user offset, Ramadan/Laylah/Eid predicates
-- Audio/UI: all 6 content types, volume, night mode, disabled groups
-- API endpoints: `/previewTimes`, `/status`, `/stopAudio`
-- Merge-integrity audit: verifies all 5 previously identified bugs are resolved
+- Audio token model: all 9 tags, per-prayer volume (0 valid, >100 rejected), custom URLs, adhkar default fallback, whitespace trimming, disabled-app blanking
+- API endpoints: `/previewTimes` (1-day and 5-day), `/status`, `/stopAudio`
+- Merge-integrity audit: audio_requested trigger removed, all 9 audio tokens declared, obsolete cards absent
 
 ---
 
 ## Upgrading from v1.x
 
 No action required. On first launch after update, `_migrateSettings()` automatically converts the old `prayerConfig` and `locationConfig` settings keys to the new schema. All existing Flow cards continue to work without modification.
+
+The `athan_action` action card has been removed — the app no longer plays audio directly. If you had Flows using that card, replace them with a "cast URL" action using the `adhan_full` or `adhan_short` tag from the prayer trigger.
 
 ---
 

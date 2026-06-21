@@ -59,7 +59,10 @@ function makeEnv({ settings = {}, instances = [], devices = {}, geo, timezone } 
   ba.setArgumentValues(instances);
   return { homey, audioRouter, scheduler, t: homey._test, ba };
 }
-const castUrls = t => t.castCalls.map(c => c.args?.url);
+// Audio is now delivered as URL tags on prayer_trigger_all. "An adhan fired" =
+// prayer_trigger_all fired carrying a non-empty Full adhan URL tag.
+const castUrls = t => (t.triggerCards['prayer_trigger_all']?.triggerCalls || [])
+  .map(c => c.tokens?.adhan_full).filter(Boolean);
 const onDay   = (s, arr, off) => arr.filter(x => x.dayEpoch === s._dayEpoch(off));
 const findOcc = (arr, prayer, dayEpoch) => arr.find(a => a.prayer === prayer && a.dayEpoch === dayEpoch);
 
@@ -323,128 +326,142 @@ section('5. HijriCalendar — method offsets (end-of-month fix) + predicates');
   check('5i. month 9 → isRamadan', hc(9, 15).isRamadan() === true);
   check('5j. Ramadan 27th → Laylah al-Qadr', hc(9, 27).isLaylahAlQadr() === true);
   check('5k. Ramadan 28th → not Laylah', hc(9, 28).isLaylahAlQadr() === false);
-  check('5l. Shawwal 1st → Eid al-Fitr', hc(10, 1).isEidAlFitr() === true);
-  check('5m. Dhul-Hijjah 10th → Eid al-Adha', hc(12, 10).isEidAlAdha() === true);
+  check('5l. Shawwal 1st → Eid al-Fitr', hc(10, 1).isOccasion('eid_al_fitr') === true);
+  check('5m. Dhul-Hijjah 10th → Eid al-Adha', hc(12, 10).isOccasion('eid_al_adha') === true);
 }
 
 // ============================================================================
-section('6. AudioRouter — content-type selection (UI selections) + volume');
+section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
 // ============================================================================
 {
-  const noon = localMidnight() + 12 * 3600 * 1000;
+  const prefs = {
+    fullUrl:    'https://example.com/full.mp3',
+    shortUrl:   'https://example.com/short.mp3',
+    reciter:    'Abdul Basit',
+    surah:      67,
+    adhkarUrl:  'https://example.com/adhkar.mp3',
+    customUrl:  'https://example.com/custom.mp3',
+    customUrl2: 'https://example.com/custom2.mp3',
+    customUrl3: 'https://example.com/custom3.mp3',
+    volumes:    { Fajr: 30, Sunrise: 50, Dhuhr: 70, Asr: 65, Maghrib: 80, Isha: 40 },
+  };
 
-  // Full adhan → azan1
-  await withFrozenNow(noon, async () => {
-    const env = makeEnv({ settings: { speakerGroups: [group({ contentType: 'Full adhan' })] }, devices: { sp1: castSpeaker('sp1') } });
-    await env.audioRouter.dispatch('Dhuhr');
-    check('6a. Full adhan casts azan1.mp3', /azan1\.mp3$/.test(castUrls(env.t)[0] || ''));
-  });
-  // Short adhan → azan2
-  await withFrozenNow(noon, async () => {
-    const env = makeEnv({ settings: { speakerGroups: [group({ contentType: 'Short adhan' })] }, devices: { sp1: castSpeaker('sp1') } });
-    await env.audioRouter.dispatch('Dhuhr');
-    check('6b. Short adhan casts azan2.mp3', /azan2\.mp3$/.test(castUrls(env.t)[0] || ''));
-  });
-  // Quran recitation → surah-padded URL
-  await withFrozenNow(noon, async () => {
-    const env = makeEnv({
-      settings: { speakerGroups: [group({ contentType: 'Quran recitation', surahNumber: 67 })], audioConfig: { globalReciter: 'Abdul Basit' } },
-      devices: { sp1: castSpeaker('sp1') },
-    });
-    env.audioRouter._reachable = async () => true;
-    await env.audioRouter.dispatch('Maghrib');
-    check('6c. Quran recitation casts surah-067 for chosen reciter', /basit\/067\.mp3$/.test(castUrls(env.t)[0] || ''));
-  });
-  // Custom URL → group.customUrl
-  await withFrozenNow(noon, async () => {
-    const custom = 'https://media.assabile.com/assabile/adhan_3435370/f30b7631d625.mp3';
-    const env = makeEnv({ settings: { speakerGroups: [group({ contentType: 'Custom URL', customUrl: custom })] }, devices: { sp1: castSpeaker('sp1') } });
-    await env.audioRouter.dispatch('Isha');
-    check('6d. Custom URL casts the configured custom mp3', castUrls(env.t)[0] === custom);
-  });
-  // Silent (Flow only) → no cast
-  await withFrozenNow(noon, async () => {
-    const env = makeEnv({
-      settings: { speakerGroups: [group()], prayerAudio: { Fajr: { adhanType: 'Silent (Flow only)' } } },
-      devices: { sp1: castSpeaker('sp1') },
-    });
-    await env.audioRouter.dispatch('Fajr');
-    check('6e. Silent (Flow only) casts nothing', castUrls(env.t).filter(Boolean).length === 0);
-  });
-  // Morning adhkar: Fajr schedules 2 follow-ups; non-Fajr does nothing.
-  await withFrozenNow(localMidnight() + 5 * 3600 * 1000, async () => {
-    const env = makeEnv({
-      settings: { speakerGroups: [group({ contentType: 'Morning adhkar', volume: 50 })], morningAdhkar: { enabled: true, delayMin: 0 } },
-      devices: { sp1: castSpeaker('sp1') },
-    });
-    await env.audioRouter.dispatch('Fajr');
-    check('6f. Morning adhkar on Fajr schedules 2 timers', env.t.timers.pending().length === 2);
+  // Configured URLs are echoed verbatim into the matching tags.
+  {
+    const env = makeEnv({ settings: { audioPrefs: prefs } });
+    const t = env.audioRouter.buildTokens('Dhuhr');
+    check('6a. full/short/custom tags echo the configured URLs',
+      t.adhan_full === prefs.fullUrl && t.adhan_short === prefs.shortUrl &&
+      t.custom === prefs.customUrl && t.custom2 === prefs.customUrl2 && t.custom3 === prefs.customUrl3);
+    check('6b. quran tag built from reciter + zero-padded surah', t.quran === 'https://server7.mp3quran.net/basit/067.mp3');
+    check('6c. reciter tag carries the configured reciter name', t.reciter === 'Abdul Basit');
+  }
+
+  // Adhkar single URL + per-prayer volume tag.
+  {
+    const env = makeEnv({ settings: { audioPrefs: prefs } });
+    check('6d. adhkar tag echoes the configured adhkarUrl (all prayers)', env.audioRouter.buildTokens('Fajr').adhkar === prefs.adhkarUrl && env.audioRouter.buildTokens('Asr').adhkar === prefs.adhkarUrl);
+    check('6e. volume tag = configured % for each prayer',
+      env.audioRouter.buildTokens('Fajr').volume    === '30' &&
+      env.audioRouter.buildTokens('Sunrise').volume === '50' &&
+      env.audioRouter.buildTokens('Dhuhr').volume   === '70' &&
+      env.audioRouter.buildTokens('Isha').volume    === '40');
+  }
+
+  // Empty prefs → adhan falls back to islamcan defaults; optional tags blank.
+  {
+    const env = makeEnv({ settings: {} });
+    const t = env.audioRouter.buildTokens('Dhuhr');
+    check('6f. missing full/short fall back to default adhan',
+      t.adhan_full.includes('islamcan.com/audio/adhan/azan1.mp3') && t.adhan_short.includes('azan2.mp3'));
+    check('6g. missing adhkar falls back to default; custom/volume are empty', t.adhkar.includes('everyayah.com') && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === '');
+    check('6h. default reciter → Afasy surah 001', t.quran === 'https://server8.mp3quran.net/afs/001.mp3');
+  }
+
+  // Unknown reciter falls back to the default server; surah is clamped 1..114.
+  {
+    const env = makeEnv({ settings: { audioPrefs: { reciter: 'Nobody', surah: 999 } } });
+    const t = env.audioRouter.buildTokens('Isha');
+    check('6i. unknown reciter → default Afasy server', t.quran.startsWith('https://server8.mp3quran.net/afs/'));
+    check('6j. out-of-range surah clamps to 114', t.quran.endsWith('/114.mp3'));
+  }
+
+  // App disabled → every URL tag blanked (global mute), reciter name retained.
+  {
+    const env = makeEnv({ settings: { advanced: { appEnabled: false }, audioPrefs: prefs } });
+    const t = env.audioRouter.buildTokens('Dhuhr');
+    check('6k. disabled app blanks all URL/volume tags',
+      t.adhan_full === '' && t.adhan_short === '' && t.adhkar === '' && t.quran === '' &&
+      t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === '');
+  }
+
+  // clearScheduled is a harmless no-op (no timed follow-ups in this model).
+  {
+    const env = makeEnv({ settings: {} });
     env.audioRouter.clearScheduled();
-    check('6g. clearScheduled cancels them', env.t.timers.pending().length === 0);
-    const env2 = makeEnv({
-      settings: { speakerGroups: [group({ contentType: 'Morning adhkar' })], morningAdhkar: { enabled: true, delayMin: 0 } },
-      devices: { sp1: castSpeaker('sp1') },
-    });
-    await env2.audioRouter.dispatch('Dhuhr');
-    check('6h. Morning adhkar does nothing on Dhuhr', env2.t.timers.pending().length === 0);
-  });
-  // Evening adhkar on Asr, distinct playlist.
-  await withFrozenNow(localMidnight() + 16 * 3600 * 1000, async () => {
-    const env = makeEnv({
-      settings: { speakerGroups: [group({ contentType: 'Evening adhkar', volume: 50 })], eveningAdhkar: { enabled: true, delayMin: 0 } },
-      devices: { sp1: castSpeaker('sp1') },
-    });
-    await env.audioRouter.dispatch('Asr');
-    check('6i. Evening adhkar on Asr schedules 2 timers', env.t.timers.pending().length === 2);
-  });
-  // Disabled group + speaker-less group skipped.
-  await withFrozenNow(noon, async () => {
-    const env = makeEnv({
-      settings: { speakerGroups: [
-        group({ id: 'off', enabled: false }),
-        group({ id: 'nospk', speakers: [] }),
-      ] },
-      devices: { sp1: castSpeaker('sp1') },
-    });
-    await env.audioRouter.dispatch('Dhuhr');
-    check('6j. disabled + speaker-less groups cast nothing', castUrls(env.t).filter(Boolean).length === 0);
-  });
+    check('6l. clearScheduled does not throw and schedules nothing', env.t.timers.pending().length === 0);
+  }
 
-  // Volume precedence: per-prayer → group → default; cast also sets volume_set.
-  await withFrozenNow(noon, async () => {
-    const sp = castSpeaker('sp1');
-    const env = makeEnv({
-      settings: { speakerGroups: [group({ volume: 90 })], prayerAudio: { Fajr: { volume: 55 } } },
-      devices: { sp1: sp },
-    });
-    await env.audioRouter.dispatch('Fajr');
-    check('6k. per-prayer volume (55) overrides group (90) → 0.55', sp.capValues.volume_set === 0.55);
-  });
-  await withFrozenNow(noon, async () => {
-    const sp = castSpeaker('sp1');
-    const env = makeEnv({ settings: { speakerGroups: [group({ volume: 90 })] }, devices: { sp1: sp } });
-    await env.audioRouter.dispatch('Fajr');
-    check('6l. no per-prayer → group volume (90) → 0.90', sp.capValues.volume_set === 0.9);
-  });
+  // ── New-feature logic tests ────────────────────────────────────────────────
 
-  // Night-mode volume resolution.
-  const cfg = { nightMode: true, quietStart: '22:00', quietEnd: '06:00', quietVol: 25 };
-  await withFrozenNow(localMidnight() + 23 * 3600 * 1000, async () => {
-    check('6m. 23:00 inside quiet window → 25', makeEnv().audioRouter._resolveVolume(70, cfg) === 25);
-  });
-  await withFrozenNow(localMidnight() + 5 * 3600 * 1000, async () => {
-    check('6n. 05:00 inside overnight window → 25', makeEnv().audioRouter._resolveVolume(70, cfg) === 25);
-  });
-  await withFrozenNow(noon, async () => {
-    check('6o. 12:00 outside window → 70', makeEnv().audioRouter._resolveVolume(70, cfg) === 70);
-    check('6p. nightMode off → 70', makeEnv().audioRouter._resolveVolume(70, { nightMode: false }) === 70);
-  });
+  // volume edge cases: 0 is valid, out-of-range rejected, per-prayer independence.
+  {
+    check('6m. volume=0 is a valid override (not falsy)',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 0  } } } }).audioRouter.buildTokens('Fajr').volume === '0');
+    check('6n. volume > 100 → empty string',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 150 } } } }).audioRouter.buildTokens('Fajr').volume === '');
+    check('6o. volume < 0 → empty string',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -5 } } } }).audioRouter.buildTokens('Fajr').volume === '');
+    check('6p. volume set for one prayer does not bleed into others',
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 85 } } } }).audioRouter.buildTokens('Fajr').volume === '' &&
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 85 } } } }).audioRouter.buildTokens('Maghrib').volume === '85');
+  }
 
-  // appEnabled gating.
-  await withFrozenNow(noon, async () => {
-    const env = makeEnv({ settings: { advanced: { appEnabled: false }, speakerGroups: [group()] }, devices: { sp1: castSpeaker('sp1') } });
-    await env.audioRouter.dispatch('Dhuhr');
-    check('6q. dispatch is a no-op while app disabled', castUrls(env.t).filter(Boolean).length === 0);
+  // custom2/custom3 are independent slots — setting one never populates another.
+  {
+    const env = makeEnv({ settings: { audioPrefs: { customUrl: 'https://t.com/c.mp3' } } });
+    const t = env.audioRouter.buildTokens('Fajr');
+    check('6q. custom2/custom3 empty when only custom is set',
+      t.custom === 'https://t.com/c.mp3' && t.custom2 === '' && t.custom3 === '');
+  }
+
+  // adhkar: single URL for all prayers — no morning/evening branch.
+  {
+    const env = makeEnv({ settings: { audioPrefs: { adhkarUrl: 'https://t.com/dhikr.mp3' } } });
+    check('6r. adhkar URL identical for all 6 prayers (no context switching)',
+      ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha']
+        .every(p => env.audioRouter.buildTokens(p).adhkar === 'https://t.com/dhikr.mp3'));
+  }
+
+  // URL whitespace handling: blank → empty, padded → trimmed.
+  {
+    const env = makeEnv({ settings: { audioPrefs: {
+      adhkarUrl:  '   ',
+      customUrl2: '  https://t.com/c2.mp3  ',
+    } } });
+    const t = env.audioRouter.buildTokens('Dhuhr');
+    check('6s. whitespace-only adhkar falls back to default', t.adhkar.includes('everyayah.com'));
+    check('6t. URL with surrounding whitespace is trimmed', t.custom2 === 'https://t.com/c2.mp3');
+  }
+
+  // End-to-end: buildTokens result propagates into prayer_trigger_all at fire time.
+  await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
+    const audioPrefs = {
+      fullUrl:    'https://t.com/full.mp3',
+      adhkarUrl:  'https://t.com/dhikr.mp3',
+      customUrl2: 'https://t.com/c2.mp3',
+      volumes:    { Dhuhr: 65 },
+    };
+    const env = makeEnv({ settings: { audioPrefs } });
+    await env.scheduler.init();
+    const occ = findOcc(env.scheduler.lastRun.audio, 'Dhuhr', env.scheduler._dayEpoch(0));
+    clock.now = occ.fireAt;
+    await env.t.timers.fireById(occ.id);
+    const tok = env.t.triggerCards['prayer_trigger_all'].triggerCalls[0]?.tokens || {};
+    check('6u. prayer_trigger_all carries adhan_full at fire time',  tok.adhan_full === 'https://t.com/full.mp3');
+    check('6v. prayer_trigger_all carries adhkar at fire time',      tok.adhkar    === 'https://t.com/dhikr.mp3');
+    check('6w. prayer_trigger_all carries custom2 at fire time',     tok.custom2   === 'https://t.com/c2.mp3');
+    check('6x. prayer_trigger_all carries volume tag at fire time',  tok.volume    === '65');
   });
 }
 
@@ -492,26 +509,32 @@ section('8. MERGE-INTEGRITY AUDIT — a FAIL here is a real issue to fix');
   const composeFlow = path.join(ROOT, '.homeycompose', 'flow');
   const exists = p => fs.existsSync(p);
 
-  // 8a. audio_requested trigger referenced by AudioRouter must exist as a card.
-  const audioReqReferenced = fs.readFileSync(path.join(LIB, 'AudioRouter.js'), 'utf8').includes("getTriggerCard('audio_requested')");
-  const audioReqCardExists = exists(path.join(composeFlow, 'triggers', 'audio_requested.json'));
-  check('8a. audio_requested card exists (AudioRouter fallback references it)',
-    !audioReqReferenced || audioReqCardExists,
-    'AudioRouter calls getTriggerCard(\'audio_requested\') but no such card is registered → non-cast fallback throws');
+  // 8a. The obsolete audio_requested trigger must be fully gone (card + registration).
+  {
+    const cardGone = !exists(path.join(composeFlow, 'triggers', 'audio_requested.json'));
+    const appSrc = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
+    const arSrc  = fs.readFileSync(path.join(LIB, 'AudioRouter.js'), 'utf8');
+    const unreferenced = !appSrc.includes('audio_requested') && !arSrc.includes('audio_requested');
+    check('8a. audio_requested trigger removed (folded into prayer triggers)', cardGone && unreferenced,
+      'audio_requested still exists as a card or is still referenced — audio tags now live on prayer_trigger_all/specific');
+  }
 
-  // 8b. athan_action Short selection should play the SHORT adhan, not Full.
-  await withFrozenNow(localMidnight() + 12 * 3600 * 1000, async () => {
-    const env = makeEnv({ settings: { speakerGroups: [group()] }, devices: { sp1: castSpeaker('sp1') } });
-    // app.js now maps athan_full→'Full adhan', else→'Short adhan' and calls playAdhan(group, athanType,…)
-    await env.audioRouter.playAdhan(group(), 'Short adhan', 70);
-    check('8b. athan_action "Short adhan" plays azan2 (short)', /azan2\.mp3$/.test(castUrls(env.t)[0] || ''),
-      'playAdhan("Short adhan") should resolve to azan2.mp3 via ADHAN_URLS');
-  });
+  // 8b. Both prayer triggers must declare the audio URL tags the scheduler attaches.
+  {
+    const TAGS = ['adhan_full', 'adhan_short', 'adhkar', 'quran', 'reciter', 'custom', 'custom2', 'custom3', 'volume'];
+    const cardHasTags = name => {
+      const j = JSON.parse(fs.readFileSync(path.join(composeFlow, 'triggers', name), 'utf8'));
+      const names = (j.tokens || []).map(t => t.name);
+      return TAGS.every(t => names.includes(t));
+    };
+    check('8b. prayer_trigger_all + _specific declare all 9 audio tags',
+      cardHasTags('prayer_trigger_all.json') && cardHasTags('prayer_trigger_specific.json'),
+      'A tag the scheduler passes is not declared on the card → Homey drops it');
+  }
 
   // 8c. prayer_trigger_specific on Sunrise should fire (Sunrise is in the dropdown).
   await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
-    const env = makeEnv({ settings: { speakerGroups: [group()] }, devices: { sp1: castSpeaker('sp1') } });
-    env.audioRouter._reachable = async () => true;
+    const env = makeEnv({ settings: {} });
     await env.scheduler.init();
     const cardSpecific = env.t.triggerCards['prayer_trigger_specific'];
     // Fire every audio occurrence today; check whether a Sunrise specific trigger ever fires.
@@ -524,12 +547,12 @@ section('8. MERGE-INTEGRITY AUDIT — a FAIL here is a real issue to fix');
       'Sunrise is offered in the dropdown but the audio loop (which fires prayer_trigger_specific) skips Sunrise → never triggers');
   });
 
-  // 8d. stopAudio should operate on the new speakerGroups model, not legacy `zones`.
+  // 8d. AudioRouter must NOT reference the removed speaker-group / volume model.
   {
-    const stopSrc = fs.readFileSync(path.join(ROOT, 'api.js'), 'utf8');
-    const stopUsesLegacyZones = /async stopAudio[\s\S]*?homey\.settings\.get\('zones'\)/.test(stopSrc);
-    check('8d. stopAudio uses speakerGroups (not legacy zones model)', !stopUsesLegacyZones,
-      'api.stopAudio reads settings.get(\'zones\') + zone.speakerId — the new model is speakerGroups[].speakers[]');
+    const arSrc = fs.readFileSync(path.join(LIB, 'AudioRouter.js'), 'utf8');
+    const hasDeadModel = /speakerGroups|_dispatchToGroup|playGroup|stopGroup|_setVolume|_requestPlayback/.test(arSrc);
+    check('8d. AudioRouter is free of the old speaker-group/volume model', !hasDeadModel,
+      'AudioRouter still references speakerGroups / group playback / volume — the new model is buildTokens()');
   }
 
   // 8e. settings entry should serve the NEW UI, not redirect to the old settings.html.
@@ -540,12 +563,14 @@ section('8. MERGE-INTEGRITY AUDIT — a FAIL here is a real issue to fix');
       'settings/index.html still redirects to the old 2023 settings.html; the new 1421-line UI sits unused at settings/settings/index.html');
   }
 
-  // 8f. app.js athan_action source should map to ADHAN_URLS keys correctly.
+  // 8f. No obsolete group-based action cards should remain in compose.
   {
-    const appSrc = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
-    const mapsToAdhanKey = /athan_full[\s\S]*?'Full adhan'|'Full adhan'[\s\S]*?athan_full/.test(appSrc);
-    check('8f. app.js maps athan dropdown to "Full adhan"/"Short adhan" keys', mapsToAdhanKey,
-      'app.js produces "Full"/"Short" which do not match ADHAN_URLS keys');
+    const actionsDir = path.join(composeFlow, 'actions');
+    const leftover = fs.existsSync(actionsDir)
+      ? fs.readdirSync(actionsDir).filter(f => /athan_action|play_audio_on_group|stop_audio_on_group/.test(f))
+      : [];
+    check('8f. obsolete group action cards removed from compose', leftover.length === 0,
+      'athan_action / play_audio_on_group / stop_audio_on_group still exist — the new model has no group playback actions');
   }
 }
 

@@ -124,6 +124,13 @@
       appearance: none;
       -webkit-appearance: none;
     }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3E%3Cpath fill='%23475569' d='M8 10L0 0h16z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px 8px;
+      padding-right: 36px;
+    }
     .field input:focus, .field select:focus {
       outline: none;
       border-color: var(--blue);
@@ -397,8 +404,7 @@
         <button class="tab-btn active" data-tab="prayer-times">Prayer times</button>
         <button class="tab-btn" data-tab="location">Location</button>
         <button class="tab-btn" data-tab="calculation">Calculation</button>
-        <button class="tab-btn" data-tab="zones">Speaker groups</button>
-        <button class="tab-btn" data-tab="prayer-audio">Quiet Prayers</button>
+        <button class="tab-btn" data-tab="zones">Audio</button>
         <button class="tab-btn" data-tab="advanced">Advanced</button>
       </div>
     </div>
@@ -647,102 +653,71 @@
   <!-- ========== TAB: ZONES ========== -->
   <div class="tab-panel" id="tab-zones">
     <div class="card">
-      <h2>Speaker groups</h2>
-      <p class="hint">Each group plays simultaneously on all its speakers. Rename groups freely — they appear by name in Flow autocomplete.</p>
-      <div id="zones-list"></div>
-      <button class="btn btn-ghost btn-sm" id="btn-add-zone" style="margin-top:8px">+ Add speaker group</button>
-      <div style="margin-top:14px">
-        <button class="btn btn-primary btn-full" id="btn-save-zones">Save groups</button>
-      </div>
-      <div id="zones-status" class="info-bar" style="margin-top:10px"></div>
+      <h2>Audio tags</h2>
+      <p class="hint">Each prayer trigger carries these as <strong>tags</strong>. In your Flow’s “cast a URL” action you pick which one to play — the app fills each from the URLs below. Leave a field blank to fall back to a built-in default (adhan) or to send nothing (adhkar/custom).</p>
 
-      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-        <button class="btn btn-ghost btn-sm" id="btn-diagnose">🔍 Diagnose playback</button>
-        <p class="hint" style="margin-top:6px">Checks which "play a URL / cast" action your speakers' apps expose — needed to auto-wire the Flow.</p>
-        <div id="diagnose-out-wrap" style="display:none;margin-top:10px;position:relative">
-          <button id="btn-diagnose-copy"
-            style="position:absolute;top:8px;right:8px;padding:5px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;z-index:1">
-            Copy
-          </button>
-          <pre id="diagnose-out" style="padding:10px;padding-right:60px;font-size:11px;line-height:1.4;background:var(--blue-lt);border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-word"></pre>
+      <div class="field" style="margin-top:12px">
+        <label>Full adhan URL</label>
+        <input type="text" id="ap-full" placeholder="https://www.islamcan.com/audio/adhan/azan1.mp3" />
+      </div>
+      <div class="field">
+        <label>Short adhan URL</label>
+        <input type="text" id="ap-short" placeholder="https://www.islamcan.com/audio/adhan/azan2.mp3" />
+      </div>
+
+      <div class="field">
+        <label>Quran reciter</label>
+        <select id="ap-reciter"></select>
+      </div>
+      <div class="field">
+        <label>Surah</label>
+        <div style="position:relative">
+          <input type="text" id="ap-surah-text" placeholder="Type name or number to search..." autocomplete="off" />
+          <div id="surah-drop" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 4px 16px rgba(0,0,0,.12);max-height:220px;overflow-y:auto"></div>
+          <input type="hidden" id="ap-surah" value="1" />
         </div>
       </div>
-    </div>
-  </div>
+      <p class="hint" style="margin-top:-8px;margin-bottom:12px">The <strong>Quran</strong> tag = this reciter's full recording of this surah.</p>
 
-  <!-- ========== TAB: PER-PRAYER AUDIO ========== -->
-  <div class="tab-panel" id="tab-prayer-audio">
-    <div class="card">
-      <h2>Quiet Prayers</h2>
-      <p class="hint">Lower the volume for specific prayers — handy for early Fajr or late Isha. When <strong>Quiet</strong> is on, that prayer plays at the reduced volume you set instead of the speaker group's normal volume.</p>
-      <div id="prayer-audio-list"></div>
-      <button class="btn btn-primary btn-full" id="btn-save-prayer-audio">Save</button>
-      <div id="prayer-audio-status" class="info-bar" style="margin-top:10px"></div>
+      <div class="field">
+        <label>Adhkar URL</label>
+        <input type="text" id="ap-adhkar" placeholder="optional — e.g. https://www.islamcan.com/audio/adhkar/..." />
+      </div>
+      <div class="field">
+        <label>Custom URL</label>
+        <input type="text" id="ap-custom" placeholder="optional — your own recording" />
+      </div>
+      <div class="field">
+        <label>Custom URL 2</label>
+        <input type="text" id="ap-custom2" placeholder="optional — second custom recording" />
+      </div>
+      <div class="field">
+        <label>Custom URL 3</label>
+        <input type="text" id="ap-custom3" placeholder="optional — third custom recording" />
+      </div>
+
+      <div style="margin-top:4px;padding-top:16px;border-top:1px solid var(--border)">
+        <h2 style="margin-bottom:4px">Prayer Volume</h2>
+        <p class="hint" style="margin-bottom:10px">Drag to set volume per prayer. Tap × to use the device default.</p>
+        <div id="prayer-volumes"></div>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btn-save-audio" style="margin-top:16px">Save audio tags</button>
+      <div id="audio-status" class="info-bar" style="margin-top:10px"></div>
+
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+        <h2 style="margin-top:0">How to wire a Flow (one time per prayer)</h2>
+        <ol class="hint" style="margin:0;padding-left:18px;line-height:1.7">
+          <li><strong>WHEN</strong> → “At any prayer time”, or “Specific Prayer” → pick one.</li>
+          <li><strong>THEN</strong> → your speaker app’s “Set Volume” action → insert <strong>[Volume %]</strong>.</li>
+          <li>Add another <strong>THEN</strong> → cast URL action (e.g. Chromecast → “Cast a sound URL”) → insert the tag you want: <strong>[Full adhan URL]</strong>, <strong>[Quran URL]</strong>, <strong>[Adhkar URL]</strong>, etc.</li>
+        </ol>
+      </div>
     </div>
   </div>
 
   <!-- ========== TAB: ADVANCED ========== -->
   <div class="tab-panel" id="tab-advanced">
-    <div class="card">
-      <h2>Night mode</h2>
-      <div class="toggle-row">
-        <span>Reduce volume during quiet hours</span>
-        <label class="toggle">
-          <input type="checkbox" id="adv-nightMode" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Quiet from</label>
-          <input type="text" id="adv-quietStart" placeholder="22:00" />
-        </div>
-        <div class="field">
-          <label>Quiet until</label>
-          <input type="text" id="adv-quietEnd" placeholder="06:00" />
-        </div>
-        <div class="field" style="max-width:110px">
-          <label>Night volume %</label>
-          <input type="number" id="adv-quietVol" min="0" max="100" placeholder="25" />
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Morning adhkar (after Fajr)</h2>
-      <div class="toggle-row">
-        <span>Enable morning adhkar</span>
-        <label class="toggle">
-          <input type="checkbox" id="adv-morningEnabled" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="field">
-        <label>Delay after Fajr (minutes)</label>
-        <input type="number" id="adv-morningDelay" min="0" max="120" placeholder="0" />
-      </div>
-    </div>
-    <div class="card">
-      <h2>Evening adhkar (after Asr)</h2>
-      <div class="toggle-row">
-        <span>Enable evening adhkar</span>
-        <label class="toggle">
-          <input type="checkbox" id="adv-eveningEnabled" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="field">
-        <label>Delay after Asr (minutes)</label>
-        <input type="number" id="adv-eveningDelay" min="0" max="120" placeholder="0" />
-      </div>
-    </div>
-    <div class="card">
-      <h2>Quran recitation</h2>
-      <div class="field">
-        <label>Default reciter</label>
-        <select id="global-reciter"></select>
-        <p class="hint" style="margin-top:6px">Applied to all Quran speaker groups.</p>
-      </div>
-    </div>
     <div class="card">
       <h2>App</h2>
       <div class="toggle-row">
@@ -800,10 +775,6 @@ function setChecked(id,v) { const el = document.getElementById(id); if (el) el.c
 function escHtml(s) {
   return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
-
-// ─── Speakers cache + global reciter staging ─────────────────────────────────
-let _speakers = [];
-let _pendingGlobalReciter = '';
 
 // ─── Today's base times (filled by loadPrayerTimes) ──────────────────────────
 let _todayTimes = {};
@@ -1078,312 +1049,148 @@ document.getElementById('btn-save-calc').addEventListener('click', () => {
   });
 });
 
-// ─── Speaker groups tab ───────────────────────────────────────────────────────
+// ─── Audio tags tab ───────────────────────────────────────────────────────────
+const RECITERS = ['Mishary Al-Afasy','Abdul Basit','Maher Al-Muaiqly','Saud Al-Shuraim','Nasser Al-Qatami','Hani Ar-Rifai','Mohammed Al-Minshawi'];
 const SURAHS = ['','Al-Fatiha','Al-Baqarah','Ali Imran','An-Nisa','Al-Maidah','Al-Anam','Al-Araf','Al-Anfal','At-Tawbah','Yunus','Hud','Yusuf','Ar-Rad','Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahf','Maryam','Ta-Ha','Al-Anbiya','Al-Hajj','Al-Muminun','An-Nur','Al-Furqan','Ash-Shuara','An-Naml','Al-Qasas','Al-Ankabut','Ar-Rum','Luqman','As-Sajdah','Al-Ahzab','Saba','Fatir','Ya-Sin','As-Saffat','Sad','Az-Zumar','Ghafir','Fussilat','Ash-Shura','Az-Zukhruf','Ad-Dukhan','Al-Jathiyah','Al-Ahqaf','Muhammad','Al-Fath','Al-Hujurat','Qaf','Adh-Dhariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahman','Al-Waqiah','Al-Hadid','Al-Mujadila','Al-Hashr','Al-Mumtahanah','As-Saf','Al-Jumuah','Al-Munafiqun','At-Taghabun','At-Talaq','At-Tahrim','Al-Mulk','Al-Qalam','Al-Haqqah','Al-Maarij','Nuh','Al-Jinn','Al-Muzzammil','Al-Muddaththir','Al-Qiyamah','Al-Insan','Al-Mursalat','An-Naba','An-Naziat','Abasa','At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Inshiqaq','Al-Buruj','At-Tariq','Al-Ala','Al-Ghashiyah','Al-Fajr','Al-Balad','Ash-Shams','Al-Layl','Ad-Duha','Ash-Sharh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyinah','Az-Zalzalah','Al-Adiyat','Al-Qariah','At-Takathur','Al-Asr','Al-Humazah','Al-Fil','Quraysh','Al-Maun','Al-Kawthar','Al-Kafirun','An-Nasr','Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas'];
-const CONTENT_TYPES = [
-  {v:'Full adhan',l:'Full adhan'},{v:'Short adhan',l:'Short adhan'},
-  {v:'Quran recitation',l:'Quran'},{v:'Morning adhkar',l:'Adhkar AM'},
-  {v:'Evening adhkar',l:'Adhkar PM'},{v:'Custom URL',l:'Custom URL'},
-  {v:'Silent (Flow only)',l:'Silent'},
-];
-let _groups = [];
 
-
-
-function renderGroups() {
-  const container = document.getElementById('zones-list');
-  container.innerHTML = '';
-  _groups.forEach((group, i) => {
-    const isOpen = group._open !== false;
-    const ct = group.contentType || 'Full adhan';
-    const div = document.createElement('div');
-    div.className = 'zone-item';
-    div.style.marginBottom = '10px';
-
-    const speakerRows = (group.speakers || []).map((sp, si) => `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-        <select style="flex:1;font-size:14px;padding:9px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card)"
-          data-gidx="${i}" data-sidx="${si}" data-field="speakerId">
-          <option value="">— select speaker —</option>
-          ${_speakers.map(s=>`<option value="${s.id}" ${sp.speakerId===s.id?'selected':''}>${escHtml(s.name)}</option>`).join('')}
-        </select>
-        <button type="button" onclick="removeSpeaker(${i},${si})"
-          style="flex-shrink:0;width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;font-size:15px;color:var(--text2)">✕</button>
-      </div>`).join('');
-
-    const ctChips = CONTENT_TYPES.map(({v,l}) => {
-      const on = ct === v;
-      return `<button type="button" onclick="setContentType(${i},'${v}')"
-        style="padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;
-               border:1px solid ${on?'#93c5fd':'var(--border)'};
-               background:${on?'var(--blue-lt)':'var(--card)'};
-               color:${on?'var(--blue-dk)':'var(--text2)'}">${escHtml(l)}</button>`;
-    }).join('');
-
-    const surahNum = parseInt(group.surahNumber)||1;
-    const surahSection = ct === 'Quran recitation' ? `
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px">Surah</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input type="number" min="1" max="114" value="${surahNum}"
-            data-gidx="${i}" data-field="surahNumber"
-            style="width:72px;padding:9px 10px;font-size:14px;border:1px solid #93c5fd;border-radius:8px;background:var(--blue-lt);color:var(--blue-dk);text-align:center" />
-          <span id="surah-name-${i}" style="font-size:14px;color:var(--blue-dk);font-weight:500">${escHtml(SURAHS[surahNum]||'')}</span>
-        </div>
-      </div>` : '';
-
-    const urlSection = ct === 'Custom URL' ? `
-      <div style="margin-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="font-size:12px;font-weight:600;color:var(--text2)">MP3 URL</span>
-          <span style="font-size:11px;color:var(--text3)">must be publicly accessible</span>
-        </div>
-        <input type="url" value="${escHtml(group.customUrl||'')}" placeholder="https://example.com/adhan.mp3"
-          data-gidx="${i}" data-field="customUrl"
-          style="width:100%;padding:10px 12px;font-size:13px;border:1px solid var(--border);border-radius:8px" />
-      </div>` : '';
-
-    div.innerHTML = `
-      <div class="zone-header" onclick="toggleGroup(${i})" style="cursor:pointer;-webkit-user-select:none;user-select:none">
-        <input type="text" class="zone-name-input" value="${escHtml(group.name||'')}" placeholder="Group name"
-          data-gidx="${i}" data-field="name" style="font-weight:600;flex:1;cursor:text"
-          onclick="event.stopPropagation()" />
-        <label class="toggle" onclick="event.stopPropagation()" style="flex-shrink:0">
-          <input type="checkbox" ${group.enabled!==false?'checked':''} data-gidx="${i}" data-field="enabled" />
-          <span class="toggle-slider"></span>
-        </label>
-        <span style="font-size:20px;color:var(--text3);line-height:1;flex-shrink:0;
-          transform:rotate(${isOpen?'180':'0'}deg);transition:transform .2s;display:inline-block">&#8964;</span>
-      </div>
-
-      <div style="${isOpen?'':'display:none'}">
-        <div style="padding:12px 14px 14px">
-
-          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Speakers</div>
-          <div>${speakerRows||'<div style="font-size:13px;color:var(--text3);padding:4px 0">No speakers yet</div>'}</div>
-          <button type="button" onclick="addSpeaker(${i})"
-            style="display:flex;align-items:center;gap:5px;padding:8px 0;font-size:13px;color:var(--blue);background:none;border:none;cursor:pointer;margin-top:4px">
-            ＋ Add speaker
-          </button>
-
-          <div style="border-top:1px solid var(--border);margin:12px 0"></div>
-
-          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Content type</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px">${ctChips}</div>
-          ${surahSection}
-          ${urlSection}
-
-          <div style="border-top:1px solid var(--border);margin:12px 0"></div>
-
-          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Volume %</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <label class="toggle" style="flex-shrink:0">
-              <input type="checkbox" ${group.volume!=null?'checked':''} data-gidx="${i}" data-field="volumeEnabled" />
-              <span class="toggle-slider"></span>
-            </label>
-            <input type="number" min="0" max="100" value="${group.volume??70}" data-gidx="${i}" data-field="volume"
-              style="width:72px;${group.volume==null?'display:none':''}" />
-            <span data-vol-hint="${i}" style="font-size:13px;color:var(--text2);${group.volume!=null?'display:none':''}">Keep current</span>
-          </div>
-
-          <div style="display:flex;gap:8px;margin-top:14px">
-            <button type="button" onclick="testGroup(${i})"
-              style="flex:1;padding:11px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--card);cursor:pointer;color:var(--text)">
-              ▶ Test
-            </button>
-            <button type="button" onclick="removeGroup(${i})"
-              style="padding:11px 16px;border:1px solid var(--danger);border-radius:8px;font-size:14px;background:var(--card);cursor:pointer;color:var(--danger)">
-              Remove
-            </button>
-          </div>
-
-        </div>
-      </div>`;
-    container.appendChild(div);
-  });
-
-  container.querySelectorAll('input[data-gidx],select[data-gidx]').forEach(el => {
-    el.addEventListener('change', e => {
-      const gi = parseInt(e.target.dataset.gidx);
-      const si = e.target.dataset.sidx !== undefined ? parseInt(e.target.dataset.sidx) : null;
-      const field = e.target.dataset.field;
-      if (isNaN(gi) || !field) return;
-      let v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-      if (field === 'surahNumber') { _groups[gi].surahNumber = Math.min(114, Math.max(1, parseInt(v)||1)); return; }
-      if (field === 'volume') v = e.target.value === '' ? null : (parseInt(v) || null);
-      if (si !== null) {
-        if (field === 'speakerId') {
-          const opt = e.target.options[e.target.selectedIndex];
-          _groups[gi].speakers[si] = { speakerId: v, speakerName: opt?.text || '' };
-        }
-      } else if (field === 'volumeEnabled') {
-        _groups[gi].volume = v ? 70 : null;
-        const wrap = e.target.closest('div[style*="display:flex"]');
-        if (wrap) {
-          const num = wrap.querySelector('input[type="number"]');
-          const hint = wrap.querySelector('[data-vol-hint]');
-          if (num) { num.style.display = v ? '' : 'none'; if (v) num.value = 70; }
-          if (hint) hint.style.display = v ? 'none' : '';
-        }
-      } else {
-        _groups[gi][field] = v;
-      }
-    });
-    el.addEventListener('input', e => {
-      if (e.target.dataset.field === 'surahNumber') {
-        const gi = parseInt(e.target.dataset.gidx);
-        const n = Math.min(114, Math.max(1, parseInt(e.target.value)||1));
-        if (_groups[gi]) _groups[gi].surahNumber = n;
-        const label = document.getElementById('surah-name-' + gi);
-        if (label) label.textContent = SURAHS[n] || '';
-      }
-    });
-  });
+function surahLabel(n) {
+  return (n >= 1 && n <= 114 && SURAHS[n]) ? n + ' · ' + SURAHS[n] : '';
 }
 
-window.toggleGroup    = function(i) { _groups[i]._open = _groups[i]._open === false; renderGroups(); };
-window.setContentType = function(i, ct) { _groups[i].contentType = ct; renderGroups(); };
-window.addSpeaker     = function(i) {
-  if (!_groups[i].speakers) _groups[i].speakers = [];
-  _groups[i].speakers.push({ speakerId: '', speakerName: '' });
-  renderGroups();
-};
-window.removeSpeaker = function(i, si) { _groups[i].speakers.splice(si, 1); renderGroups(); };
-window.removeGroup   = function(i) { _groups.splice(i, 1); renderGroups(); };
-window.testGroup     = function(i) {
-  const group = _groups[i];
-  if (!group?.id) return showStatus('zones-status', 'Save first, then test.', 'error');
-  if (!group.speakers?.some(s => s.speakerId)) return showStatus('zones-status', 'Add at least one speaker first.', 'error');
-  Homey.api('POST', '/testAudio', { groupId: group.id }, err => {
-    if (err) showStatus('zones-status', 'Error: ' + err.message, 'error');
-    else     showStatus('zones-status', 'Test sent to all speakers in group!', 'success');
-  });
-};
-document.getElementById('btn-add-zone').addEventListener('click', () => {
-  _groups.push({ id: 'group_' + Date.now(), name: 'Speaker group ' + (_groups.length + 1),
-    speakers: [], contentType: 'Full adhan', surahNumber: 1, customUrl: 'https://media.assabile.com/assabile/adhan_3435370/f30b7631d625.mp3', volume: null, enabled: true, _open: true });
-  renderGroups();
-});
-document.getElementById('btn-save-zones').addEventListener('click', () => {
-  const toSave = _groups.map(({ _open, ...g }) => g);
-  Homey.set('speakerGroups', toSave, err => {
-    if (err) return showStatus('zones-status', 'Error: ' + err.message, 'error');
-    showStatus('zones-status', 'Speaker groups saved!', 'success');
-  });
-});
-document.getElementById('btn-diagnose').addEventListener('click', () => {
-  const wrap = document.getElementById('diagnose-out-wrap');
-  const out  = document.getElementById('diagnose-out');
-  wrap.style.display = 'block';
-  out.textContent = 'Running…';
-  Homey.api('GET', '/diagnosePlayback', null, (err, res) => {
-    if (err) { out.textContent = 'Error: ' + err.message; return; }
-    if (!res || (res.speakers && !res.speakers.length)) {
-      out.textContent = 'No speakers configured yet — add speakers to a group and Save first.';
-      return;
+function initAudio() {
+  const recSel = document.getElementById('ap-reciter');
+  if (recSel) recSel.innerHTML = RECITERS.map(r => `<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
+
+  const textEl = document.getElementById('ap-surah-text');
+  const dropEl = document.getElementById('surah-drop');
+  const hidEl  = document.getElementById('ap-surah');
+  if (!textEl || !dropEl || !hidEl) return;
+
+  function renderDrop(q) {
+    const lq = q.toLowerCase();
+    const hits = [];
+    for (let i = 1; i <= 114; i++) {
+      const name = SURAHS[i];
+      if (!q || String(i) === q || name.toLowerCase().includes(lq)) hits.push(i);
+      if (hits.length >= 20) break;
     }
-    out.textContent = JSON.stringify(res, null, 2);
-  });
-});
-document.getElementById('btn-diagnose-copy').addEventListener('click', () => {
-  const text = document.getElementById('diagnose-out').textContent;
-  if (!text || text === 'Running…') return;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('btn-diagnose-copy');
-    btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-  }).catch(() => {
-    // Fallback for older WebViews
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    const btn = document.getElementById('btn-diagnose-copy');
-    btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-  });
-});
+    if (!hits.length) { dropEl.style.display = 'none'; return; }
+    dropEl.innerHTML = hits.map(n =>
+      `<div data-n="${n}" style="padding:10px 12px;cursor:pointer;font-size:14px;color:var(--text)">${n} &middot; ${escHtml(SURAHS[n])}</div>`
+    ).join('');
+    dropEl.querySelectorAll('[data-n]').forEach(el => {
+      el.addEventListener('mouseenter', function() { this.style.background = 'var(--bg)'; });
+      el.addEventListener('mouseleave', function() { this.style.background = ''; });
+      el.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        const n = parseInt(this.dataset.n);
+        hidEl.value = String(n);
+        textEl.value = surahLabel(n);
+        dropEl.style.display = 'none';
+      });
+    });
+    dropEl.style.display = 'block';
+  }
 
-// ─── Per-Prayer Audio tab ─────────────────────────────────────────────────────
-const PRAYERS = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
-let _prayerAudio = {};
+  textEl.addEventListener('input',  function() { renderDrop(this.value.trim()); });
+  textEl.addEventListener('focus',  function() { renderDrop(this.value.trim()); });
+  textEl.addEventListener('blur',   function() { setTimeout(() => { dropEl.style.display = 'none'; }, 150); });
+}
 
-function renderPrayerAudio() {
-  const container = document.getElementById('prayer-audio-list');
-  container.innerHTML = '';
-  PRAYERS.forEach(p => {
-    const cfg   = _prayerAudio[p] || {};
-    const quiet = !!cfg.quiet;
-    const vol   = cfg.volume ?? 25;
-    const div = document.createElement('div');
-    div.className = 'prayer-section-item';
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px">
-        <strong style="flex:1">${p}</strong>
-        <span style="font-size:13px;color:var(--text2)">Quiet</span>
-        <label class="toggle" style="flex-shrink:0">
-          <input type="checkbox" ${quiet?'checked':''} data-prayer="${p}" data-field="quiet" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div data-vol-wrap="${p}" style="${quiet?'':'display:none'};display:${quiet?'flex':'none'};align-items:center;gap:10px;margin-top:10px">
-        <span style="font-size:13px;color:var(--text2)">Reduced volume %</span>
-        <input type="number" min="0" max="100" value="${vol}" data-prayer="${p}" data-field="volume" style="width:80px" />
-      </div>`;
-    container.appendChild(div);
-  });
-  container.querySelectorAll('input').forEach(el => {
-    el.addEventListener('change', e => {
-      const prayer = e.target.dataset.prayer;
-      const field  = e.target.dataset.field;
-      if (!prayer || !field) return;
-      _prayerAudio[prayer] = _prayerAudio[prayer] || {};
-      if (field === 'quiet') {
-        const on = e.target.checked;
-        _prayerAudio[prayer].quiet = on;
-        if (on) { if (_prayerAudio[prayer].volume == null) _prayerAudio[prayer].volume = 25; }
-        else    { _prayerAudio[prayer].volume = null; }
-        const wrap = container.querySelector(`[data-vol-wrap="${prayer}"]`);
-        if (wrap) wrap.style.display = on ? 'flex' : 'none';
-      } else if (field === 'volume') {
-        _prayerAudio[prayer].volume = Math.min(100, Math.max(0, parseInt(e.target.value)||0));
-      }
+const _volPrayers = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+const _volState = {};
+
+function buildVolumeRows() {
+  const container = document.getElementById('prayer-volumes');
+  if (!container) return;
+  container.innerHTML = _volPrayers.map(p => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="width:62px;font-size:13px;color:var(--text2);flex-shrink:0">${p}</span>
+      <input type="range" id="vol-${p}" min="0" max="100" step="5" value="70"
+        style="flex:1;accent-color:var(--blue);cursor:pointer;opacity:.3" />
+      <span id="vol-${p}-lbl" style="width:34px;text-align:right;font-size:13px;font-weight:500;color:var(--text3)">–</span>
+      <button type="button" id="vol-${p}-clr"
+        style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:0 2px;flex-shrink:0"
+        title="Reset to device default">×</button>
+    </div>
+  `).join('');
+  _volPrayers.forEach(p => {
+    document.getElementById('vol-' + p).addEventListener('input', function () {
+      _volState[p] = parseInt(this.value);
+      const lbl = document.getElementById('vol-' + p + '-lbl');
+      lbl.textContent = this.value + '%';
+      lbl.style.color = 'var(--blue)';
+      this.style.opacity = '1';
+    });
+    document.getElementById('vol-' + p + '-clr').addEventListener('click', function () {
+      volClear(p);
     });
   });
 }
-document.getElementById('btn-save-prayer-audio').addEventListener('click', () => {
-  Homey.set('prayerAudio', _prayerAudio, err => {
-    if (err) return showStatus('prayer-audio-status', 'Error: ' + err.message, 'error');
-    showStatus('prayer-audio-status', 'Saved!', 'success');
+
+function volClear(p) {
+  delete _volState[p];
+  const sl = document.getElementById('vol-' + p);
+  const lbl = document.getElementById('vol-' + p + '-lbl');
+  if (sl)  { sl.value = 70; sl.style.opacity = '.3'; }
+  if (lbl) { lbl.textContent = '–'; lbl.style.color = 'var(--text3)'; }
+}
+
+function volLoad(vols) {
+  _volPrayers.forEach(p => {
+    const sl  = document.getElementById('vol-' + p);
+    const lbl = document.getElementById('vol-' + p + '-lbl');
+    if (!sl || !lbl) return;
+    if (typeof vols[p] === 'number') {
+      _volState[p] = vols[p];
+      sl.value = String(vols[p]);
+      sl.style.opacity = '1';
+      lbl.textContent = vols[p] + '%';
+      lbl.style.color = 'var(--blue)';
+    } else {
+      delete _volState[p];
+      sl.value = 70;
+      sl.style.opacity = '.3';
+      lbl.textContent = '–';
+      lbl.style.color = 'var(--text3)';
+    }
+  });
+}
+
+document.getElementById('btn-save-audio').addEventListener('click', () => {
+  const volumes = {};
+  _volPrayers.forEach(p => { if (typeof _volState[p] === 'number') volumes[p] = _volState[p]; });
+  const prefs = {
+    fullUrl:    val('ap-full').trim(),
+    shortUrl:   val('ap-short').trim(),
+    reciter:    val('ap-reciter'),
+    surah:      Math.min(114, Math.max(1, parseInt(val('ap-surah')) || 1)),
+    adhkarUrl:  val('ap-adhkar').trim(),
+    customUrl:  val('ap-custom').trim(),
+    customUrl2: val('ap-custom2').trim(),
+    customUrl3: val('ap-custom3').trim(),
+    volumes,
+  };
+  Homey.set('audioPrefs', prefs, err => {
+    if (err) return showStatus('audio-status', 'Error: ' + err.message, 'error');
+    showStatus('audio-status', 'Audio tags saved!', 'success');
   });
 });
+
 
 // ─── Advanced tab ─────────────────────────────────────────────────────────────
 document.getElementById('btn-save-advanced').addEventListener('click', () => {
-  Homey.get('audioConfig', (err, existing) => {
-    const merged = Object.assign({}, existing || {}, {
-      nightMode:     checked('adv-nightMode'),
-      quietStart:    val('adv-quietStart'),
-      quietEnd:      val('adv-quietEnd'),
-      quietVol:      parseInt(val('adv-quietVol'))||25,
-      globalReciter: val('global-reciter'),
-    });
-    Homey.set('audioConfig', merged, () => {});
-  });
-  Homey.set('morningAdhkar',{enabled:checked('adv-morningEnabled'),delayMin:parseInt(val('adv-morningDelay'))||0},()=>{});
-  Homey.set('eveningAdhkar',{enabled:checked('adv-eveningEnabled'),delayMin:parseInt(val('adv-eveningDelay'))||0},()=>{});
-  Homey.set('advanced',{appEnabled:checked('adv-appEnabled'),excludeSunrise:checked('adv-excludeSunrise')},err=>{
-    if (err) return showStatus('advanced-status','Error: '+err.message,'error');
-    showStatus('advanced-status','Advanced settings saved!','success');
+  Homey.set('advanced', { appEnabled: checked('adv-appEnabled'), excludeSunrise: checked('adv-excludeSunrise') }, err => {
+    if (err) return showStatus('advanced-status', 'Error: ' + err.message, 'error');
+    showStatus('advanced-status', 'Advanced settings saved!', 'success');
   });
 });
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 function onHomeyReady(Homey) {
+  initAudio();
+  buildVolumeRows();
+
   let _readyCalled = false;
   function callReady() {
     if (_readyCalled) return;
@@ -1417,56 +1224,20 @@ function onHomeyReady(Homey) {
     }
   });
 
-  Homey.api('GET', '/speakers', null, (err, speakers) => {
-    _speakers = speakers || [];
-    Homey.get('speakerGroups', (err2, groups) => {
-      if (groups && groups.length) {
-        _groups = groups;
-      } else {
-        // migrate old zones format on first load
-        Homey.get('zones', (err3, zones) => {
-          _groups = (zones || []).map(z => ({
-            id: z.id, name: z.name, enabled: z.enabled !== false,
-            speakers: z.speakerId ? [{ speakerId: z.speakerId, speakerName: z.speakerName || '' }] : [],
-            contentType: z.contentType || 'Full adhan',
-            volume: z.volume ?? 70, surahNumber: z.surahNumber || 1,
-          }));
-        });
-      }
-      renderGroups();
-    });
-  });
-
-  Homey.get('prayerAudio', (err, pa) => {
-    _prayerAudio = pa || {};
-    Homey.api('GET', '/reciters', null, (err2, reciters) => {
-      const opts = (reciters||[]).map(r=>`<option value="${escHtml(r)}">${escHtml(r)}</option>`).join('');
-      const sel = document.getElementById('global-reciter');
-      if (sel) { sel.innerHTML = opts; if (_pendingGlobalReciter) sel.value = _pendingGlobalReciter; }
-      renderPrayerAudio();
-    });
-  });
-
-  Homey.get('audioConfig', (err, ac) => {
-    ac = ac || {};
-    setChecked('adv-nightMode',  ac.nightMode);
-    setVal('adv-quietStart',     ac.quietStart || '22:00');
-    setVal('adv-quietEnd',       ac.quietEnd   || '06:00');
-    setVal('adv-quietVol',       ac.quietVol   ?? 25);
-    _pendingGlobalReciter = ac.globalReciter || '';
-    setVal('global-reciter', _pendingGlobalReciter);
-  });
-
-  Homey.get('morningAdhkar', (err, m) => {
-    m = m || {};
-    setChecked('adv-morningEnabled', m.enabled);
-    setVal('adv-morningDelay', m.delayMin || 0);
-  });
-
-  Homey.get('eveningAdhkar', (err, e) => {
-    e = e || {};
-    setChecked('adv-eveningEnabled', e.enabled);
-    setVal('adv-eveningDelay', e.delayMin || 0);
+  Homey.get('audioPrefs', (err, ap) => {
+    ap = ap || {};
+    setVal('ap-full',    ap.fullUrl   || 'https://www.islamcan.com/audio/adhan/azan1.mp3');
+    setVal('ap-short',   ap.shortUrl  || 'https://www.islamcan.com/audio/adhan/azan2.mp3');
+    setVal('ap-reciter', ap.reciter || 'Mishary Al-Afasy');
+    const surahN = ap.surah || 1;
+    setVal('ap-surah', surahN);
+    const surahTextEl = document.getElementById('ap-surah-text');
+    if (surahTextEl) surahTextEl.value = surahLabel(surahN);
+    setVal('ap-adhkar',  ap.adhkarUrl || 'https://everyayah.com/data/Alafasy_128kbps/002255.mp3');
+    setVal('ap-custom',  ap.customUrl  || '');
+    setVal('ap-custom2', ap.customUrl2 || '');
+    setVal('ap-custom3', ap.customUrl3 || '');
+    volLoad(ap.volumes || {});
   });
 
   Homey.get('advanced', (err, adv) => {
