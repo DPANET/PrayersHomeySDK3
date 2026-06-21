@@ -16,6 +16,12 @@
   "engines": {
     "node": ">=22"
   },
+  "overrides": {
+    "got": "^11.8.5",
+    "parseuri": "^3.0.1",
+    "uuid": "11.1.1",
+    "inquirer": "^9.3.7"
+  },
   "author": "dpanet",
   "license": "MIT"
 }

@@ -53,15 +53,54 @@ At each prayer time the app fires a trigger card carrying **audio URL tags**. Yo
 
 ### ⚡ Homey Flow Integration
 
-| Card type | Card ID | Description |
-|-----------|---------|-------------|
-| **Trigger** | `prayer_trigger_all` | Fires at every prayer — tokens: all 9 audio tags + `prayerName`, `prayerTime` |
-| **Trigger** | `prayer_trigger_specific` | Fires for one chosen prayer — same tokens, filtered by name |
-| **Trigger** | `prayer_trigger_before_after_specific` | Fires before/after a chosen prayer — tokens: `prayerName`, `prayerTimeCalculated` |
-| **Condition** | `is_ramadan` | True during the month of Ramadan |
-| **Condition** | `is_laylah_al_qadr` | True on the 27th of Ramadan |
+#### Prayer triggers
 
-> All card IDs and argument names are identical to v1.x — existing user flows require no changes.
+| Card ID | Title | Tokens |
+|---------|-------|--------|
+| `prayer_trigger_all` | At any prayer time | `prayerName`, `prayerTime`, + 9 audio tags (see below) |
+| `prayer_trigger_specific` | Specific Prayer | Same 11 tokens, filtered by chosen prayer |
+| `prayer_trigger_before_after_specific` | Before or After Prayer | `prayerName`, `prayerTimeCalculated` |
+
+Audio tokens on `prayer_trigger_all` and `prayer_trigger_specific`:
+
+| Token | Example value |
+|-------|---------------|
+| `adhan_full` | `https://www.islamcan.com/audio/adhan/azan1.mp3` |
+| `adhan_short` | `https://www.islamcan.com/audio/adhan/azan2.mp3` |
+| `adhkar` | `https://everyayah.com/data/Alafasy_128kbps/002255.mp3` |
+| `quran` | `https://server8.mp3quran.net/afs/001.mp3` |
+| `reciter` | `Mishary Al-Afasy` |
+| `custom` | user-defined |
+| `custom2` | user-defined |
+| `custom3` | user-defined |
+| `volume` | `"70"` or `""` (device default) |
+
+#### Hijri calendar triggers
+
+| Card ID | Title | Tokens |
+|---------|-------|--------|
+| `hijri_month_event` | Hijri month starts / ends | `hijriMonthName`, `hijriMonth`, `hijriYear` |
+| `hijri_day_of_month` | On day N of each Hijri month | `hijriDay`, `hijriMonthName`, `hijriMonth`, `hijriYear` |
+| `hijri_specific_date` | On Hijri date (day + month, yearly) | `hijriDay`, `hijriMonthName`, `hijriYear`, `gregorianDate` |
+| `hijri_date_offset` | Before / after Hijri date | `hijriDate`, `gregorianDate`, `anchorName` |
+
+#### Islamic occasion triggers
+
+| Card ID | Title | Tokens |
+|---------|-------|--------|
+| `islamic_occasion_event` | Islamic occasion starts / ends | `occasionName`, `hijriDate`, `gregorianDate` |
+| `islamic_occasion_offset` | Before / after Islamic occasion | `occasionName`, `hijriDate`, `gregorianDate` |
+
+Occasions covered: Ramadan, Eid Al-Fitr, Eid Al-Adha, Day of Arafah, Ashura, Mawlid Al-Nabi, Laylah Al-Qadr.
+
+#### Conditions
+
+| Card ID | Title |
+|---------|-------|
+| `prayer_name_is` | Prayer name is / is not `[prayer]` — use in Any-prayer Flows to branch by name |
+| `is_islamic_occasion` | It is / is not `[occasion]` — Ramadan, Last 10 nights, Laylah Al-Qadr, Eid Al-Fitr, Eid Al-Adha, Arafah, Ashura, Mawlid |
+
+> All prayer card IDs and argument names are identical to v1.x — existing user flows require no changes.
 
 ### 📊 Dashboard Widget
 - **Prayer Times widget** — add to any Homey dashboard
