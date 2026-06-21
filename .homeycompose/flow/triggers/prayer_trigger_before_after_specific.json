@@ -57,6 +57,16 @@
       "type": "string",
       "title": { "en": "Alert Time" },
       "example": { "en": "05:28" }
-    }
+    },
+    { "name": "adhan_full",     "type": "string", "title": { "en": "Full adhan URL" },     "example": { "en": "Full adhan audio link" } },
+    { "name": "adhan_short",    "type": "string", "title": { "en": "Short adhan URL" },    "example": { "en": "Short adhan audio link" } },
+    { "name": "adhkar_morning", "type": "string", "title": { "en": "Morning Adhkar URL" }, "example": { "en": "Morning adhkar audio link" } },
+    { "name": "adhkar_evening", "type": "string", "title": { "en": "Evening Adhkar URL" }, "example": { "en": "Evening adhkar audio link" } },
+    { "name": "quran",          "type": "string", "title": { "en": "Quran URL" },          "example": { "en": "Quran recitation audio link" } },
+    { "name": "reciter",        "type": "string", "title": { "en": "Reciter" },            "example": { "en": "Mishary Al-Afasy" } },
+    { "name": "custom",         "type": "string", "title": { "en": "Custom URL" },         "example": { "en": "Custom audio link 1" } },
+    { "name": "custom2",        "type": "string", "title": { "en": "Custom URL 2" },       "example": { "en": "Custom audio link 2" } },
+    { "name": "custom3",        "type": "string", "title": { "en": "Custom URL 3" },       "example": { "en": "Custom audio link 3" } },
+    { "name": "volume",         "type": "number", "title": { "en": "Volume (0-1)" },       "example": 0.7 }
   ]
 }
