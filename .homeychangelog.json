@@ -13,5 +13,8 @@
   },
   "2.2.5": {
     "en": "added new settings and prayers widget fixes"
+  },
+  "2.2.6": {
+    "en": "improved settings and widget support"
   }
 }
