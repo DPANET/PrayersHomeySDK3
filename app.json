@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.prayerssapp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "compatibility": ">=12.1.0",
   "sdk": 3,
   "platforms": [
@@ -51,37 +51,17 @@
       "method": "GET",
       "path": "/searchCity"
     },
-    "getSpeakers": {
-      "method": "GET",
-      "path": "/speakers"
-    },
     "getLocation": {
       "method": "GET",
       "path": "/location"
-    },
-    "getReciters": {
-      "method": "GET",
-      "path": "/reciters"
     },
     "getStatus": {
       "method": "GET",
       "path": "/status"
     },
-    "testAudio": {
-      "method": "POST",
-      "path": "/testAudio"
-    },
-    "diagnosePlayback": {
-      "method": "GET",
-      "path": "/diagnosePlayback"
-    },
     "reschedule": {
       "method": "POST",
       "path": "/reschedule"
-    },
-    "stopAudio": {
-      "method": "POST",
-      "path": "/stopAudio"
     },
     "widgetData": {
       "method": "GET",
@@ -91,12 +71,839 @@
   "flow": {
     "triggers": [
       {
+        "id": "hijri_date_offset",
+        "title": {
+          "en": "Before or after Hijri date"
+        },
+        "titleFormatted": {
+          "en": "[[when]] [[type]] [[beforeAfter]] [[day]] [[month]] Hijri"
+        },
+        "hint": {
+          "en": "Fires N days or weeks before or after a specific Hijri date. Use this for preparation reminders."
+        },
+        "args": [
+          {
+            "name": "beforeAfter",
+            "type": "dropdown",
+            "title": {
+              "en": "Before or after"
+            },
+            "values": [
+              {
+                "id": "Before",
+                "title": {
+                  "en": "Before"
+                }
+              },
+              {
+                "id": "After",
+                "title": {
+                  "en": "After"
+                }
+              }
+            ]
+          },
+          {
+            "name": "when",
+            "type": "number",
+            "title": {
+              "en": "Number"
+            },
+            "placeholder": {
+              "en": "3"
+            },
+            "min": 1,
+            "max": 30
+          },
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "en": "Unit"
+            },
+            "values": [
+              {
+                "id": "days",
+                "title": {
+                  "en": "day(s)"
+                }
+              },
+              {
+                "id": "weeks",
+                "title": {
+                  "en": "week(s)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "day",
+            "type": "number",
+            "title": {
+              "en": "Day"
+            },
+            "placeholder": {
+              "en": "10"
+            },
+            "min": 1,
+            "max": 30
+          },
+          {
+            "name": "month",
+            "type": "dropdown",
+            "title": {
+              "en": "Month"
+            },
+            "values": [
+              {
+                "id": "1",
+                "title": {
+                  "en": "Muharram"
+                }
+              },
+              {
+                "id": "2",
+                "title": {
+                  "en": "Safar"
+                }
+              },
+              {
+                "id": "3",
+                "title": {
+                  "en": "Rabi Al-Awwal"
+                }
+              },
+              {
+                "id": "4",
+                "title": {
+                  "en": "Rabi Al-Thani"
+                }
+              },
+              {
+                "id": "5",
+                "title": {
+                  "en": "Jumada Al-Awwal"
+                }
+              },
+              {
+                "id": "6",
+                "title": {
+                  "en": "Jumada Al-Thani"
+                }
+              },
+              {
+                "id": "7",
+                "title": {
+                  "en": "Rajab"
+                }
+              },
+              {
+                "id": "8",
+                "title": {
+                  "en": "Sha'ban"
+                }
+              },
+              {
+                "id": "9",
+                "title": {
+                  "en": "Ramadan"
+                }
+              },
+              {
+                "id": "10",
+                "title": {
+                  "en": "Shawwal"
+                }
+              },
+              {
+                "id": "11",
+                "title": {
+                  "en": "Dhul Qa'dah"
+                }
+              },
+              {
+                "id": "12",
+                "title": {
+                  "en": "Dhul Hijjah"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "hijriDate",
+            "type": "string",
+            "title": {
+              "en": "Hijri date"
+            },
+            "example": {
+              "en": "10 Dhul Hijjah 1447"
+            }
+          },
+          {
+            "name": "gregorianDate",
+            "type": "string",
+            "title": {
+              "en": "Gregorian date"
+            },
+            "example": {
+              "en": "2025-06-06"
+            }
+          },
+          {
+            "name": "anchorName",
+            "type": "string",
+            "title": {
+              "en": "Anchor date"
+            },
+            "example": {
+              "en": "10 Dhul Hijjah"
+            }
+          }
+        ]
+      },
+      {
+        "id": "hijri_day_of_month",
+        "title": {
+          "en": "On day of each Hijri month"
+        },
+        "titleFormatted": {
+          "en": "On day [[day]] of each Hijri month"
+        },
+        "hint": {
+          "en": "Fires on the same day number every Hijri month. Use day 13, 14, or 15 for white days."
+        },
+        "args": [
+          {
+            "name": "day",
+            "type": "number",
+            "title": {
+              "en": "Day"
+            },
+            "placeholder": {
+              "en": "13"
+            },
+            "min": 1,
+            "max": 30
+          }
+        ],
+        "tokens": [
+          {
+            "name": "hijriDay",
+            "type": "number",
+            "title": {
+              "en": "Day"
+            },
+            "example": {
+              "en": "13"
+            }
+          },
+          {
+            "name": "hijriMonthName",
+            "type": "string",
+            "title": {
+              "en": "Month name"
+            },
+            "example": {
+              "en": "Ramadan"
+            }
+          },
+          {
+            "name": "hijriMonth",
+            "type": "number",
+            "title": {
+              "en": "Month number"
+            },
+            "example": {
+              "en": "9"
+            }
+          },
+          {
+            "name": "hijriYear",
+            "type": "number",
+            "title": {
+              "en": "Hijri year"
+            },
+            "example": {
+              "en": "1447"
+            }
+          }
+        ]
+      },
+      {
+        "id": "hijri_month_event",
+        "title": {
+          "en": "Hijri month event"
+        },
+        "titleFormatted": {
+          "en": "Hijri month [[month]] [[event]]"
+        },
+        "hint": {
+          "en": "Fires when a Hijri month starts or ends. Choose 'Any month' to fire every month."
+        },
+        "args": [
+          {
+            "name": "month",
+            "type": "dropdown",
+            "title": {
+              "en": "Month"
+            },
+            "values": [
+              {
+                "id": "any",
+                "title": {
+                  "en": "Any month"
+                }
+              },
+              {
+                "id": "1",
+                "title": {
+                  "en": "Muharram"
+                }
+              },
+              {
+                "id": "2",
+                "title": {
+                  "en": "Safar"
+                }
+              },
+              {
+                "id": "3",
+                "title": {
+                  "en": "Rabi Al-Awwal"
+                }
+              },
+              {
+                "id": "4",
+                "title": {
+                  "en": "Rabi Al-Thani"
+                }
+              },
+              {
+                "id": "5",
+                "title": {
+                  "en": "Jumada Al-Awwal"
+                }
+              },
+              {
+                "id": "6",
+                "title": {
+                  "en": "Jumada Al-Thani"
+                }
+              },
+              {
+                "id": "7",
+                "title": {
+                  "en": "Rajab"
+                }
+              },
+              {
+                "id": "8",
+                "title": {
+                  "en": "Sha'ban"
+                }
+              },
+              {
+                "id": "9",
+                "title": {
+                  "en": "Ramadan"
+                }
+              },
+              {
+                "id": "10",
+                "title": {
+                  "en": "Shawwal"
+                }
+              },
+              {
+                "id": "11",
+                "title": {
+                  "en": "Dhul Qa'dah"
+                }
+              },
+              {
+                "id": "12",
+                "title": {
+                  "en": "Dhul Hijjah"
+                }
+              }
+            ]
+          },
+          {
+            "name": "event",
+            "type": "dropdown",
+            "title": {
+              "en": "Event"
+            },
+            "values": [
+              {
+                "id": "starts",
+                "title": {
+                  "en": "starts"
+                }
+              },
+              {
+                "id": "ends",
+                "title": {
+                  "en": "ends"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "hijriMonthName",
+            "type": "string",
+            "title": {
+              "en": "Month name"
+            },
+            "example": {
+              "en": "Ramadan"
+            }
+          },
+          {
+            "name": "hijriMonth",
+            "type": "number",
+            "title": {
+              "en": "Month number"
+            },
+            "example": {
+              "en": "9"
+            }
+          },
+          {
+            "name": "hijriYear",
+            "type": "number",
+            "title": {
+              "en": "Hijri year"
+            },
+            "example": {
+              "en": "1447"
+            }
+          }
+        ]
+      },
+      {
+        "id": "hijri_specific_date",
+        "title": {
+          "en": "On Hijri date"
+        },
+        "titleFormatted": {
+          "en": "On [[day]] [[month]] Hijri"
+        },
+        "hint": {
+          "en": "Fires once a year on a specific Hijri day and month."
+        },
+        "args": [
+          {
+            "name": "day",
+            "type": "number",
+            "title": {
+              "en": "Day"
+            },
+            "placeholder": {
+              "en": "10"
+            },
+            "min": 1,
+            "max": 30
+          },
+          {
+            "name": "month",
+            "type": "dropdown",
+            "title": {
+              "en": "Month"
+            },
+            "values": [
+              {
+                "id": "1",
+                "title": {
+                  "en": "Muharram"
+                }
+              },
+              {
+                "id": "2",
+                "title": {
+                  "en": "Safar"
+                }
+              },
+              {
+                "id": "3",
+                "title": {
+                  "en": "Rabi Al-Awwal"
+                }
+              },
+              {
+                "id": "4",
+                "title": {
+                  "en": "Rabi Al-Thani"
+                }
+              },
+              {
+                "id": "5",
+                "title": {
+                  "en": "Jumada Al-Awwal"
+                }
+              },
+              {
+                "id": "6",
+                "title": {
+                  "en": "Jumada Al-Thani"
+                }
+              },
+              {
+                "id": "7",
+                "title": {
+                  "en": "Rajab"
+                }
+              },
+              {
+                "id": "8",
+                "title": {
+                  "en": "Sha'ban"
+                }
+              },
+              {
+                "id": "9",
+                "title": {
+                  "en": "Ramadan"
+                }
+              },
+              {
+                "id": "10",
+                "title": {
+                  "en": "Shawwal"
+                }
+              },
+              {
+                "id": "11",
+                "title": {
+                  "en": "Dhul Qa'dah"
+                }
+              },
+              {
+                "id": "12",
+                "title": {
+                  "en": "Dhul Hijjah"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "hijriDay",
+            "type": "number",
+            "title": {
+              "en": "Day"
+            },
+            "example": {
+              "en": "10"
+            }
+          },
+          {
+            "name": "hijriMonthName",
+            "type": "string",
+            "title": {
+              "en": "Month name"
+            },
+            "example": {
+              "en": "Dhul Hijjah"
+            }
+          },
+          {
+            "name": "hijriYear",
+            "type": "number",
+            "title": {
+              "en": "Hijri year"
+            },
+            "example": {
+              "en": "1447"
+            }
+          },
+          {
+            "name": "gregorianDate",
+            "type": "string",
+            "title": {
+              "en": "Gregorian date"
+            },
+            "example": {
+              "en": "2025-06-06"
+            }
+          }
+        ]
+      },
+      {
+        "id": "islamic_occasion_event",
+        "title": {
+          "en": "Islamic occasion event"
+        },
+        "titleFormatted": {
+          "en": "[[occasion]] [[event]]"
+        },
+        "hint": {
+          "en": "Fires when an Islamic occasion starts or ends. Ramadan fires on day 1 (starts) and the last day of Ramadan (ends). All other occasions fire on the occasion day for both start and end."
+        },
+        "args": [
+          {
+            "name": "occasion",
+            "type": "dropdown",
+            "title": {
+              "en": "Occasion"
+            },
+            "values": [
+              {
+                "id": "ramadan",
+                "title": {
+                  "en": "Ramadan"
+                }
+              },
+              {
+                "id": "eid_al_fitr",
+                "title": {
+                  "en": "Eid Al-Fitr"
+                }
+              },
+              {
+                "id": "eid_al_adha",
+                "title": {
+                  "en": "Eid Al-Adha"
+                }
+              },
+              {
+                "id": "arafah",
+                "title": {
+                  "en": "Day of Arafah"
+                }
+              },
+              {
+                "id": "ashura",
+                "title": {
+                  "en": "Ashura"
+                }
+              },
+              {
+                "id": "mawlid",
+                "title": {
+                  "en": "Mawlid Al-Nabi"
+                }
+              },
+              {
+                "id": "laylah_al_qadr",
+                "title": {
+                  "en": "Laylah Al-Qadr"
+                }
+              }
+            ]
+          },
+          {
+            "name": "event",
+            "type": "dropdown",
+            "title": {
+              "en": "Event"
+            },
+            "values": [
+              {
+                "id": "starts",
+                "title": {
+                  "en": "starts"
+                }
+              },
+              {
+                "id": "ends",
+                "title": {
+                  "en": "ends"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "occasionName",
+            "type": "string",
+            "title": {
+              "en": "Occasion name"
+            },
+            "example": {
+              "en": "Ramadan"
+            }
+          },
+          {
+            "name": "hijriDate",
+            "type": "string",
+            "title": {
+              "en": "Hijri date"
+            },
+            "example": {
+              "en": "1 Ramadan 1447"
+            }
+          },
+          {
+            "name": "gregorianDate",
+            "type": "string",
+            "title": {
+              "en": "Gregorian date"
+            },
+            "example": {
+              "en": "2026-02-18"
+            }
+          }
+        ]
+      },
+      {
+        "id": "islamic_occasion_offset",
+        "title": {
+          "en": "Before or after Islamic occasion"
+        },
+        "titleFormatted": {
+          "en": "[[when]] [[type]] [[beforeAfter]] [[occasion]]"
+        },
+        "hint": {
+          "en": "Fires N days or weeks before or after an Islamic occasion. Use this for preparation reminders like 'grocery shopping 3 days before Eid'."
+        },
+        "args": [
+          {
+            "name": "beforeAfter",
+            "type": "dropdown",
+            "title": {
+              "en": "Before or after"
+            },
+            "values": [
+              {
+                "id": "Before",
+                "title": {
+                  "en": "Before"
+                }
+              },
+              {
+                "id": "After",
+                "title": {
+                  "en": "After"
+                }
+              }
+            ]
+          },
+          {
+            "name": "when",
+            "type": "number",
+            "title": {
+              "en": "Number"
+            },
+            "placeholder": {
+              "en": "3"
+            },
+            "min": 1,
+            "max": 30
+          },
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "en": "Unit"
+            },
+            "values": [
+              {
+                "id": "days",
+                "title": {
+                  "en": "day(s)"
+                }
+              },
+              {
+                "id": "weeks",
+                "title": {
+                  "en": "week(s)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "occasion",
+            "type": "dropdown",
+            "title": {
+              "en": "Occasion"
+            },
+            "values": [
+              {
+                "id": "ramadan",
+                "title": {
+                  "en": "Ramadan"
+                }
+              },
+              {
+                "id": "eid_al_fitr",
+                "title": {
+                  "en": "Eid Al-Fitr"
+                }
+              },
+              {
+                "id": "eid_al_adha",
+                "title": {
+                  "en": "Eid Al-Adha"
+                }
+              },
+              {
+                "id": "arafah",
+                "title": {
+                  "en": "Day of Arafah"
+                }
+              },
+              {
+                "id": "ashura",
+                "title": {
+                  "en": "Ashura"
+                }
+              },
+              {
+                "id": "mawlid",
+                "title": {
+                  "en": "Mawlid Al-Nabi"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "occasionName",
+            "type": "string",
+            "title": {
+              "en": "Occasion name"
+            },
+            "example": {
+              "en": "Eid Al-Fitr"
+            }
+          },
+          {
+            "name": "hijriDate",
+            "type": "string",
+            "title": {
+              "en": "Hijri date"
+            },
+            "example": {
+              "en": "1 Shawwal 1447"
+            }
+          },
+          {
+            "name": "gregorianDate",
+            "type": "string",
+            "title": {
+              "en": "Gregorian date"
+            },
+            "example": {
+              "en": "2025-03-30"
+            }
+          }
+        ]
+      },
+      {
         "id": "prayer_trigger_all",
         "title": {
           "en": "At any prayer time"
         },
         "hint": {
-          "en": "Fires at every prayer time (Fajr, Dhuhr, Asr, Maghrib, Isha). Use the Prayer Name and Prayer Time tags in your Then cards."
+          "en": "Fires at every prayer time (Fajr, Dhuhr, Asr, Maghrib, Isha). In your Then 'cast a URL' card, pick the audio tag you want — Full adhan, Short adhan, Adhkar, Quran or Custom. The app fills each tag from your Audio settings."
         },
         "tokens": [
           {
@@ -117,6 +924,96 @@
             },
             "example": {
               "en": "05:38"
+            }
+          },
+          {
+            "name": "adhan_full",
+            "type": "string",
+            "title": {
+              "en": "Full adhan URL"
+            },
+            "example": {
+              "en": "https://www.islamcan.com/audio/adhan/azan1.mp3"
+            }
+          },
+          {
+            "name": "adhan_short",
+            "type": "string",
+            "title": {
+              "en": "Short adhan URL"
+            },
+            "example": {
+              "en": "https://www.islamcan.com/audio/adhan/azan2.mp3"
+            }
+          },
+          {
+            "name": "adhkar",
+            "type": "string",
+            "title": {
+              "en": "Adhkar URL"
+            },
+            "example": {
+              "en": "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
+            }
+          },
+          {
+            "name": "quran",
+            "type": "string",
+            "title": {
+              "en": "Quran URL"
+            },
+            "example": {
+              "en": "https://server8.mp3quran.net/afs/001.mp3"
+            }
+          },
+          {
+            "name": "reciter",
+            "type": "string",
+            "title": {
+              "en": "Reciter"
+            },
+            "example": {
+              "en": "Mishary Al-Afasy"
+            }
+          },
+          {
+            "name": "custom",
+            "type": "string",
+            "title": {
+              "en": "Custom URL"
+            },
+            "example": {
+              "en": "https://example.com/audio.mp3"
+            }
+          },
+          {
+            "name": "custom2",
+            "type": "string",
+            "title": {
+              "en": "Custom URL 2"
+            },
+            "example": {
+              "en": "https://example.com/audio2.mp3"
+            }
+          },
+          {
+            "name": "custom3",
+            "type": "string",
+            "title": {
+              "en": "Custom URL 3"
+            },
+            "example": {
+              "en": "https://example.com/audio3.mp3"
+            }
+          },
+          {
+            "name": "volume",
+            "type": "string",
+            "title": {
+              "en": "Volume %"
+            },
+            "example": {
+              "en": "70"
             }
           }
         ]
@@ -340,60 +1237,225 @@
             "example": {
               "en": "05:38"
             }
+          },
+          {
+            "name": "adhan_full",
+            "type": "string",
+            "title": {
+              "en": "Full adhan URL"
+            },
+            "example": {
+              "en": "https://www.islamcan.com/audio/adhan/azan1.mp3"
+            }
+          },
+          {
+            "name": "adhan_short",
+            "type": "string",
+            "title": {
+              "en": "Short adhan URL"
+            },
+            "example": {
+              "en": "https://www.islamcan.com/audio/adhan/azan2.mp3"
+            }
+          },
+          {
+            "name": "adhkar",
+            "type": "string",
+            "title": {
+              "en": "Adhkar URL"
+            },
+            "example": {
+              "en": "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
+            }
+          },
+          {
+            "name": "quran",
+            "type": "string",
+            "title": {
+              "en": "Quran URL"
+            },
+            "example": {
+              "en": "https://server8.mp3quran.net/afs/001.mp3"
+            }
+          },
+          {
+            "name": "reciter",
+            "type": "string",
+            "title": {
+              "en": "Reciter"
+            },
+            "example": {
+              "en": "Mishary Al-Afasy"
+            }
+          },
+          {
+            "name": "custom",
+            "type": "string",
+            "title": {
+              "en": "Custom URL"
+            },
+            "example": {
+              "en": "https://example.com/audio.mp3"
+            }
+          },
+          {
+            "name": "custom2",
+            "type": "string",
+            "title": {
+              "en": "Custom URL 2"
+            },
+            "example": {
+              "en": "https://example.com/audio2.mp3"
+            }
+          },
+          {
+            "name": "custom3",
+            "type": "string",
+            "title": {
+              "en": "Custom URL 3"
+            },
+            "example": {
+              "en": "https://example.com/audio3.mp3"
+            }
+          },
+          {
+            "name": "volume",
+            "type": "string",
+            "title": {
+              "en": "Volume %"
+            },
+            "example": {
+              "en": "70"
+            }
           }
         ]
       }
     ],
     "conditions": [
       {
-        "id": "is_laylah_al_qadr",
+        "id": "is_islamic_occasion",
         "title": {
-          "en": "It is Laylah Al-Qadr"
+          "en": "Islamic occasion is"
         },
         "titleFormatted": {
-          "en": "It !{{is|is not}} Laylah Al-Qadr (Night of Power)"
-        }
-      },
-      {
-        "id": "is_ramadan",
-        "title": {
-          "en": "It is Ramadan"
-        },
-        "titleFormatted": {
-          "en": "It !{{is|is not}} Ramadan"
-        }
-      }
-    ],
-    "actions": [
-      {
-        "id": "athan_action",
-        "title": {
-          "en": "Play Adhan"
-        },
-        "titleFormatted": {
-          "en": "Play [[athan_dropdown]] adhan on all speakers"
+          "en": "It !{{is|is not}} [[occasion]]"
         },
         "hint": {
-          "en": "Plays the adhan on all enabled speaker groups configured in the app settings."
+          "en": "Check if today falls on a named Islamic occasion. Use 'is not' to skip flows during a specific occasion."
         },
         "args": [
           {
-            "name": "athan_dropdown",
+            "name": "occasion",
             "type": "dropdown",
             "title": {
-              "en": "Adhan type"
+              "en": "Occasion"
             },
             "values": [
               {
-                "id": "athan_short",
+                "id": "ramadan",
                 "title": {
-                  "en": "Short"
+                  "en": "Ramadan"
                 }
               },
               {
-                "id": "athan_full",
+                "id": "last_10_nights",
                 "title": {
-                  "en": "Full"
+                  "en": "Last 10 nights of Ramadan"
+                }
+              },
+              {
+                "id": "laylah_al_qadr",
+                "title": {
+                  "en": "Laylah Al-Qadr (Night of Power)"
+                }
+              },
+              {
+                "id": "eid_al_fitr",
+                "title": {
+                  "en": "Eid Al-Fitr"
+                }
+              },
+              {
+                "id": "eid_al_adha",
+                "title": {
+                  "en": "Eid Al-Adha"
+                }
+              },
+              {
+                "id": "arafah",
+                "title": {
+                  "en": "Day of Arafah"
+                }
+              },
+              {
+                "id": "ashura",
+                "title": {
+                  "en": "Ashura"
+                }
+              },
+              {
+                "id": "mawlid",
+                "title": {
+                  "en": "Mawlid Al-Nabi"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "prayer_name_is",
+        "title": {
+          "en": "Prayer name is"
+        },
+        "titleFormatted": {
+          "en": "Prayer name !{{is|is not}} [[prayerName]]"
+        },
+        "hint": {
+          "en": "Check if the current prayer matches the selected prayer. Use 'is not' to exclude a specific prayer from your flow."
+        },
+        "args": [
+          {
+            "name": "prayerName",
+            "type": "dropdown",
+            "title": {
+              "en": "Prayer"
+            },
+            "values": [
+              {
+                "id": "Fajr",
+                "title": {
+                  "en": "Fajr"
+                }
+              },
+              {
+                "id": "Sunrise",
+                "title": {
+                  "en": "Sunrise"
+                }
+              },
+              {
+                "id": "Dhuhr",
+                "title": {
+                  "en": "Dhuhr"
+                }
+              },
+              {
+                "id": "Asr",
+                "title": {
+                  "en": "Asr"
+                }
+              },
+              {
+                "id": "Maghrib",
+                "title": {
+                  "en": "Maghrib"
+                }
+              },
+              {
+                "id": "Isha",
+                "title": {
+                  "en": "Isha"
                 }
               }
             ]

@@ -1,6 +1,6 @@
 {
   "id": "com.prayerssapp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "compatibility": ">=12.1.0",
   "sdk": 3,
   "platforms": ["local"],
@@ -23,14 +23,9 @@
   "api": {
     "previewTimes":    { "method": "GET",  "path": "/previewTimes"    },
     "searchCity":      { "method": "GET",  "path": "/searchCity"      },
-    "getSpeakers":     { "method": "GET",  "path": "/speakers"        },
     "getLocation":     { "method": "GET",  "path": "/location"        },
-    "getReciters":     { "method": "GET",  "path": "/reciters"        },
     "getStatus":       { "method": "GET",  "path": "/status"          },
-    "testAudio":       { "method": "POST", "path": "/testAudio"       },
-    "diagnosePlayback":{ "method": "GET",  "path": "/diagnosePlayback"},
     "reschedule":      { "method": "POST", "path": "/reschedule"      },
-    "stopAudio":       { "method": "POST", "path": "/stopAudio"       },
     "widgetData":      { "method": "GET",  "path": "/widgetData"      }
   }
 }
