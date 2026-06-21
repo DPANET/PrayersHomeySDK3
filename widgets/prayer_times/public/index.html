@@ -29,9 +29,9 @@
 
     /* ── Left panel — next prayer focus ──────────────────────────────────── */
     .panel-left {
-      width: 42%;
-      min-width: 120px;
-      padding: 12px 11px;
+      width: 44%;
+      min-width: 130px;
+      padding: 14px 13px;
       background: rgba(255, 255, 255, .035);
       border-right: 1px solid rgba(255, 255, 255, .07);
       display: flex;
@@ -43,61 +43,61 @@
     .loc-row {
       display: flex;
       align-items: center;
-      gap: 3px;
-      font-size: 9px;
-      color: rgba(255, 255, 255, .4);
+      gap: 4px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, .5);
       text-transform: uppercase;
-      letter-spacing: .7px;
+      letter-spacing: .6px;
       line-height: 1;
     }
     .loc-row svg {
-      width: 8px; height: 8px;
+      width: 10px; height: 10px;
       stroke: currentColor; fill: none; stroke-width: 2.2;
       flex-shrink: 0;
     }
     .loc-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .next-block { display: flex; flex-direction: column; gap: 1px; }
+    .next-block { display: flex; flex-direction: column; gap: 2px; }
     .next-label {
-      font-size: 9px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: .9px;
+      letter-spacing: .8px;
       color: #3eb68a;
       font-weight: 600;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .next-name {
-      font-size: clamp(18px, 5.5vw, 26px);
+      font-size: clamp(24px, 7vw, 34px);
       font-weight: 700;
       color: #ffffff;
       line-height: 1;
       letter-spacing: -.3px;
     }
     .next-time {
-      font-size: clamp(12px, 3.8vw, 16px);
+      font-size: clamp(17px, 5vw, 22px);
       font-weight: 600;
       color: #3eb68a;
       font-variant-numeric: tabular-nums;
-      margin-top: 3px;
+      margin-top: 4px;
     }
     .next-countdown {
-      font-size: 10px;
-      color: rgba(255, 255, 255, .4);
+      font-size: 12px;
+      color: rgba(255, 255, 255, .45);
       margin-top: 5px;
       font-variant-numeric: tabular-nums;
     }
 
     .hijri-date {
-      font-size: 9px;
-      color: rgba(255, 255, 255, .28);
-      line-height: 1.45;
+      font-size: 11px;
+      color: rgba(255, 255, 255, .32);
+      line-height: 1.4;
     }
 
     /* ── Right panel — daily schedule ────────────────────────────────────── */
     .panel-right {
       flex: 1;
       min-width: 0;
-      padding: 8px 9px;
+      padding: 10px 10px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -106,15 +106,15 @@
     .pr-row {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 3px 6px;
-      border-radius: 7px;
+      gap: 7px;
+      padding: 4px 7px;
+      border-radius: 8px;
     }
-    .pr-row.passed { opacity: .35; }
+    .pr-row.passed { opacity: .38; }
     .pr-row.next   { background: rgba(62, 182, 138, .13); }
 
     .pr-dot {
-      width: 5px; height: 5px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
       background: rgba(255, 255, 255, .2);
@@ -125,19 +125,19 @@
     .pr-name {
       flex: 1;
       min-width: 0;
-      font-size: clamp(10px, 3vw, 12px);
+      font-size: clamp(13px, 3.8vw, 15px);
       font-weight: 500;
-      color: rgba(255, 255, 255, .72);
+      color: rgba(255, 255, 255, .80);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .pr-row.next .pr-name { color: #3eb68a; }
+    .pr-row.next .pr-name { color: #3eb68a; font-weight: 600; }
 
     .pr-time {
-      font-size: clamp(10px, 3vw, 12px);
+      font-size: clamp(13px, 3.8vw, 15px);
       font-weight: 500;
-      color: rgba(255, 255, 255, .5);
+      color: rgba(255, 255, 255, .55);
       font-variant-numeric: tabular-nums;
       flex-shrink: 0;
     }
@@ -192,6 +192,10 @@ let _homey       = null;
 function onHomeyReady(Homey) {
   _homey = Homey;
 
+  // Signal ready immediately so Homey removes the loading overlay.
+  // The widget renders placeholders until the first fetch completes.
+  Homey.ready();
+
   fetchData();
 
   // Re-fetch every 60 s (covers prayer time changes, new day, adjustments)
@@ -199,17 +203,18 @@ function onHomeyReady(Homey) {
 
   // Countdown ticks every second (client-side, no API call)
   setInterval(tickCountdown, 1000);
-
-  // Widget is shown after first render; Homey.ready() called inside render()
 }
 
 // ── Data fetch ───────────────────────────────────────────────────────────────
-function fetchData() {
-  _homey.api('GET', '/widgetData', null, function(err, data) {
-    if (err || !data) return;
+async function fetchData() {
+  try {
+    var data = await _homey.api('GET', '/data');
+    if (!data) { console.warn('fetchData: no data returned'); return; }
     _data = data;
     render(data);
-  });
+  } catch (err) {
+    console.error('fetchData error:', err);
+  }
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -249,7 +254,6 @@ function render(data) {
     '</div>';
   }).join('');
 
-  _homey.ready();
 }
 
 // ── Countdown ─────────────────────────────────────────────────────────────────

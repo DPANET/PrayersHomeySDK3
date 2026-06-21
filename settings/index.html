@@ -658,11 +658,11 @@
 
       <div class="field" style="margin-top:12px">
         <label>Full adhan URL</label>
-        <input type="text" id="ap-full" placeholder="https://www.islamcan.com/audio/adhan/azan1.mp3" />
+        <input type="text" id="ap-full" placeholder="leave blank to use built-in default (Mansour Al-Zahrani)" />
       </div>
       <div class="field">
         <label>Short adhan URL</label>
-        <input type="text" id="ap-short" placeholder="https://www.islamcan.com/audio/adhan/azan2.mp3" />
+        <input type="text" id="ap-short" placeholder="leave blank to use built-in default (Al-Fatiha, Alafasy)" />
       </div>
 
       <div class="field">
@@ -681,15 +681,15 @@
 
       <div class="field">
         <label>Morning Adhkar URL</label>
-        <input type="text" id="ap-adhkar-morning" placeholder="played via adhkar_morning tag" />
+        <input type="text" id="ap-adhkar-morning" placeholder="leave blank to use built-in default (Adhkar Morning, Alafasy)" />
       </div>
       <div class="field">
         <label>Evening Adhkar URL</label>
-        <input type="text" id="ap-adhkar-evening" placeholder="played via adhkar_evening tag" />
+        <input type="text" id="ap-adhkar-evening" placeholder="leave blank to use built-in default (Adhkar Evening, Alafasy)" />
       </div>
       <div class="field">
         <label>Custom URL</label>
-        <input type="text" id="ap-custom" placeholder="optional — your own recording" />
+        <input type="text" id="ap-custom" placeholder="leave blank to use built-in default (Assabile adhan)" />
       </div>
       <div class="field">
         <label>Custom URL 2</label>
@@ -1240,18 +1240,18 @@ function onHomeyReady(Homey) {
 
   Homey.get('audioPrefs', (err, ap) => {
     ap = ap || {};
-    setVal('ap-full',    ap.fullUrl   || 'https://cdn.aladhan.com/audio/adhans/a11-mansour-al-zahrani.mp3');
-    setVal('ap-short',   ap.shortUrl  || 'https://everyayah.com/data/Alafasy_128kbps/001001.mp3');
+    setVal('ap-full',          ap.fullUrl          || '');
+    setVal('ap-short',         ap.shortUrl         || '');
     setVal('ap-reciter', ap.reciter || 'Mishary Al-Afasy');
     const surahN = ap.surah || 1;
     setVal('ap-surah', surahN);
     const surahTextEl = document.getElementById('ap-surah-text');
     if (surahTextEl) surahTextEl.value = surahLabel(surahN);
-    setVal('ap-adhkar-morning', ap.adhkarMorningUrl || 'https://archive.org/download/adhkar-of-the-morning-mishary-alafasi/Adhkar%20of%20the%20Morning_Mishary%20Alafasi%20.mp3');
-    setVal('ap-adhkar-evening', ap.adhkarEveningUrl || 'https://archive.org/download/adhkar-of-the-evening-mishary-alafasi/Adhkar%20of%20the%20Evening_Mishary%20Alafasi%20.mp3');
-    setVal('ap-custom',  ap.customUrl  || 'https://media.assabile.com/assabile/adhan_3435370/f30b7631d625.mp3');
-    setVal('ap-custom2', ap.customUrl2 || '');
-    setVal('ap-custom3', ap.customUrl3 || '');
+    setVal('ap-adhkar-morning', ap.adhkarMorningUrl || '');
+    setVal('ap-adhkar-evening', ap.adhkarEveningUrl || '');
+    setVal('ap-custom',        ap.customUrl        || '');
+    setVal('ap-custom2',       ap.customUrl2       || '');
+    setVal('ap-custom3',       ap.customUrl3       || '');
     volLoad(ap.volumes || {});
   });
 

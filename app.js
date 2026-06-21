@@ -1,12 +1,14 @@
 'use strict';
 
 const Homey            = require('homey');
+const adhan            = require('adhan-extended');
 const PrayerScheduler  = require('./lib/PrayerScheduler');
 const HijriScheduler   = require('./lib/HijriScheduler');
 const AudioRouter      = require('./lib/AudioRouter');
 const HijriCalendar    = require('./lib/HijriCalendar');
 const triggerMatches   = require('./lib/triggerMatch');
 const Logger           = require('./lib/Logger');
+const { buildParams, resolveCoords } = require('./lib/calc');
 
 class App extends Homey.App {
   async onInit() {
@@ -33,6 +35,70 @@ class App extends Homey.App {
     if (mapsKey) this.homey.settings.set('googleMapsKey', mapsKey);
 
     this.logger.log('Prayers Alert v2 started');
+  }
+
+  async getWidgetData() {
+    try {
+    this.logger.log('Widget: getWidgetData called');
+    const loc  = this.homey.settings.get('location')    || {};
+    const calc = this.homey.settings.get('calculation') || {};
+    const adj  = this.homey.settings.get('adjustments') || {};
+
+    const params = buildParams(calc);
+    const coords = resolveCoords(this.homey);
+    const tz     = this.homey.clock.getTimezone();
+    const now    = new Date();
+    const nowMs  = now.getTime();
+
+    const pt = new adhan.PrayerTimes(coords, now, params);
+
+    const adjTime = (d, prayer) => d ? new Date(d.getTime() + (adj[prayer] || 0) * 60000) : null;
+    const fmt = d => d
+      ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz })
+      : '--:--';
+
+    const todayPrayers = [
+      { name: 'Fajr',    time: adjTime(pt.fajr,    'Fajr')    },
+      { name: 'Sunrise', time: adjTime(pt.sunrise,  'Sunrise') },
+      { name: 'Dhuhr',   time: adjTime(pt.dhuhr,    'Dhuhr')   },
+      { name: 'Asr',     time: adjTime(pt.asr,      'Asr')     },
+      { name: 'Maghrib', time: adjTime(pt.maghrib,  'Maghrib') },
+      { name: 'Isha',    time: adjTime(pt.isha,      'Isha')    },
+    ];
+
+    const nextIdx = todayPrayers.findIndex(p => p.time && p.time.getTime() > nowMs);
+
+    let overrideNext = null;
+    if (nextIdx === -1) {
+      const tmr = new Date(now);
+      tmr.setDate(tmr.getDate() + 1);
+      tmr.setHours(0, 0, 0, 0);
+      const tmrFajr = adjTime(new adhan.PrayerTimes(coords, tmr, params).fajr, 'Fajr');
+      overrideNext  = { name: 'Fajr', time: fmt(tmrFajr), timeMs: tmrFajr ? tmrFajr.getTime() : null };
+    }
+
+    const hijri = new HijriCalendar(this.homey.settings.get('hijriConfig') || {});
+
+    const result = {
+      city:        loc.city    || null,
+      country:     loc.country || null,
+      hijriDate:   hijri.todayInfo(),
+      overrideNext,
+      prayers: todayPrayers.map((p, i) => ({
+        name:   p.name,
+        time:   fmt(p.time),
+        timeMs: p.time ? p.time.getTime() : null,
+        passed: p.time ? p.time.getTime() <= nowMs : false,
+        isNext: i === nextIdx,
+      })),
+    };
+    const nextPrayer = result.prayers.find(p => p.isNext);
+    this.logger.log(`Widget: returning ${result.prayers.length} prayers, next=${nextPrayer ? nextPrayer.name + '@' + nextPrayer.time : 'none'}, city=${result.city}`);
+    return result;
+    } catch (e) {
+      this.logger.error('Widget: getWidgetData ERROR:', e.message);
+      throw e;
+    }
   }
 
   // Convert old app (1.x) settings keys to new format on first run.

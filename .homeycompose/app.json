@@ -5,10 +5,10 @@
   "sdk": 3,
   "platforms": ["local"],
   "name": { "en": "Prayers Alert" },
-  "description": { "en": "Islamic audio hub with prayer times and Flow triggers" },
+  "description": { "en": "Prayer times, adhan audio, Quran recitation, Hijri calendar and Flow automation for Muslim households" },
   "category": ["tools"],
   "tags": {
-    "en": ["prayer", "adhan", "quran", "islamic", "fajr", "isha", "asr", "maghrib", "dhuhr"]
+    "en": ["prayer", "adhan", "quran", "islamic", "fajr", "isha", "asr", "maghrib", "dhuhr", "hijri", "ramadan", "eid"]
   },
   "permissions": [
     "homey:manager:geolocation"

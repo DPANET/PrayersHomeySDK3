@@ -1,6 +1,9 @@
 {
   "name": { "en": "Prayer Times" },
-  "height": 200,
+  "height": 250,
   "transparent": true,
-  "settings": []
+  "settings": [],
+  "api": {
+    "getData": { "method": "GET", "path": "/data" }
+  }
 }
