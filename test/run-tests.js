@@ -309,38 +309,38 @@ section('4. Edge cases — end of month, midnight boundary, freshness, early-fir
     check('4r. location change DOES schedule rebuild', env.scheduler._debounce !== null);
   });
 
-  // Boot-cooldown catch-up: a legit change suppressed in the 90s window is still
-  // applied by a one-shot catch-up reconcile (the additive heartbeat can't fix coords).
+  // Post-boot events are honored, never dropped. The old 90s boot cooldown
+  // swallowed the flow-card 'update' Homey emits once it finishes loading flow
+  // arguments — so before/after timers were never registered ("scheduled but
+  // never triggers"). Now every change source funnels into one debounced,
+  // idempotent rebuild with no suppression window.
   await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
     const env = makeEnv({ settings: {} });
     await env.scheduler.init();
-    check('4s. boot catch-up timer armed after init', !!env.scheduler._bootCatchup);
+    // Clean boot: schedule built in one idempotent pass, nothing left pending,
+    // no legacy cooldown/catch-up machinery.
+    check('4s. boot leaves no cooldown/catch-up timer pending',
+      env.scheduler._bootCatchup === undefined && env.scheduler._readyAt === undefined &&
+      env.scheduler._debounce === null);
 
-    // A real location change lands inside the cooldown → suppressed, not debounced…
+    // Regression guard: a post-boot flow-card 'update' arms a rebuild (registers
+    // the before/after flow timers) instead of being dropped.
+    env.ba.emit('update');
+    check('4t. post-boot flow update arms a rebuild (not dropped by a cooldown)',
+      env.scheduler._debounce !== null);
+
+    // A post-boot setting change is likewise honored (re-arms the same debounce).
     env.scheduler._onSettingChanged('location');
-    check('4t. event inside cooldown is suppressed (no debounce armed)', env.scheduler._debounce === null);
-    check('4u. …but recorded for catch-up', env.scheduler._suppressedDuringBoot === true);
+    check('4u. post-boot setting change arms a rebuild', env.scheduler._debounce !== null);
 
-    // Spy on destructive runs, then fire the catch-up timer at the end of the window.
+    // Bursty events collapse into exactly one destructive rebuild when it fires.
     let destructiveRuns = 0;
     const origRun = env.scheduler._run.bind(env.scheduler);
     env.scheduler._run = (d) => { if (d) destructiveRuns++; return origRun(d); };
-    clock.now += 90 * 1000;
-    await env.t.timers.fireById(env.scheduler._bootCatchup);
-    check('4v. catch-up runs one destructive reschedule for the suppressed change', destructiveRuns === 1);
-    check('4w. suppressed flag cleared after catch-up', env.scheduler._suppressedDuringBoot === false);
-  });
-
-  // Quiet boot (no suppressed change) → catch-up is a no-op (no needless rebuild).
-  await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
-    const env = makeEnv({ settings: {} });
-    await env.scheduler.init();
-    let destructiveRuns = 0;
-    const origRun = env.scheduler._run.bind(env.scheduler);
-    env.scheduler._run = (d) => { if (d) destructiveRuns++; return origRun(d); };
-    clock.now += 90 * 1000;
-    await env.t.timers.fireById(env.scheduler._bootCatchup);
-    check('4x. quiet boot → catch-up does not rebuild', destructiveRuns === 0);
+    env.ba.emit('update');
+    env.scheduler._onSettingChanged('location');
+    await env.t.timers.fireById(env.scheduler._debounce);
+    check('4v. bursty post-boot events collapse into one rebuild', destructiveRuns === 1);
   });
 }
 
@@ -775,7 +775,7 @@ section('12. onInit integration — full boot sequence wires & fires end-to-end'
     // Prayer events initialized.
     check('12b. 18 audio + 3 before/after timers armed at boot',
       s.lastRun.audio.length === 18 && s.lastRun.flows.length === 3);
-    check('12c. heartbeat + boot catch-up armed', !!s._heartbeat && !!s._bootCatchup);
+    check('12c. heartbeat armed, no boot-cooldown machinery', !!s._heartbeat && s._bootCatchup === undefined);
 
     // Events wired: all trigger + condition run-listeners registered.
     check('12d. all 9 trigger cards + 2 condition cards have run-listeners',
@@ -785,7 +785,7 @@ section('12. onInit integration — full boot sequence wires & fires end-to-end'
       !!SC['is_islamic_occasion']._runListener && !!SC['prayer_name_is']._runListener);
 
     check('12e. HijriScheduler initialized (heartbeat armed)', !!app.hijriScheduler._heartbeat);
-    check('12f. boot is stable — googleMapsKey did not suppress a reschedule', s._suppressedDuringBoot === false);
+    check('12f. boot is stable — googleMapsKey set did not arm a reschedule', s._debounce === null);
 
     // After init: a prayer time arrives → prayer_trigger_all + _specific fire correctly.
     const dhuhr = s.lastRun.audio.find(a => a.prayer === 'Dhuhr' && a.dayEpoch === s._dayEpoch(0));
