@@ -128,13 +128,18 @@ section('2. Scheduler — rolling 2-day window with legacy before/after card');
     check('2e. audio fireAt = exact Fajr (no offset)', !!todayAudio && Math.abs(todayAudio.fireAt - pt.fajr.getTime()) < 1000);
   });
 
-  // "Any" before 10min → 6 flow timers/day (Fajr..Isha + Sunrise) since PRAYER_KEYS_FLOW has 6.
+  // "Any" before 10min → 6 flow timers/day (Fajr..Isha + Sunrise) since PRAYER_KEYS has 6.
+  // Assert against a fully-future day (tomorrow) so the count is independent of the
+  // machine timezone: at local-midnight+1min some of *today's* before-offsets may
+  // already be in the past (e.g. Fajr-10min in UTC), which is correct to skip.
   await withFrozenNow(localMidnight() + 60 * 1000, async () => {
     const env = makeEnv({
       instances: [{ prayerAfterBefore: 'Before', prayerName: 'Any', prayerDurationTime: 10, prayerDurationType: 'minutes' }],
     });
     await env.scheduler.init();
-    check('2f. "Any" expands to 6 prayers incl. Sunrise → 6 flows/day (18 total)', env.scheduler.lastRun.flows.length === 18);
+    const day1 = onDay(env.scheduler, env.scheduler.lastRun.flows, 1);
+    check('2f. "Any" expands to all 6 prayers incl. Sunrise on a full future day',
+      day1.length === 6 && day1.some(f => f.prayer === 'Sunrise'));
   });
 
   // After all prayers (just before next local midnight): today empty, future full.
