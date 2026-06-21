@@ -1,5 +1,8 @@
 {
   "2.2.1": {
     "en": "Major improvement on calculation method, more improved settings and introduction of prayer Widget"
+  },
+  "2.2.2": {
+    "en": "Refresh of App Architecture and Introdcution of Widgets"
   }
 }
