@@ -7,13 +7,42 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Theme tokens — dark (default) ───────────────────────────────────── */
+    :root {
+      --bg:           #0d1b2a;
+      --panel-tint:   rgba(255,255,255,.035);
+      --divider:      rgba(255,255,255,.07);
+      --text-primary: #ffffff;
+      --text-sec:     rgba(255,255,255,.80);
+      --text-muted:   rgba(255,255,255,.50);
+      --text-faint:   rgba(255,255,255,.32);
+      --text-dim:     rgba(255,255,255,.45);
+      --text-time:    rgba(255,255,255,.55);
+      --dot-idle:     rgba(255,255,255,.20);
+      --accent:       #3eb68a;
+    }
+
+    /* ── Theme tokens — light ─────────────────────────────────────────────── */
+    [theme="light"] {
+      --bg:           #ffffff;
+      --panel-tint:   rgba(0,0,0,.03);
+      --divider:      rgba(0,0,0,.08);
+      --text-primary: #0d1b2a;
+      --text-sec:     rgba(0,0,0,.75);
+      --text-muted:   rgba(0,0,0,.50);
+      --text-faint:   rgba(0,0,0,.35);
+      --text-dim:     rgba(0,0,0,.45);
+      --text-time:    rgba(0,0,0,.55);
+      --dot-idle:     rgba(0,0,0,.15);
+      --accent:       #2a9d72;
+    }
+
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      /* Transparent so Homey renders its own widget background (blur/material) */
       background: transparent;
-      color: #fff;
+      color: var(--text-primary);
       -webkit-font-smoothing: antialiased;
     }
 
@@ -22,7 +51,7 @@
       display: flex;
       width: 100%;
       height: 100%;
-      background: #0d1b2a;
+      background: var(--bg);
       border-radius: 16px;
       overflow: hidden;
     }
@@ -32,8 +61,8 @@
       width: 44%;
       min-width: 130px;
       padding: 14px 13px;
-      background: rgba(255, 255, 255, .035);
-      border-right: 1px solid rgba(255, 255, 255, .07);
+      background: var(--panel-tint);
+      border-right: 1px solid var(--divider);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -45,7 +74,7 @@
       align-items: center;
       gap: 4px;
       font-size: 11px;
-      color: rgba(255, 255, 255, .5);
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: .6px;
       line-height: 1;
@@ -62,34 +91,34 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: .8px;
-      color: #3eb68a;
+      color: var(--accent);
       font-weight: 600;
       margin-bottom: 2px;
     }
     .next-name {
       font-size: clamp(24px, 7vw, 34px);
       font-weight: 700;
-      color: #ffffff;
+      color: var(--text-primary);
       line-height: 1;
       letter-spacing: -.3px;
     }
     .next-time {
       font-size: clamp(17px, 5vw, 22px);
       font-weight: 600;
-      color: #3eb68a;
+      color: var(--accent);
       font-variant-numeric: tabular-nums;
       margin-top: 4px;
     }
     .next-countdown {
       font-size: 12px;
-      color: rgba(255, 255, 255, .45);
+      color: var(--text-dim);
       margin-top: 5px;
       font-variant-numeric: tabular-nums;
     }
 
     .hijri-date {
       font-size: 11px;
-      color: rgba(255, 255, 255, .32);
+      color: var(--text-faint);
       line-height: 1.4;
     }
 
@@ -117,31 +146,31 @@
       width: 6px; height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, .2);
+      background: var(--dot-idle);
     }
-    .pr-row.passed .pr-dot { background: rgba(62, 182, 138, .5); }
-    .pr-row.next   .pr-dot { background: #3eb68a; }
+    .pr-row.passed .pr-dot { background: var(--accent); opacity: .5; }
+    .pr-row.next   .pr-dot { background: var(--accent); opacity: 1; }
 
     .pr-name {
       flex: 1;
       min-width: 0;
       font-size: clamp(13px, 3.8vw, 15px);
       font-weight: 500;
-      color: rgba(255, 255, 255, .80);
+      color: var(--text-sec);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .pr-row.next .pr-name { color: #3eb68a; font-weight: 600; }
+    .pr-row.next .pr-name { color: var(--accent); font-weight: 600; }
 
     .pr-time {
       font-size: clamp(13px, 3.8vw, 15px);
       font-weight: 500;
-      color: rgba(255, 255, 255, .55);
+      color: var(--text-time);
       font-variant-numeric: tabular-nums;
       flex-shrink: 0;
     }
-    .pr-row.next .pr-time { color: #3eb68a; font-weight: 700; }
+    .pr-row.next .pr-time { color: var(--accent); font-weight: 700; }
   </style>
 </head>
 <body>
