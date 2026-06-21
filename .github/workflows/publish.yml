@@ -1,43 +1,75 @@
 name: Publish to Homey App Store
 
+# Manual trigger: pick a version bump and type the changelog users will see.
+# (Publishing must be deliberate and needs a changelog, so this is not automatic.)
 on:
-  push:
-    branches: [master]
-    paths:
-      - 'app.js'
-      - 'api.js'
-      - 'lib/**'
-      - 'app.json'
-      - '.homeycompose/**'
-      - 'assets/**'
-      - 'settings/**'
-      - 'widgets/**'
-      - 'package.json'
-      - 'package-lock.json'
   workflow_dispatch:
+    inputs:
+      version:
+        description: Version bump
+        type: choice
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      changelog:
+        description: Changelog (shown to users in the App Store)
+        type: string
+        required: true
+
+# Needed so the version step can commit the bump, push, and create a release.
+permissions:
+  contents: write
 
 jobs:
   publish:
-    name: Publish app
+    name: Validate, version & publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --omit=dev
-
-      - name: Install Homey CLI
-        run: npm install -g homey
+        run: npm install --no-audit --no-fund
 
       - name: Run tests
         run: npm test
 
-      - name: Publish to App Store
-        run: homey app publish
-        env:
-          HOMEY_TOKEN: ${{ secrets.HOMEY_TOKEN }}
+      - name: Validate app (publish level)
+        uses: athombv/github-action-homey-app-validate@master
+        with:
+          level: publish
+
+      - name: Update version & changelog
+        uses: athombv/github-action-homey-app-version@master
+        id: version
+        with:
+          version: ${{ inputs.version }}
+          changelog: ${{ inputs.changelog }}
+
+      - name: Commit, tag & push the version bump
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: bump version to v${{ steps.version.outputs.version }}"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin HEAD --tags
+
+      - name: Publish to Homey App Store
+        uses: athombv/github-action-homey-app-publish@master
+        id: publish
+        with:
+          personal_access_token: ${{ secrets.HOMEY_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "✅ Published v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Submit it for Test/Live at ${{ steps.publish.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
