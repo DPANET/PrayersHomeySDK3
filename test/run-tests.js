@@ -366,10 +366,10 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
       env.audioRouter.buildTokens('Fajr').adhkar_morning === prefs.adhkarMorningUrl &&
       env.audioRouter.buildTokens('Asr').adhkar_evening  === prefs.adhkarEveningUrl);
     check('6e. volume tag = configured 0-1 value for each prayer',
-      env.audioRouter.buildTokens('Fajr').volume    === '0.3' &&
-      env.audioRouter.buildTokens('Sunrise').volume === '0.5' &&
-      env.audioRouter.buildTokens('Dhuhr').volume   === '0.7' &&
-      env.audioRouter.buildTokens('Isha').volume    === '0.4');
+      env.audioRouter.buildTokens('Fajr').volume    === 0.3 &&
+      env.audioRouter.buildTokens('Sunrise').volume === 0.5 &&
+      env.audioRouter.buildTokens('Dhuhr').volume   === 0.7 &&
+      env.audioRouter.buildTokens('Isha').volume    === 0.4);
   }
 
   // Empty prefs → adhan falls back to islamcan defaults; optional tags blank.
@@ -378,9 +378,9 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     const t = env.audioRouter.buildTokens('Dhuhr');
     check('6f. missing full/short fall back to default adhan',
       t.adhan_full.includes('cdn.aladhan.com') && t.adhan_short.includes('001001.mp3'));
-    check('6g. missing adhkar/custom fall back to defaults; volume is empty',
+    check('6g. missing adhkar/custom fall back to defaults; volume is null (device default)',
       t.adhkar_morning.includes('archive.org') && t.adhkar_evening.includes('archive.org') &&
-      t.custom.includes('assabile.com') && t.custom2 === '' && t.custom3 === '' && t.volume === '');
+      t.custom.includes('assabile.com') && t.custom2 === '' && t.custom3 === '' && t.volume === null);
     check('6h. default reciter → Afasy surah 001', t.quran === 'https://server8.mp3quran.net/afs/001.mp3');
   }
 
@@ -396,10 +396,10 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   {
     const env = makeEnv({ settings: { advanced: { appEnabled: false }, audioPrefs: prefs } });
     const t = env.audioRouter.buildTokens('Dhuhr');
-    check('6k. disabled app blanks all URL/volume tags',
+    check('6k. disabled app blanks all URL tags; volume is null',
       t.adhan_full === '' && t.adhan_short === '' &&
       t.adhkar_morning === '' && t.adhkar_evening === '' &&
-      t.quran === '' && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === '');
+      t.quran === '' && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === null);
   }
 
   // clearScheduled is a harmless no-op (no timed follow-ups in this model).
@@ -414,14 +414,14 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   // volume edge cases: 0 is valid, out-of-range rejected, per-prayer independence.
   {
     check('6m. volume=0 is a valid override (not falsy)',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 0    } } } }).audioRouter.buildTokens('Fajr').volume === '0');
-    check('6n. volume > 1 → empty string',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 1.5  } } } }).audioRouter.buildTokens('Fajr').volume === '');
-    check('6o. volume < 0 → empty string',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -0.1 } } } }).audioRouter.buildTokens('Fajr').volume === '');
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 0    } } } }).audioRouter.buildTokens('Fajr').volume === 0);
+    check('6n. volume > 1 → null',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 1.5  } } } }).audioRouter.buildTokens('Fajr').volume === null);
+    check('6o. volume < 0 → null',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -0.1 } } } }).audioRouter.buildTokens('Fajr').volume === null);
     check('6p. volume set for one prayer does not bleed into others',
-      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Fajr').volume === '' &&
-      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Maghrib').volume === '0.85');
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Fajr').volume === null &&
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Maghrib').volume === 0.85);
   }
 
   // custom2/custom3 are independent slots — setting one never populates another.
@@ -477,7 +477,7 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     check('6v. prayer_trigger_all carries adhkar_morning at fire time', tok.adhkar_morning === 'https://t.com/morning.mp3');
     check('6v2. prayer_trigger_all carries adhkar_evening at fire time', tok.adhkar_evening === 'https://t.com/evening.mp3');
     check('6w. prayer_trigger_all carries custom2 at fire time',     tok.custom2   === 'https://t.com/c2.mp3');
-    check('6x. prayer_trigger_all carries volume tag at fire time',  tok.volume    === '0.65');
+    check('6x. prayer_trigger_all carries volume tag at fire time',  tok.volume    === 0.65);
   });
 }
 
