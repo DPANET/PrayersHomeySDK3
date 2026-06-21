@@ -7,34 +7,22 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Theme tokens — dark (default) ───────────────────────────────────── */
+    /* Theme tokens.
+       Colours that must flip with light/dark mode use Homey's semantic
+       variables (--homey-background-color, --homey-text-color), which the
+       runtime reassigns per theme — no attribute or media query needed.
+       Text-hierarchy tiers are produced by per-element `opacity` over the
+       theme-correct text colour, so they read correctly in both modes.
+       Subtle tints/dividers/dots use a mid-grey alpha overlay, which darkens
+       a light card and lightens a dark card without needing theme detection. */
     :root {
-      --bg:           #0d1b2a;
-      --panel-tint:   rgba(255,255,255,.035);
-      --divider:      rgba(255,255,255,.07);
-      --text-primary: #ffffff;
-      --text-sec:     rgba(255,255,255,.80);
-      --text-muted:   rgba(255,255,255,.50);
-      --text-faint:   rgba(255,255,255,.32);
-      --text-dim:     rgba(255,255,255,.45);
-      --text-time:    rgba(255,255,255,.55);
-      --dot-idle:     rgba(255,255,255,.20);
-      --accent:       #3eb68a;
-    }
-
-    /* ── Theme tokens — light ─────────────────────────────────────────────── */
-    [theme="light"] {
-      --bg:           #ffffff;
-      --panel-tint:   rgba(0,0,0,.03);
-      --divider:      rgba(0,0,0,.08);
-      --text-primary: #0d1b2a;
-      --text-sec:     rgba(0,0,0,.75);
-      --text-muted:   rgba(0,0,0,.50);
-      --text-faint:   rgba(0,0,0,.35);
-      --text-dim:     rgba(0,0,0,.45);
-      --text-time:    rgba(0,0,0,.55);
-      --dot-idle:     rgba(0,0,0,.15);
-      --accent:       #2a9d72;
+      --bg:           var(--homey-background-color, #0d1b2a);
+      --text:         var(--homey-text-color, #ffffff);
+      --tint:         rgba(128,128,128,.07);
+      --divider:      rgba(128,128,128,.16);
+      --dot-idle:     rgba(128,128,128,.40);
+      --accent:       #2fa877;
+      --accent-soft:  rgba(47,168,119,.14);
     }
 
     html, body {
@@ -42,9 +30,11 @@
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       background: transparent;
-      color: var(--text-primary);
+      color: var(--text);
       -webkit-font-smoothing: antialiased;
     }
+    /* Full-bleed card — neutralise the default .homey-widget padding. */
+    body.homey-widget { padding: 0; }
 
     /* ── Root widget card ─────────────────────────────────────────────────── */
     .widget {
@@ -61,7 +51,7 @@
       width: 44%;
       min-width: 130px;
       padding: 14px 13px;
-      background: var(--panel-tint);
+      background: var(--tint);
       border-right: 1px solid var(--divider);
       display: flex;
       flex-direction: column;
@@ -74,7 +64,8 @@
       align-items: center;
       gap: 4px;
       font-size: 11px;
-      color: var(--text-muted);
+      color: var(--text);
+      opacity: .5;
       text-transform: uppercase;
       letter-spacing: .6px;
       line-height: 1;
@@ -98,7 +89,7 @@
     .next-name {
       font-size: clamp(24px, 7vw, 34px);
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--text);
       line-height: 1;
       letter-spacing: -.3px;
     }
@@ -111,14 +102,16 @@
     }
     .next-countdown {
       font-size: 12px;
-      color: var(--text-dim);
+      color: var(--text);
+      opacity: .45;
       margin-top: 5px;
       font-variant-numeric: tabular-nums;
     }
 
     .hijri-date {
       font-size: 11px;
-      color: var(--text-faint);
+      color: var(--text);
+      opacity: .4;
       line-height: 1.4;
     }
 
@@ -140,7 +133,7 @@
       border-radius: 8px;
     }
     .pr-row.passed { opacity: .38; }
-    .pr-row.next   { background: rgba(62, 182, 138, .13); }
+    .pr-row.next   { background: var(--accent-soft); }
 
     .pr-dot {
       width: 6px; height: 6px;
@@ -156,24 +149,26 @@
       min-width: 0;
       font-size: clamp(13px, 3.8vw, 15px);
       font-weight: 500;
-      color: var(--text-sec);
+      color: var(--text);
+      opacity: .80;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .pr-row.next .pr-name { color: var(--accent); font-weight: 600; }
+    .pr-row.next .pr-name { color: var(--accent); opacity: 1; font-weight: 600; }
 
     .pr-time {
       font-size: clamp(13px, 3.8vw, 15px);
       font-weight: 500;
-      color: var(--text-time);
+      color: var(--text);
+      opacity: .55;
       font-variant-numeric: tabular-nums;
       flex-shrink: 0;
     }
-    .pr-row.next .pr-time { color: var(--accent); font-weight: 700; }
+    .pr-row.next .pr-time { color: var(--accent); opacity: 1; font-weight: 700; }
   </style>
 </head>
-<body>
+<body class="homey-widget">
 
 <div class="widget">
 
