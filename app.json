@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.prayerssapp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "compatibility": ">=12.1.0",
   "sdk": 3,
   "platforms": [
@@ -30,8 +30,7 @@
     ]
   },
   "permissions": [
-    "homey:manager:geolocation",
-    "homey:manager:api"
+    "homey:manager:geolocation"
   ],
   "images": {
     "small": "/assets/images/small.jpg",
@@ -933,7 +932,7 @@
               "en": "Full adhan URL"
             },
             "example": {
-              "en": "https://www.islamcan.com/audio/adhan/azan1.mp3"
+              "en": "https://cdn.aladhan.com/audio/adhans/a11-mansour-al-zahrani.mp3"
             }
           },
           {
@@ -943,17 +942,27 @@
               "en": "Short adhan URL"
             },
             "example": {
-              "en": "https://www.islamcan.com/audio/adhan/azan2.mp3"
+              "en": "https://everyayah.com/data/Alafasy_128kbps/001001.mp3"
             }
           },
           {
-            "name": "adhkar",
+            "name": "adhkar_morning",
             "type": "string",
             "title": {
-              "en": "Adhkar URL"
+              "en": "Morning Adhkar URL"
             },
             "example": {
-              "en": "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
+              "en": "https://archive.org/download/adhkar-of-the-morning-mishary-alafasi/Adhkar%20of%20the%20Morning_Mishary%20Alafasi%20.mp3"
+            }
+          },
+          {
+            "name": "adhkar_evening",
+            "type": "string",
+            "title": {
+              "en": "Evening Adhkar URL"
+            },
+            "example": {
+              "en": "https://archive.org/download/adhkar-of-the-evening-mishary-alafasi/Adhkar%20of%20the%20Evening_Mishary%20Alafasi%20.mp3"
             }
           },
           {
@@ -1010,10 +1019,10 @@
             "name": "volume",
             "type": "string",
             "title": {
-              "en": "Volume %"
+              "en": "Volume (0-1)"
             },
             "example": {
-              "en": "70"
+              "en": "0.7"
             }
           }
         ]
@@ -1245,7 +1254,7 @@
               "en": "Full adhan URL"
             },
             "example": {
-              "en": "https://www.islamcan.com/audio/adhan/azan1.mp3"
+              "en": "https://cdn.aladhan.com/audio/adhans/a11-mansour-al-zahrani.mp3"
             }
           },
           {
@@ -1255,17 +1264,27 @@
               "en": "Short adhan URL"
             },
             "example": {
-              "en": "https://www.islamcan.com/audio/adhan/azan2.mp3"
+              "en": "https://everyayah.com/data/Alafasy_128kbps/001001.mp3"
             }
           },
           {
-            "name": "adhkar",
+            "name": "adhkar_morning",
             "type": "string",
             "title": {
-              "en": "Adhkar URL"
+              "en": "Morning Adhkar URL"
             },
             "example": {
-              "en": "https://everyayah.com/data/Alafasy_128kbps/002255.mp3"
+              "en": "https://archive.org/download/adhkar-of-the-morning-mishary-alafasi/Adhkar%20of%20the%20Morning_Mishary%20Alafasi%20.mp3"
+            }
+          },
+          {
+            "name": "adhkar_evening",
+            "type": "string",
+            "title": {
+              "en": "Evening Adhkar URL"
+            },
+            "example": {
+              "en": "https://archive.org/download/adhkar-of-the-evening-mishary-alafasi/Adhkar%20of%20the%20Evening_Mishary%20Alafasi%20.mp3"
             }
           },
           {
@@ -1322,10 +1341,10 @@
             "name": "volume",
             "type": "string",
             "title": {
-              "en": "Volume %"
+              "en": "Volume (0-1)"
             },
             "example": {
-              "en": "70"
+              "en": "0.7"
             }
           }
         ]
@@ -1463,5 +1482,16 @@
         ]
       }
     ]
+  },
+  "widgets": {
+    "prayer_times": {
+      "name": {
+        "en": "Prayer Times"
+      },
+      "height": 200,
+      "transparent": true,
+      "settings": [],
+      "id": "prayer_times"
+    }
   }
 }

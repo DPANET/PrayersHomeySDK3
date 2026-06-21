@@ -1,6 +1,6 @@
 {
   "name": "com.prayerssapp",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "description": "Islamic audio hub with prayer times and Flow triggers for Homey Pro",
   "main": "app.js",
   "scripts": {
@@ -8,10 +8,9 @@
     "test": "node test/run-tests.js"
   },
   "dependencies": {
-    "homey": "*",
-    "adhan-extended": "*",
-    "hijri-date": "^0.2.2",
-    "homey-api": "*"
+    "homey": "^4.3.0",
+    "adhan-extended": "^6.1.0",
+    "hijri-date": "^0.2.2"
   },
   "engines": {
     "node": ">=22"

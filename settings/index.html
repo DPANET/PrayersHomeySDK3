@@ -680,8 +680,12 @@
       <p class="hint" style="margin-top:-8px;margin-bottom:12px">The <strong>Quran</strong> tag = this reciter's full recording of this surah.</p>
 
       <div class="field">
-        <label>Adhkar URL</label>
-        <input type="text" id="ap-adhkar" placeholder="optional — e.g. https://www.islamcan.com/audio/adhkar/..." />
+        <label>Morning Adhkar URL</label>
+        <input type="text" id="ap-adhkar-morning" placeholder="played via adhkar_morning tag" />
+      </div>
+      <div class="field">
+        <label>Evening Adhkar URL</label>
+        <input type="text" id="ap-adhkar-evening" placeholder="played via adhkar_evening tag" />
       </div>
       <div class="field">
         <label>Custom URL</label>
@@ -733,6 +737,15 @@
         </span>
         <label class="toggle">
           <input type="checkbox" id="adv-excludeSunrise" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row" style="margin-top:12px">
+        <span>Debug logging
+          <span class="hint" style="display:block;font-size:12px;color:var(--color-text-muted,#888)">Verbose per-timer tracing in the app log. Leave off for normal use.</span>
+        </span>
+        <label class="toggle">
+          <input type="checkbox" id="adv-debugLogging" />
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -1106,7 +1119,7 @@ function buildVolumeRows() {
   container.innerHTML = _volPrayers.map(p => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
       <span style="width:62px;font-size:13px;color:var(--text2);flex-shrink:0">${p}</span>
-      <input type="range" id="vol-${p}" min="0" max="100" step="5" value="70"
+      <input type="range" id="vol-${p}" min="0" max="1" step="0.05" value="0.7"
         style="flex:1;accent-color:var(--blue);cursor:pointer;opacity:.3" />
       <span id="vol-${p}-lbl" style="width:34px;text-align:right;font-size:13px;font-weight:500;color:var(--text3)">–</span>
       <button type="button" id="vol-${p}-clr"
@@ -1116,9 +1129,9 @@ function buildVolumeRows() {
   `).join('');
   _volPrayers.forEach(p => {
     document.getElementById('vol-' + p).addEventListener('input', function () {
-      _volState[p] = parseInt(this.value);
+      _volState[p] = parseFloat(this.value);
       const lbl = document.getElementById('vol-' + p + '-lbl');
-      lbl.textContent = this.value + '%';
+      lbl.textContent = Math.round(parseFloat(this.value) * 100) + '%';
       lbl.style.color = 'var(--blue)';
       this.style.opacity = '1';
     });
@@ -1132,7 +1145,7 @@ function volClear(p) {
   delete _volState[p];
   const sl = document.getElementById('vol-' + p);
   const lbl = document.getElementById('vol-' + p + '-lbl');
-  if (sl)  { sl.value = 70; sl.style.opacity = '.3'; }
+  if (sl)  { sl.value = 0.7; sl.style.opacity = '.3'; }
   if (lbl) { lbl.textContent = '–'; lbl.style.color = 'var(--text3)'; }
 }
 
@@ -1145,11 +1158,11 @@ function volLoad(vols) {
       _volState[p] = vols[p];
       sl.value = String(vols[p]);
       sl.style.opacity = '1';
-      lbl.textContent = vols[p] + '%';
+      lbl.textContent = Math.round(vols[p] * 100) + '%';
       lbl.style.color = 'var(--blue)';
     } else {
       delete _volState[p];
-      sl.value = 70;
+      sl.value = 0.7;
       sl.style.opacity = '.3';
       lbl.textContent = '–';
       lbl.style.color = 'var(--text3)';
@@ -1165,7 +1178,8 @@ document.getElementById('btn-save-audio').addEventListener('click', () => {
     shortUrl:   val('ap-short').trim(),
     reciter:    val('ap-reciter'),
     surah:      Math.min(114, Math.max(1, parseInt(val('ap-surah')) || 1)),
-    adhkarUrl:  val('ap-adhkar').trim(),
+    adhkarMorningUrl: val('ap-adhkar-morning').trim(),
+    adhkarEveningUrl: val('ap-adhkar-evening').trim(),
     customUrl:  val('ap-custom').trim(),
     customUrl2: val('ap-custom2').trim(),
     customUrl3: val('ap-custom3').trim(),
@@ -1180,7 +1194,7 @@ document.getElementById('btn-save-audio').addEventListener('click', () => {
 
 // ─── Advanced tab ─────────────────────────────────────────────────────────────
 document.getElementById('btn-save-advanced').addEventListener('click', () => {
-  Homey.set('advanced', { appEnabled: checked('adv-appEnabled'), excludeSunrise: checked('adv-excludeSunrise') }, err => {
+  Homey.set('advanced', { appEnabled: checked('adv-appEnabled'), excludeSunrise: checked('adv-excludeSunrise'), debugLogging: checked('adv-debugLogging') }, err => {
     if (err) return showStatus('advanced-status', 'Error: ' + err.message, 'error');
     showStatus('advanced-status', 'Advanced settings saved!', 'success');
   });
@@ -1226,15 +1240,16 @@ function onHomeyReady(Homey) {
 
   Homey.get('audioPrefs', (err, ap) => {
     ap = ap || {};
-    setVal('ap-full',    ap.fullUrl   || 'https://www.islamcan.com/audio/adhan/azan1.mp3');
-    setVal('ap-short',   ap.shortUrl  || 'https://www.islamcan.com/audio/adhan/azan2.mp3');
+    setVal('ap-full',    ap.fullUrl   || 'https://cdn.aladhan.com/audio/adhans/a11-mansour-al-zahrani.mp3');
+    setVal('ap-short',   ap.shortUrl  || 'https://everyayah.com/data/Alafasy_128kbps/001001.mp3');
     setVal('ap-reciter', ap.reciter || 'Mishary Al-Afasy');
     const surahN = ap.surah || 1;
     setVal('ap-surah', surahN);
     const surahTextEl = document.getElementById('ap-surah-text');
     if (surahTextEl) surahTextEl.value = surahLabel(surahN);
-    setVal('ap-adhkar',  ap.adhkarUrl || 'https://everyayah.com/data/Alafasy_128kbps/002255.mp3');
-    setVal('ap-custom',  ap.customUrl  || '');
+    setVal('ap-adhkar-morning', ap.adhkarMorningUrl || 'https://archive.org/download/adhkar-of-the-morning-mishary-alafasi/Adhkar%20of%20the%20Morning_Mishary%20Alafasi%20.mp3');
+    setVal('ap-adhkar-evening', ap.adhkarEveningUrl || 'https://archive.org/download/adhkar-of-the-evening-mishary-alafasi/Adhkar%20of%20the%20Evening_Mishary%20Alafasi%20.mp3');
+    setVal('ap-custom',  ap.customUrl  || 'https://media.assabile.com/assabile/adhan_3435370/f30b7631d625.mp3');
     setVal('ap-custom2', ap.customUrl2 || '');
     setVal('ap-custom3', ap.customUrl3 || '');
     volLoad(ap.volumes || {});
@@ -1244,6 +1259,7 @@ function onHomeyReady(Homey) {
     adv = adv || {};
     setChecked('adv-appEnabled', adv.appEnabled !== false);
     setChecked('adv-excludeSunrise', !!adv.excludeSunrise);
+    setChecked('adv-debugLogging', !!adv.debugLogging);
     callReady();
   });
 }

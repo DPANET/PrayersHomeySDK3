@@ -1,6 +1,6 @@
 {
   "id": "com.prayerssapp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "compatibility": ">=12.1.0",
   "sdk": 3,
   "platforms": ["local"],
@@ -11,8 +11,7 @@
     "en": ["prayer", "adhan", "quran", "islamic", "fajr", "isha", "asr", "maghrib", "dhuhr"]
   },
   "permissions": [
-    "homey:manager:geolocation",
-    "homey:manager:api"
+    "homey:manager:geolocation"
   ],
   "images": {
     "small": "/assets/images/small.jpg",

@@ -1,0 +1,36 @@
+{
+  "id": "islamic_occasion_event",
+  "title": { "en": "Islamic occasion event" },
+  "titleFormatted": { "en": "[[occasion]] [[event]]" },
+  "hint": { "en": "Fires when an Islamic occasion starts or ends. Ramadan fires on day 1 (starts) and the last day of Ramadan (ends). All other occasions fire on the occasion day for both start and end." },
+  "args": [
+    {
+      "name": "occasion",
+      "type": "dropdown",
+      "title": { "en": "Occasion" },
+      "values": [
+        { "id": "ramadan",        "title": { "en": "Ramadan" } },
+        { "id": "eid_al_fitr",   "title": { "en": "Eid Al-Fitr" } },
+        { "id": "eid_al_adha",   "title": { "en": "Eid Al-Adha" } },
+        { "id": "arafah",        "title": { "en": "Day of Arafah" } },
+        { "id": "ashura",        "title": { "en": "Ashura" } },
+        { "id": "mawlid",        "title": { "en": "Mawlid Al-Nabi" } },
+        { "id": "laylah_al_qadr","title": { "en": "Laylah Al-Qadr" } }
+      ]
+    },
+    {
+      "name": "event",
+      "type": "dropdown",
+      "title": { "en": "Event" },
+      "values": [
+        { "id": "starts", "title": { "en": "starts" } },
+        { "id": "ends",   "title": { "en": "ends" } }
+      ]
+    }
+  ],
+  "tokens": [
+    { "name": "occasionName",  "type": "string", "title": { "en": "Occasion name" }, "example": { "en": "Ramadan" } },
+    { "name": "hijriDate",     "type": "string", "title": { "en": "Hijri date" },    "example": { "en": "1 Ramadan 1447" } },
+    { "name": "gregorianDate", "type": "string", "title": { "en": "Gregorian date" },"example": { "en": "2026-02-18" } }
+  ]
+}

@@ -35,6 +35,7 @@
       "type": "dropdown",
       "title": { "en": "Occasion" },
       "values": [
+        { "id": "ramadan",     "title": { "en": "Ramadan" } },
         { "id": "eid_al_fitr", "title": { "en": "Eid Al-Fitr" } },
         { "id": "eid_al_adha", "title": { "en": "Eid Al-Adha" } },
         { "id": "arafah",      "title": { "en": "Day of Arafah" } },

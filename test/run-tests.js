@@ -16,6 +16,7 @@ const ROOT = path.join(__dirname, '..');
 
 const adhan           = require('adhan-extended');
 const PrayerScheduler = require(path.join(LIB, 'PrayerScheduler'));
+const HijriScheduler  = require(path.join(LIB, 'HijriScheduler'));
 const AudioRouter     = require(path.join(LIB, 'AudioRouter'));
 const HijriCalendar   = require(path.join(LIB, 'HijriCalendar'));
 const triggerMatches  = require(path.join(LIB, 'triggerMatch'));
@@ -339,11 +340,12 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     shortUrl:   'https://example.com/short.mp3',
     reciter:    'Abdul Basit',
     surah:      67,
-    adhkarUrl:  'https://example.com/adhkar.mp3',
+    adhkarMorningUrl: 'https://example.com/adhkar-morning.mp3',
+    adhkarEveningUrl: 'https://example.com/adhkar-evening.mp3',
     customUrl:  'https://example.com/custom.mp3',
     customUrl2: 'https://example.com/custom2.mp3',
     customUrl3: 'https://example.com/custom3.mp3',
-    volumes:    { Fajr: 30, Sunrise: 50, Dhuhr: 70, Asr: 65, Maghrib: 80, Isha: 40 },
+    volumes:    { Fajr: 0.3, Sunrise: 0.5, Dhuhr: 0.7, Asr: 0.65, Maghrib: 0.8, Isha: 0.4 },
   };
 
   // Configured URLs are echoed verbatim into the matching tags.
@@ -360,12 +362,14 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   // Adhkar single URL + per-prayer volume tag.
   {
     const env = makeEnv({ settings: { audioPrefs: prefs } });
-    check('6d. adhkar tag echoes the configured adhkarUrl (all prayers)', env.audioRouter.buildTokens('Fajr').adhkar === prefs.adhkarUrl && env.audioRouter.buildTokens('Asr').adhkar === prefs.adhkarUrl);
-    check('6e. volume tag = configured % for each prayer',
-      env.audioRouter.buildTokens('Fajr').volume    === '30' &&
-      env.audioRouter.buildTokens('Sunrise').volume === '50' &&
-      env.audioRouter.buildTokens('Dhuhr').volume   === '70' &&
-      env.audioRouter.buildTokens('Isha').volume    === '40');
+    check('6d. adhkar_morning/evening tags echo configured URLs',
+      env.audioRouter.buildTokens('Fajr').adhkar_morning === prefs.adhkarMorningUrl &&
+      env.audioRouter.buildTokens('Asr').adhkar_evening  === prefs.adhkarEveningUrl);
+    check('6e. volume tag = configured 0-1 value for each prayer',
+      env.audioRouter.buildTokens('Fajr').volume    === '0.3' &&
+      env.audioRouter.buildTokens('Sunrise').volume === '0.5' &&
+      env.audioRouter.buildTokens('Dhuhr').volume   === '0.7' &&
+      env.audioRouter.buildTokens('Isha').volume    === '0.4');
   }
 
   // Empty prefs → adhan falls back to islamcan defaults; optional tags blank.
@@ -373,8 +377,10 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     const env = makeEnv({ settings: {} });
     const t = env.audioRouter.buildTokens('Dhuhr');
     check('6f. missing full/short fall back to default adhan',
-      t.adhan_full.includes('islamcan.com/audio/adhan/azan1.mp3') && t.adhan_short.includes('azan2.mp3'));
-    check('6g. missing adhkar falls back to default; custom/volume are empty', t.adhkar.includes('everyayah.com') && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === '');
+      t.adhan_full.includes('cdn.aladhan.com') && t.adhan_short.includes('001001.mp3'));
+    check('6g. missing adhkar/custom fall back to defaults; volume is empty',
+      t.adhkar_morning.includes('archive.org') && t.adhkar_evening.includes('archive.org') &&
+      t.custom.includes('assabile.com') && t.custom2 === '' && t.custom3 === '' && t.volume === '');
     check('6h. default reciter → Afasy surah 001', t.quran === 'https://server8.mp3quran.net/afs/001.mp3');
   }
 
@@ -391,8 +397,9 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     const env = makeEnv({ settings: { advanced: { appEnabled: false }, audioPrefs: prefs } });
     const t = env.audioRouter.buildTokens('Dhuhr');
     check('6k. disabled app blanks all URL/volume tags',
-      t.adhan_full === '' && t.adhan_short === '' && t.adhkar === '' && t.quran === '' &&
-      t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === '');
+      t.adhan_full === '' && t.adhan_short === '' &&
+      t.adhkar_morning === '' && t.adhkar_evening === '' &&
+      t.quran === '' && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === '');
   }
 
   // clearScheduled is a harmless no-op (no timed follow-ups in this model).
@@ -407,14 +414,14 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   // volume edge cases: 0 is valid, out-of-range rejected, per-prayer independence.
   {
     check('6m. volume=0 is a valid override (not falsy)',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 0  } } } }).audioRouter.buildTokens('Fajr').volume === '0');
-    check('6n. volume > 100 → empty string',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 150 } } } }).audioRouter.buildTokens('Fajr').volume === '');
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 0    } } } }).audioRouter.buildTokens('Fajr').volume === '0');
+    check('6n. volume > 1 → empty string',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 1.5  } } } }).audioRouter.buildTokens('Fajr').volume === '');
     check('6o. volume < 0 → empty string',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -5 } } } }).audioRouter.buildTokens('Fajr').volume === '');
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -0.1 } } } }).audioRouter.buildTokens('Fajr').volume === '');
     check('6p. volume set for one prayer does not bleed into others',
-      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 85 } } } }).audioRouter.buildTokens('Fajr').volume === '' &&
-      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 85 } } } }).audioRouter.buildTokens('Maghrib').volume === '85');
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Fajr').volume === '' &&
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Maghrib').volume === '0.85');
   }
 
   // custom2/custom3 are independent slots — setting one never populates another.
@@ -425,22 +432,29 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
       t.custom === 'https://t.com/c.mp3' && t.custom2 === '' && t.custom3 === '');
   }
 
-  // adhkar: single URL for all prayers — no morning/evening branch.
+  // adhkar_morning and adhkar_evening are independent tokens on every prayer.
   {
-    const env = makeEnv({ settings: { audioPrefs: { adhkarUrl: 'https://t.com/dhikr.mp3' } } });
-    check('6r. adhkar URL identical for all 6 prayers (no context switching)',
-      ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha']
-        .every(p => env.audioRouter.buildTokens(p).adhkar === 'https://t.com/dhikr.mp3'));
+    const env = makeEnv({ settings: { audioPrefs: {
+      adhkarMorningUrl: 'https://t.com/morning.mp3',
+      adhkarEveningUrl: 'https://t.com/evening.mp3',
+    } } });
+    const prayers = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
+    check('6r. adhkar_morning URL consistent across all prayers',
+      prayers.every(p => env.audioRouter.buildTokens(p).adhkar_morning === 'https://t.com/morning.mp3'));
+    check('6r2. adhkar_evening URL consistent across all prayers',
+      prayers.every(p => env.audioRouter.buildTokens(p).adhkar_evening === 'https://t.com/evening.mp3'));
   }
 
   // URL whitespace handling: blank → empty, padded → trimmed.
   {
     const env = makeEnv({ settings: { audioPrefs: {
-      adhkarUrl:  '   ',
-      customUrl2: '  https://t.com/c2.mp3  ',
+      adhkarMorningUrl: '   ',
+      adhkarEveningUrl: '   ',
+      customUrl2:       '  https://t.com/c2.mp3  ',
     } } });
     const t = env.audioRouter.buildTokens('Dhuhr');
-    check('6s. whitespace-only adhkar falls back to default', t.adhkar.includes('everyayah.com'));
+    check('6s. whitespace-only adhkar_morning falls back to default', t.adhkar_morning.includes('archive.org'));
+    check('6s2. whitespace-only adhkar_evening falls back to default', t.adhkar_evening.includes('archive.org'));
     check('6t. URL with surrounding whitespace is trimmed', t.custom2 === 'https://t.com/c2.mp3');
   }
 
@@ -448,9 +462,10 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
     const audioPrefs = {
       fullUrl:    'https://t.com/full.mp3',
-      adhkarUrl:  'https://t.com/dhikr.mp3',
+      adhkarMorningUrl: 'https://t.com/morning.mp3',
+      adhkarEveningUrl: 'https://t.com/evening.mp3',
       customUrl2: 'https://t.com/c2.mp3',
-      volumes:    { Dhuhr: 65 },
+      volumes:    { Dhuhr: 0.65 },
     };
     const env = makeEnv({ settings: { audioPrefs } });
     await env.scheduler.init();
@@ -459,9 +474,10 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     await env.t.timers.fireById(occ.id);
     const tok = env.t.triggerCards['prayer_trigger_all'].triggerCalls[0]?.tokens || {};
     check('6u. prayer_trigger_all carries adhan_full at fire time',  tok.adhan_full === 'https://t.com/full.mp3');
-    check('6v. prayer_trigger_all carries adhkar at fire time',      tok.adhkar    === 'https://t.com/dhikr.mp3');
+    check('6v. prayer_trigger_all carries adhkar_morning at fire time', tok.adhkar_morning === 'https://t.com/morning.mp3');
+    check('6v2. prayer_trigger_all carries adhkar_evening at fire time', tok.adhkar_evening === 'https://t.com/evening.mp3');
     check('6w. prayer_trigger_all carries custom2 at fire time',     tok.custom2   === 'https://t.com/c2.mp3');
-    check('6x. prayer_trigger_all carries volume tag at fire time',  tok.volume    === '65');
+    check('6x. prayer_trigger_all carries volume tag at fire time',  tok.volume    === '0.65');
   });
 }
 
@@ -521,7 +537,7 @@ section('8. MERGE-INTEGRITY AUDIT — a FAIL here is a real issue to fix');
 
   // 8b. Both prayer triggers must declare the audio URL tags the scheduler attaches.
   {
-    const TAGS = ['adhan_full', 'adhan_short', 'adhkar', 'quran', 'reciter', 'custom', 'custom2', 'custom3', 'volume'];
+    const TAGS = ['adhan_full', 'adhan_short', 'adhkar_morning', 'adhkar_evening', 'quran', 'reciter', 'custom', 'custom2', 'custom3', 'volume'];
     const cardHasTags = name => {
       const j = JSON.parse(fs.readFileSync(path.join(composeFlow, 'triggers', name), 'utf8'));
       const names = (j.tokens || []).map(t => t.name);
@@ -572,6 +588,90 @@ section('8. MERGE-INTEGRITY AUDIT — a FAIL here is a real issue to fix');
     check('8f. obsolete group action cards removed from compose', leftover.length === 0,
       'athan_action / play_audio_on_group / stop_audio_on_group still exist — the new model has no group playback actions');
   }
+}
+
+// ============================================================================
+section('9. prayer_name_is condition — state from prayer_trigger_all (regression)');
+// ============================================================================
+{
+  // prayer_trigger_all must pass { prayerName } as state so the prayer_name_is
+  // condition can branch in Any-prayer flows (it reads state.prayerName).
+  await withFrozenNow(localMidnight() + 60 * 1000, async (clock) => {
+    const env = makeEnv({ settings: {} });
+    await env.scheduler.init();
+    const occ = findOcc(env.scheduler.lastRun.audio, 'Dhuhr', env.scheduler._dayEpoch(0));
+    clock.now = occ.fireAt;
+    await env.t.timers.fireById(occ.id);
+    const call = env.t.triggerCards['prayer_trigger_all'].triggerCalls[0];
+    check('9a. prayer_trigger_all passes state.prayerName (condition can branch)',
+      !!call && call.state && call.state.prayerName === 'Dhuhr',
+      'prayer_trigger_all fired without state → prayer_name_is can never match in Any-prayer flows');
+  });
+}
+
+// ============================================================================
+section('10. HijriScheduler — flow-usage gating + correct trigger state keys');
+// ============================================================================
+{
+  function makeHijri(settings = {}, argMap = {}) {
+    const homey = createMockHomey({ settings });
+    const hijri = new HijriScheduler(homey);
+    for (const [id, vals] of Object.entries(argMap)) {
+      homey.flow.getTriggerCard(id).setArgumentValues(vals);
+    }
+    return { homey, hijri, t: homey._test };
+  }
+  const keysOf = h => [...h._timers.keys()];
+
+  await withFrozenNow(new Date(2026, 5, 20, 12, 0).getTime(), async (clock) => {
+    // No flows wired → per-day loop arms nothing (the optimization).
+    const a = makeHijri({ hijriConfig: {} });
+    await a.hijri.init();
+    check('10a. no Hijri flows → zero timers armed (gating works)', a.hijri._timers.size === 0);
+
+    // Only hijri_day_of_month=13 wired → only day-13 timers armed.
+    const b = makeHijri({ hijriConfig: {} }, { hijri_day_of_month: [{ day: 13 }] });
+    await b.hijri.init();
+    const bKeys = keysOf(b.hijri);
+    check('10b. day_of_month=13 wired → only day-13 timers armed',
+      bKeys.length > 0 && bKeys.every(k => k.startsWith('day_of_month@13@')));
+
+    // Fire one day-13 timer → state must carry hijriDay (matches app.js listener).
+    const entry = [...b.hijri._timers.values()][0];
+    clock.now = entry.fireAt;
+    await b.t.timers.fireById(entry.id);
+    const call = b.t.triggerCards['hijri_day_of_month'].triggerCalls[0];
+    check('10c. hijri_day_of_month fires with state.hijriDay (not bare day)',
+      !!call && call.state && call.state.hijriDay === 13);
+  });
+
+  // Occasion gating: wire one occasion near its date → only occasion timers armed.
+  const ashura = new HijriCalendar({}).nextOccurrence(1, 10);   // Muharram 10
+  await withFrozenNow(ashura.getTime() - 5 * 86400000, async () => {
+    const c = makeHijri({ hijriConfig: {} }, { islamic_occasion_event: [{ occasion: 'ashura', event: 'starts' }] });
+    await c.hijri.init();
+    const cKeys = keysOf(c.hijri);
+    check('10d. occasion wired → only occasion timers (no day/specific/month leak)',
+      cKeys.length > 0 && cKeys.every(k => k.startsWith('occ_')));
+  });
+}
+
+// ============================================================================
+section('11. API — searchCity guard + widgetData shape');
+// ============================================================================
+{
+  const empty = await apiHandlers.searchCity({ query: {} });
+  check('11a. searchCity with empty query returns [] (no network call)',
+    Array.isArray(empty) && empty.length === 0);
+
+  await withFrozenNow(new Date(2026, 5, 20, 12, 0).getTime(), async () => {
+    const homey = createMockHomey({ settings: { calculation: { method: 'Dubai' }, location: { useHomeyLoc: true } } });
+    const w = await apiHandlers.widgetData({ homey });
+    check('11b. widgetData returns 6 prayers with time + flags',
+      Array.isArray(w.prayers) && w.prayers.length === 6 &&
+      w.prayers.every(p => /^\d{2}:\d{2}$/.test(p.time) && 'passed' in p && 'isNext' in p));
+    check('11c. widgetData includes hijriDate info', w.hijriDate && 'day' in w.hijriDate);
+  });
 }
 
   // ── summary ──────────────────────────────────────────────────────────────────

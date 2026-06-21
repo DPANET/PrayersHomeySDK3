@@ -1,7 +1,6 @@
 'use strict';
 
 const Homey            = require('homey');
-const { HomeyAPI }     = require('homey-api');
 const PrayerScheduler  = require('./lib/PrayerScheduler');
 const HijriScheduler   = require('./lib/HijriScheduler');
 const AudioRouter      = require('./lib/AudioRouter');
@@ -15,10 +14,6 @@ class App extends Homey.App {
     this.logger.log('Prayers Alert: onInit starting…');
 
     this._migrateSettings();
-
-    // homey-api: cross-app device access (requires "homey:manager:api" permission)
-    this.homeyApi = await HomeyAPI.createAppAPI({ homey: this.homey });
-    this.logger.debug('HomeyAPI ready');
 
     this.audioRouter     = new AudioRouter(this.homey);
     this.scheduler       = new PrayerScheduler(this.homey);

@@ -1,9 +1,0 @@
-{
-  "id": "ramadan_starts",
-  "title": { "en": "Ramadan starts" },
-  "hint": { "en": "Fires once a year on 1 Ramadan." },
-  "tokens": [
-    { "name": "hijriYear",     "type": "number", "title": { "en": "Hijri year" }, "example": { "en": "1447" } },
-    { "name": "gregorianDate", "type": "string", "title": { "en": "Gregorian date" }, "example": { "en": "2025-03-01" } }
-  ]
-}

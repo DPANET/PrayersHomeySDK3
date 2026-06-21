@@ -1,7 +1,7 @@
 {
   "id": "prayer_trigger_all",
   "title": { "en": "At any prayer time" },
-  "hint": { "en": "Fires at every prayer time (Fajr, Dhuhr, Asr, Maghrib, Isha). Use the Prayer Name and Prayer Time tags in your Then cards." },
+  "hint": { "en": "Fires at every prayer time (Fajr, Dhuhr, Asr, Maghrib, Isha). In your Then 'cast a URL' card, pick the audio tag you want — Full adhan, Short adhan, Adhkar, Quran or Custom. The app fills each tag from your Audio settings." },
   "tokens": [
     {
       "name": "prayerName",
@@ -14,6 +14,16 @@
       "type": "string",
       "title": { "en": "Prayer Time" },
       "example": { "en": "05:38" }
-    }
+    },
+    { "name": "adhan_full",  "type": "string", "title": { "en": "Full adhan URL" },  "example": { "en": "https://cdn.aladhan.com/audio/adhans/a11-mansour-al-zahrani.mp3" } },
+    { "name": "adhan_short", "type": "string", "title": { "en": "Short adhan URL" }, "example": { "en": "https://everyayah.com/data/Alafasy_128kbps/001001.mp3" } },
+    { "name": "adhkar_morning", "type": "string", "title": { "en": "Morning Adhkar URL" }, "example": { "en": "https://archive.org/download/adhkar-of-the-morning-mishary-alafasi/Adhkar%20of%20the%20Morning_Mishary%20Alafasi%20.mp3" } },
+    { "name": "adhkar_evening", "type": "string", "title": { "en": "Evening Adhkar URL" }, "example": { "en": "https://archive.org/download/adhkar-of-the-evening-mishary-alafasi/Adhkar%20of%20the%20Evening_Mishary%20Alafasi%20.mp3" } },
+    { "name": "quran",       "type": "string", "title": { "en": "Quran URL" },       "example": { "en": "https://server8.mp3quran.net/afs/001.mp3" } },
+    { "name": "reciter",     "type": "string", "title": { "en": "Reciter" },         "example": { "en": "Mishary Al-Afasy" } },
+    { "name": "custom",      "type": "string", "title": { "en": "Custom URL" },      "example": { "en": "https://example.com/audio.mp3" } },
+    { "name": "custom2",     "type": "string", "title": { "en": "Custom URL 2" },    "example": { "en": "https://example.com/audio2.mp3" } },
+    { "name": "custom3",     "type": "string", "title": { "en": "Custom URL 3" },    "example": { "en": "https://example.com/audio3.mp3" } },
+    { "name": "volume",      "type": "string", "title": { "en": "Volume (0-1)" },     "example": { "en": "0.7" } }
   ]
 }

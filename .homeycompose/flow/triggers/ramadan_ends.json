@@ -1,9 +1,0 @@
-{
-  "id": "ramadan_ends",
-  "title": { "en": "Ramadan ends" },
-  "hint": { "en": "Fires on 1 Shawwal — the first day of Eid Al-Fitr." },
-  "tokens": [
-    { "name": "hijriYear",     "type": "number", "title": { "en": "Hijri year" }, "example": { "en": "1447" } },
-    { "name": "gregorianDate", "type": "string", "title": { "en": "Gregorian date" }, "example": { "en": "2025-03-30" } }
-  ]
-}
