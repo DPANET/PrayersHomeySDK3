@@ -142,6 +142,19 @@ section('2. Scheduler — rolling 2-day window with legacy before/after card');
       day1.length === 6 && day1.some(f => f.prayer === 'Sunrise'));
   });
 
+  // excludeSunrise must also suppress before/after FLOW timers (not just audio):
+  // "Any" should expand to 5 prayers/day with no Sunrise timer armed.
+  await withFrozenNow(localMidnight() + 60 * 1000, async () => {
+    const env = makeEnv({
+      settings: { advanced: { excludeSunrise: true } },
+      instances: [{ prayerAfterBefore: 'Before', prayerName: 'Any', prayerDurationTime: 10, prayerDurationType: 'minutes' }],
+    });
+    await env.scheduler.init();
+    const day1 = onDay(env.scheduler, env.scheduler.lastRun.flows, 1);
+    check('2i. excludeSunrise drops the "Any" Sunrise before/after flow timer',
+      day1.length === 5 && !day1.some(f => f.prayer === 'Sunrise'));
+  });
+
   // After all prayers (just before next local midnight): today empty, future full.
   await withFrozenNow(localMidnight() + (24 * 60 - 1) * 60 * 1000, async () => {
     const env = makeEnv({ instances: [] });
