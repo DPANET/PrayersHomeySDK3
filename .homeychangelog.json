@@ -28,5 +28,8 @@
   },
   "2.3.2": {
     "en": "Fixed init problems with volume "
+  },
+  "2.4.0": {
+    "en": "Added: \"Any prayer\" option on the Before/After Prayer trigger. Improved trigger reliability (no duplicate fires)."
   }
 }
