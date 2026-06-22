@@ -1069,6 +1069,12 @@
             },
             "values": [
               {
+                "id": "Any",
+                "title": {
+                  "en": "Any prayer"
+                }
+              },
+              {
                 "id": "Fajr",
                 "title": {
                   "en": "Fajr"

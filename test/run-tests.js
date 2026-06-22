@@ -155,6 +155,26 @@ section('2. Scheduler — rolling 2-day window with legacy before/after card');
       day1.length === 5 && !day1.some(f => f.prayer === 'Sunrise'));
   });
 
+  // "Any" + an explicit same-direction/offset flow collapse onto ONE timer per
+  // prayer/day (no double-fire). The run listener fans both flows out at fire time.
+  await withFrozenNow(localMidnight() + 60 * 1000, async () => {
+    const env = makeEnv({
+      instances: [
+        { prayerAfterBefore: 'Before', prayerName: 'Any',  prayerDurationTime: 10, prayerDurationType: 'minutes' },
+        { prayerAfterBefore: 'Before', prayerName: 'Fajr', prayerDurationTime: 10, prayerDurationType: 'minutes' },
+      ],
+    });
+    await env.scheduler.init();
+    const day1  = onDay(env.scheduler, env.scheduler.lastRun.flows, 1);
+    const fajrs = day1.filter(f => f.prayer === 'Fajr');
+    check('2j. Any + explicit Fajr (same offset) collapse to ONE Fajr timer (no double-fire)',
+      fajrs.length === 1 && day1.length === 6);
+    const st = fajrs[0].args; // snapshot stores the timer state under `args`
+    check('2k. both the Any and the explicit Fajr flow match that shared timer',
+      triggerMatches({ prayerAfterBefore: 'Before', prayerName: 'Any',  prayerDurationTime: 10, prayerDurationType: 'minutes' }, st) === true &&
+      triggerMatches({ prayerAfterBefore: 'Before', prayerName: 'Fajr', prayerDurationTime: 10, prayerDurationType: 'minutes' }, st) === true);
+  });
+
   // After all prayers (just before next local midnight): today empty, future full.
   await withFrozenNow(localMidnight() + (24 * 60 - 1) * 60 * 1000, async () => {
     const env = makeEnv({ instances: [] });
@@ -215,6 +235,10 @@ section('3. Legacy trigger firing — the merge core (all / specific / before-af
     triggerMatches({ ...b, prayerDurationTime: 0 }, { ...b, prayerDurationTime: '0' }) === true);
   check('3j. triggerMatches: matches via _resolvedPrayer when arg is concrete',
     triggerMatches({ ...b, prayerName: 'Fajr' }, { ...b, prayerName: 'Any', _resolvedPrayer: 'Fajr' }) === true);
+  check('3k. triggerMatches: an "Any" flow matches any resolved prayer',
+    triggerMatches({ ...b, prayerName: 'Any' }, { ...b, prayerName: 'Maghrib', _resolvedPrayer: 'Maghrib' }) === true);
+  check('3l. triggerMatches: explicit flow does NOT match a different resolved prayer',
+    triggerMatches({ ...b, prayerName: 'Fajr' }, { ...b, prayerName: 'Any', _resolvedPrayer: 'Maghrib' }) === false);
 }
 
 // ============================================================================

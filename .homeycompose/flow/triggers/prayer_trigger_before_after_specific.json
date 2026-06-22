@@ -18,6 +18,7 @@
       "type": "dropdown",
       "title": { "en": "Prayer" },
       "values": [
+        { "id": "Any",     "title": { "en": "Any prayer" } },
         { "id": "Fajr",    "title": { "en": "Fajr"    } },
         { "id": "Sunrise", "title": { "en": "Sunrise"  } },
         { "id": "Dhuhr",   "title": { "en": "Dhuhr"   } },
