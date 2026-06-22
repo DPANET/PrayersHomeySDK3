@@ -438,9 +438,9 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     const t = env.audioRouter.buildTokens('Dhuhr');
     check('6f. missing full/short fall back to default adhan',
       t.adhan_full.includes('cdn.aladhan.com') && t.adhan_short.includes('001001.mp3'));
-    check('6g. missing adhkar/custom fall back to defaults; volume defaults to 1 (number, never absent)',
+    check('6g. missing adhkar/custom fall back to defaults; volume defaults to 0.3 (number, never absent)',
       t.adhkar_morning.includes('archive.org') && t.adhkar_evening.includes('archive.org') &&
-      t.custom.includes('assabile.com') && t.custom2 === '' && t.custom3 === '' && t.volume === 1);
+      t.custom.includes('assabile.com') && t.custom2 === '' && t.custom3 === '' && t.volume === 0.3);
     check('6h. default reciter → Afasy surah 001', t.quran === 'https://server8.mp3quran.net/afs/001.mp3');
   }
 
@@ -456,10 +456,10 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   {
     const env = makeEnv({ settings: { advanced: { appEnabled: false }, audioPrefs: prefs } });
     const t = env.audioRouter.buildTokens('Dhuhr');
-    check('6k. disabled app blanks all URL tags; volume still a number (1)',
+    check('6k. disabled app blanks all URL tags; volume still a number (0.3)',
       t.adhan_full === '' && t.adhan_short === '' &&
       t.adhkar_morning === '' && t.adhkar_evening === '' &&
-      t.quran === '' && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === 1);
+      t.quran === '' && t.custom === '' && t.custom2 === '' && t.custom3 === '' && t.volume === 0.3);
   }
 
   // clearScheduled is a harmless no-op (no timed follow-ups in this model).
@@ -475,12 +475,12 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
   {
     check('6m. volume=0 is a valid override (not falsy)',
       makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 0    } } } }).audioRouter.buildTokens('Fajr').volume === 0);
-    check('6n. volume > 1 → default 1 (invalid range rejected)',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 1.5  } } } }).audioRouter.buildTokens('Fajr').volume === 1);
-    check('6o. volume < 0 → default 1 (invalid range rejected)',
-      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -0.1 } } } }).audioRouter.buildTokens('Fajr').volume === 1);
+    check('6n. volume > 1 → default 0.3 (invalid range rejected)',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: 1.5  } } } }).audioRouter.buildTokens('Fajr').volume === 0.3);
+    check('6o. volume < 0 → default 0.3 (invalid range rejected)',
+      makeEnv({ settings: { audioPrefs: { volumes: { Fajr: -0.1 } } } }).audioRouter.buildTokens('Fajr').volume === 0.3);
     check('6p. volume set for one prayer does not bleed into others',
-      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Fajr').volume === 1 &&
+      makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Fajr').volume === 0.3 &&
       makeEnv({ settings: { audioPrefs: { volumes: { Maghrib: 0.85 } } } }).audioRouter.buildTokens('Maghrib').volume === 0.85);
 
     // Regression: volume must ALWAYS be a number. Homey requires every declared
@@ -491,11 +491,11 @@ section('6. AudioRouter.buildTokens — URL tags the prayer triggers carry');
     {
       const prayers = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
       const noVolEnv = makeEnv({ settings: {} });
-      check('6p2. volume is always a number (defaults to 1) with no per-prayer volume',
-        prayers.every(p => noVolEnv.audioRouter.buildTokens(p).volume === 1));
+      check('6p2. volume is always a number (defaults to 0.3) with no per-prayer volume',
+        prayers.every(p => noVolEnv.audioRouter.buildTokens(p).volume === 0.3));
       const disabledEnv = makeEnv({ settings: { advanced: { appEnabled: false } } });
-      check('6p3. volume is always a number (1) when app is disabled',
-        prayers.every(p => disabledEnv.audioRouter.buildTokens(p).volume === 1));
+      check('6p3. volume is always a number (0.3) when app is disabled',
+        prayers.every(p => disabledEnv.audioRouter.buildTokens(p).volume === 0.3));
     }
   }
 
