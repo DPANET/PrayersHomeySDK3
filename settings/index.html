@@ -706,7 +706,10 @@
         <div id="prayer-volumes"></div>
       </div>
 
-      <button class="btn btn-primary btn-full" id="btn-save-audio" style="margin-top:16px">Save audio tags</button>
+      <div class="btn-group" style="margin-top:16px">
+        <button class="btn btn-ghost" id="btn-reset-audio">Reset to defaults</button>
+        <button class="btn btn-primary" id="btn-save-audio">Save audio tags</button>
+      </div>
       <div id="audio-status" class="info-bar" style="margin-top:10px"></div>
 
       <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
@@ -1191,6 +1194,28 @@ document.getElementById('btn-save-audio').addEventListener('click', () => {
   });
 });
 
+
+document.getElementById('btn-reset-audio').addEventListener('click', () => {
+  setVal('ap-full',          '');
+  setVal('ap-short',         '');
+  setVal('ap-reciter',       'Mishary Al-Afasy');
+  setVal('ap-surah',         '1');
+  const surahTextEl = document.getElementById('ap-surah-text');
+  if (surahTextEl) surahTextEl.value = surahLabel(1);
+  setVal('ap-adhkar-morning', '');
+  setVal('ap-adhkar-evening', '');
+  setVal('ap-custom',        '');
+  setVal('ap-custom2',       '');
+  setVal('ap-custom3',       '');
+  _volPrayers.forEach(p => volClear(p));
+
+  const prefs = { fullUrl: '', shortUrl: '', reciter: 'Mishary Al-Afasy', surah: 1,
+    adhkarMorningUrl: '', adhkarEveningUrl: '', customUrl: '', customUrl2: '', customUrl3: '', volumes: {} };
+  Homey.set('audioPrefs', prefs, err => {
+    if (err) return showStatus('audio-status', 'Error: ' + err.message, 'error');
+    showStatus('audio-status', 'Reset to defaults — built-in recordings will be used.', 'success');
+  });
+});
 
 // ─── Advanced tab ─────────────────────────────────────────────────────────────
 document.getElementById('btn-save-advanced').addEventListener('click', () => {
