@@ -658,11 +658,11 @@
 
       <div class="field" style="margin-top:12px">
         <label>Full adhan URL</label>
-        <input type="text" id="ap-full" placeholder="leave blank to use built-in default (Mansour Al-Zahrani)" />
+        <input type="text" id="ap-full" placeholder="Full adhan URL" />
       </div>
       <div class="field">
         <label>Short adhan URL</label>
-        <input type="text" id="ap-short" placeholder="leave blank to use built-in default (Al-Fatiha, Alafasy)" />
+        <input type="text" id="ap-short" placeholder="Short adhan URL" />
       </div>
 
       <div class="field">
@@ -681,15 +681,15 @@
 
       <div class="field">
         <label>Morning Adhkar URL</label>
-        <input type="text" id="ap-adhkar-morning" placeholder="leave blank to use built-in default (Adhkar Morning, Alafasy)" />
+        <input type="text" id="ap-adhkar-morning" placeholder="Adhkar morning URL" />
       </div>
       <div class="field">
         <label>Evening Adhkar URL</label>
-        <input type="text" id="ap-adhkar-evening" placeholder="leave blank to use built-in default (Adhkar Evening, Alafasy)" />
+        <input type="text" id="ap-adhkar-evening" placeholder="Adhkar evening URL" />
       </div>
       <div class="field">
         <label>Custom URL</label>
-        <input type="text" id="ap-custom" placeholder="leave blank to use built-in default (Assabile adhan)" />
+        <input type="text" id="ap-custom" placeholder="Custom audio URL" />
       </div>
       <div class="field">
         <label>Custom URL 2</label>
@@ -707,8 +707,8 @@
       </div>
 
       <div class="btn-group" style="margin-top:16px">
-        <button class="btn btn-ghost" id="btn-reset-audio">Reset to defaults</button>
-        <button class="btn btn-primary" id="btn-save-audio">Save audio tags</button>
+        <button class="btn btn-ghost" id="btn-reset-audio">Reset</button>
+        <button class="btn btn-primary" id="btn-save-audio">Save</button>
       </div>
       <div id="audio-status" class="info-bar" style="margin-top:10px"></div>
 
@@ -1113,6 +1113,14 @@ function initAudio() {
   textEl.addEventListener('blur',   function() { setTimeout(() => { dropEl.style.display = 'none'; }, 150); });
 }
 
+const AUDIO_DEFAULTS = {
+  full:           'https://cdn.aladhan.com/audio/adhans/a1.mp3',
+  short:          'https://everyayah.com/data/Alafasy_128kbps/001001.mp3',
+  adhkarMorning:  'https://archive.org/download/adhkar-of-the-morning-mishary-alafasi/Adhkar%20of%20the%20Morning_Mishary%20Alafasi%20.mp3',
+  adhkarEvening:  'https://archive.org/download/adhkar-of-the-evening-mishary-alafasi/Adhkar%20of%20the%20Evening_Mishary%20Alafasi%20.mp3',
+  custom:         'https://media.assabile.com/assabile/adhan_3435370/f30b7631d625.mp3',
+};
+
 const _volPrayers = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
 const _volState = {};
 
@@ -1196,24 +1204,29 @@ document.getElementById('btn-save-audio').addEventListener('click', () => {
 
 
 document.getElementById('btn-reset-audio').addEventListener('click', () => {
-  setVal('ap-full',          '');
-  setVal('ap-short',         '');
-  setVal('ap-reciter',       'Mishary Al-Afasy');
-  setVal('ap-surah',         '1');
+  setVal('ap-full',           AUDIO_DEFAULTS.full);
+  setVal('ap-short',          AUDIO_DEFAULTS.short);
+  setVal('ap-reciter',        'Mishary Al-Afasy');
+  setVal('ap-surah',          '1');
   const surahTextEl = document.getElementById('ap-surah-text');
   if (surahTextEl) surahTextEl.value = surahLabel(1);
-  setVal('ap-adhkar-morning', '');
-  setVal('ap-adhkar-evening', '');
-  setVal('ap-custom',        '');
-  setVal('ap-custom2',       '');
-  setVal('ap-custom3',       '');
+  setVal('ap-adhkar-morning', AUDIO_DEFAULTS.adhkarMorning);
+  setVal('ap-adhkar-evening', AUDIO_DEFAULTS.adhkarEvening);
+  setVal('ap-custom',         AUDIO_DEFAULTS.custom);
+  setVal('ap-custom2',        '');
+  setVal('ap-custom3',        '');
   _volPrayers.forEach(p => volClear(p));
 
-  const prefs = { fullUrl: '', shortUrl: '', reciter: 'Mishary Al-Afasy', surah: 1,
-    adhkarMorningUrl: '', adhkarEveningUrl: '', customUrl: '', customUrl2: '', customUrl3: '', volumes: {} };
+  const prefs = {
+    fullUrl: AUDIO_DEFAULTS.full, shortUrl: AUDIO_DEFAULTS.short,
+    reciter: 'Mishary Al-Afasy', surah: 1,
+    adhkarMorningUrl: AUDIO_DEFAULTS.adhkarMorning,
+    adhkarEveningUrl: AUDIO_DEFAULTS.adhkarEvening,
+    customUrl: AUDIO_DEFAULTS.custom, customUrl2: '', customUrl3: '', volumes: {},
+  };
   Homey.set('audioPrefs', prefs, err => {
     if (err) return showStatus('audio-status', 'Error: ' + err.message, 'error');
-    showStatus('audio-status', 'Reset to defaults — built-in recordings will be used.', 'success');
+    showStatus('audio-status', 'Reset to defaults.', 'success');
   });
 });
 
@@ -1265,16 +1278,16 @@ function onHomeyReady(Homey) {
 
   Homey.get('audioPrefs', (err, ap) => {
     ap = ap || {};
-    setVal('ap-full',          ap.fullUrl          || '');
-    setVal('ap-short',         ap.shortUrl         || '');
+    setVal('ap-full',          ap.fullUrl          || AUDIO_DEFAULTS.full);
+    setVal('ap-short',         ap.shortUrl         || AUDIO_DEFAULTS.short);
     setVal('ap-reciter', ap.reciter || 'Mishary Al-Afasy');
     const surahN = ap.surah || 1;
     setVal('ap-surah', surahN);
     const surahTextEl = document.getElementById('ap-surah-text');
     if (surahTextEl) surahTextEl.value = surahLabel(surahN);
-    setVal('ap-adhkar-morning', ap.adhkarMorningUrl || '');
-    setVal('ap-adhkar-evening', ap.adhkarEveningUrl || '');
-    setVal('ap-custom',        ap.customUrl        || '');
+    setVal('ap-adhkar-morning', ap.adhkarMorningUrl || AUDIO_DEFAULTS.adhkarMorning);
+    setVal('ap-adhkar-evening', ap.adhkarEveningUrl || AUDIO_DEFAULTS.adhkarEvening);
+    setVal('ap-custom',        ap.customUrl        || AUDIO_DEFAULTS.custom);
     setVal('ap-custom2',       ap.customUrl2       || '');
     setVal('ap-custom3',       ap.customUrl3       || '');
     volLoad(ap.volumes || {});
