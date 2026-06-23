@@ -37,5 +37,8 @@
   },
   "2.4.3": {
     "en": "Fixed widget preview images to comply with Homey App Store guidelines (abstract shapes, no text, transparent background). Updated default full adhan to Al-Ghamdi Makkah recording (cdn.aladhan.com/audio/adhans/a1.mp3)."
+  },
+  "2.4.4": {
+    "en": "audio settings always show default URLs, simplified reset and save buttons"
   }
 }
