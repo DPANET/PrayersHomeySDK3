@@ -31,5 +31,8 @@
   },
   "2.4.0": {
     "en": "Added: \"Any prayer\" option on the Before/After Prayer trigger. Improved trigger reliability (no duplicate fires)."
+  },
+  "2.4.1": {
+    "en": "Fixed: \"Prayer name is/is not\" condition now works correctly under the Before/After Any prayer trigger (e.g. excluding Sunrise)."
   }
 }
