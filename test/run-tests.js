@@ -869,6 +869,16 @@ section('12. onInit integration — full boot sequence wires & fires end-to-end'
     check('12k. before/after offset flow fires at Dhuhr+5min with legacy tokens',
       !!baCall && baCall.tokens.prayerName === 'Dhuhr' &&
       Math.abs(baOcc.fireAt - (dhuhr.fireAt + 5 * 60000)) < 1000);
+
+    // Regression: prayer_name_is must read the RESOLVED prayer for the
+    // "Before/After Any prayer" trigger (state.prayerName === 'Any',
+    // _resolvedPrayer === concrete). Otherwise "is not Sunrise" lets Sunrise
+    // through (screenshot bug 2026-06-23).
+    const anySunrise = { prayerAfterBefore: 'Before', prayerName: 'Any', _resolvedPrayer: 'Sunrise' };
+    const anyFajr    = { prayerAfterBefore: 'Before', prayerName: 'Any', _resolvedPrayer: 'Fajr' };
+    check('12l. prayer_name_is uses _resolvedPrayer under "Any" trigger (Sunrise matches → "is not Sunrise" blocks)',
+      SC['prayer_name_is']._runListener({ prayerName: 'Sunrise' }, anySunrise) === true &&
+      SC['prayer_name_is']._runListener({ prayerName: 'Sunrise' }, anyFajr) === false);
   });
 }
 

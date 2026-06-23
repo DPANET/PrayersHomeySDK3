@@ -196,8 +196,13 @@ class App extends Homey.App {
 
     this.homey.flow.getConditionCard('prayer_name_is')
       .registerRunListener((args, state) => {
-        const result = state.prayerName === args.prayerName;
-        this.logger.debug(`Condition prayer_name_is [${args.prayerName}] state=[${state.prayerName}] → ${result}`);
+        // Use the resolved prayer: for the "Before/After Any prayer" trigger,
+        // state.prayerName is "Any" while the concrete prayer is in
+        // _resolvedPrayer. For prayer_trigger_all/_specific there is no
+        // _resolvedPrayer, so fall back to state.prayerName (already concrete).
+        const prayer = state._resolvedPrayer || state.prayerName;
+        const result = prayer === args.prayerName;
+        this.logger.debug(`Condition prayer_name_is [${args.prayerName}] state=[${prayer}] → ${result}`);
         return result;
       });
 
