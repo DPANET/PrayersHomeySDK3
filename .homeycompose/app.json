@@ -1,6 +1,6 @@
 {
   "id": "com.prayerssapp",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "compatibility": ">=12.1.0",
   "sdk": 3,
   "platforms": [

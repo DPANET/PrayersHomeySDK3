@@ -4,6 +4,16 @@ All notable changes to Prayers Alert are documented here.
 
 ---
 
+## [2.4.2] — 2026-06-23
+
+### Fixed
+- **Widget preview images** replaced with abstract, text-free representations to comply with Homey App Store guideline §1.10 — previous previews were rejected for containing text (prayer names, times, city, date) and a non-transparent background
+
+### Changed
+- **Default full adhan** updated to `https://cdn.aladhan.com/audio/adhans/a1.mp3` (Makkah adhan, Al-Ghamdi)
+
+---
+
 ## [2.2.1] — 2026-06-21
 
 ### Added
