@@ -315,6 +315,7 @@
     .info-bar.success { background: var(--success-lt); color: var(--success-txt); }
     .info-bar.error   { background: var(--danger-lt);  color: var(--danger-txt); }
     .info-bar.info    { background: var(--blue-lt);    color: var(--blue-dk);    }
+    .info-bar.warning { background: #FEF9C3;           color: #713F12;           }
 
     /* ── Google Places autocomplete styling ── */
     .pac-container {
@@ -450,7 +451,7 @@
     <!-- Adjustments (merged onto this tab) -->
     <div class="card">
       <div class="adj-section-lbl">Fine-tune prayer times</div>
-      <p class="hint" style="margin-bottom:12px">Offset each prayer ±60 min. Grid above updates live. Press Save to apply.</p>
+      <p class="hint" style="margin-bottom:12px">Offset each prayer ±60 min. Tiles above update live. Press <strong>Preview</strong> to see the 5-day table. Changes are not applied until you press <strong>Save</strong>.</p>
       <div>
         <div class="adj-row">
           <div class="adj-name">Fajr</div>
@@ -822,7 +823,8 @@ function updatePrayerDisplay() {
 }
 
 function loadPrayerTimes() {
-  Homey.api('GET', '/previewTimes', null, (err, times) => {
+  // Fetch raw (unadjusted) times so updatePrayerDisplay() applies exactly one offset from the steppers.
+  Homey.api('GET', '/previewTimes?adj=' + encodeURIComponent('{}'), null, (err, times) => {
     if (err || !times || Array.isArray(times)) return;
     _todayTimes = times;
     updatePrayerDisplay();
@@ -890,8 +892,24 @@ window.adjStep = function(prayer, delta) {
   onAdjInput(prayer);
 };
 
+let _hasUnsaved = false;
+function _adjUnsaved() {
+  _hasUnsaved = true;
+  const el = document.getElementById('adj-status');
+  if (!el) return;
+  el.className = 'info-bar warning';
+  el.textContent = 'Unsaved changes — press Save to apply.';
+  el.style.display = 'block';
+}
+function _adjClearStatus() {
+  _hasUnsaved = false;
+  const el = document.getElementById('adj-status');
+  if (el) el.style.display = 'none';
+}
+
 window.onAdjInput = function(prayer) {
   updatePrayerDisplay();
+  _adjUnsaved();
 };
 
 function initAdjustments(adj) {
@@ -903,6 +921,7 @@ function initAdjustments(adj) {
 document.getElementById('btn-reset-adj').addEventListener('click', () => {
   ADJ_PRAYERS.forEach(p => setVal('adj-' + p, 0));
   updatePrayerDisplay();
+  _adjClearStatus();
   loadPreview5Day();
 });
 
@@ -911,7 +930,7 @@ document.getElementById('btn-save-adj').addEventListener('click', () => {
   ADJ_PRAYERS.forEach(p => { adjData[p] = parseInt(val('adj-' + p)) || 0; });
   Homey.set('adjustments', adjData, err => {
     if (err) return showStatus('adj-status', 'Error: ' + err.message, 'error');
-    showStatus('adj-status', 'Saved — re-scheduling…', 'success');
+    showStatus('adj-status', 'Saved — adjustments applied and scheduler updated.', 'success');
     Homey.api('POST', '/reschedule', {}, () => {
       loadPrayerTimes();
       loadPreview5Day();
@@ -921,11 +940,11 @@ document.getElementById('btn-save-adj').addEventListener('click', () => {
 
 // ─── 5-day preview (always visible, Preview button reloads) ──────────────────
 document.getElementById('btn-preview').addEventListener('click', () => {
-  // Build current unsaved adjustments from steppers and pass them inline
   const adj = {};
   ADJ_PRAYERS.forEach(p => { adj[p] = parseInt(val('adj-' + p)) || 0; });
   loadPreview5Day(adj);
-  showStatus('adj-status', 'Preview refreshed', 'info');
+  showStatus('adj-status', 'Preview updated — changes not saved yet.', 'info');
+  if (_hasUnsaved) setTimeout(_adjUnsaved, 3100);
 });
 
 function loadPreview5Day(adjOverride) {

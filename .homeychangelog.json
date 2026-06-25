@@ -40,5 +40,8 @@
   },
   "2.4.4": {
     "en": "audio settings always show default URLs, simplified reset and save buttons"
+  },
+  "2.4.5": {
+    "en": "Fixed prayer-time tiles on the Settings page showing a value that didn't match the 5-day preview table; the fine-tune table now also refreshes live as you adjust."
   }
 }

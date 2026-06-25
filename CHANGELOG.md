@@ -4,6 +4,16 @@ All notable changes to Prayers Alert are documented here.
 
 ---
 
+## [2.4.5] — 2026-06-25
+
+### Fixed
+- **Prayer Times settings page** — the six prayer tiles double-applied the fine-tune offset, so a tile (e.g. Asr `15:44`) could disagree with the matching row in the 5-day preview table (`15:46`). Tiles now load the raw calculated time and apply the stepper offset exactly once, so tile and table always agree.
+
+### Changed
+- The 5-day preview table now refreshes live (debounced) as you move the `−` / `+` steppers — no need to press **Preview** to see the table catch up.
+
+---
+
 ## [2.4.2] — 2026-06-23
 
 ### Fixed
