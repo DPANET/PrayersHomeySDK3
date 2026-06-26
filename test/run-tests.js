@@ -882,6 +882,427 @@ section('12. onInit integration — full boot sequence wires & fires end-to-end'
   });
 }
 
+// ============================================================================
+section('13. Assistant config endpoint + migration (settings contract)');
+// ============================================================================
+{
+  // ── assistantConfig: safe defaults when nothing is saved ───────────────────
+  {
+    const homey = createMockHomey({ settings: {} });
+    const cfg = await apiHandlers.assistantConfig({ homey });
+    check('13a. assistantConfig returns safe defaults when unset',
+      cfg.enabled === false && Array.isArray(cfg.allowedNumbers) && cfg.allowedNumbers.length === 0 &&
+      cfg.model === 'claude-sonnet-4-6' && cfg.rateLimitSeconds === 10 && cfg.dailyCap === 50 &&
+      cfg.language === 'both' && cfg.translit === false && cfg.customInstructions === '');
+    check('13b. assistantConfig.enabled is a strict boolean (never undefined) when unset',
+      cfg.enabled === false && typeof cfg.enabled === 'boolean');
+    check('13c. assistantConfig NEVER leaks the API key (only a hasKey boolean)',
+      !('apiKey' in cfg) && !('anthropic_key' in cfg) && !('key' in cfg) && !('anthropicKey' in cfg) &&
+      cfg.hasKey === false && typeof cfg.hasKey === 'boolean');
+  }
+
+  // ── assistantConfig: echoes saved values verbatim ──────────────────────────
+  {
+    const homey = createMockHomey({ settings: { assistant: {
+      enabled: true, allowedNumbers: ['+971500000001', '+971500000002'], fallbackMessage: 'Unavailable',
+      model: 'claude-opus-4-8', customInstructions: 'be brief', rateLimitSeconds: 5, dailyCap: 20,
+      language: 'arabic', translit: true, anthropicKey: 'sk-ant-secret',
+    } } });
+    const cfg = await apiHandlers.assistantConfig({ homey });
+    check('13d. assistantConfig echoes saved values',
+      cfg.enabled === true && cfg.allowedNumbers.length === 2 && cfg.model === 'claude-opus-4-8' &&
+      cfg.rateLimitSeconds === 5 && cfg.dailyCap === 20 && cfg.language === 'arabic' && cfg.translit === true &&
+      cfg.customInstructions === 'be brief' && cfg.fallbackMessage === 'Unavailable');
+    check('13d2. assistantConfig reports hasKey:true but never the key itself',
+      cfg.hasKey === true && !('anthropicKey' in cfg));
+    check('13e. enabled:false stays false (not coerced to a default)',
+      (await apiHandlers.assistantConfig({ homey: createMockHomey({ settings: { assistant: { enabled: false } } }) })).enabled === false);
+  }
+
+  // ── assistantConfig: defensive coercion of malformed input ─────────────────
+  {
+    const homey = createMockHomey({ settings: { assistant: {
+      allowedNumbers: 'not-an-array', rateLimitSeconds: 'oops', dailyCap: null, enabled: 'yes', language: 'klingon',
+    } } });
+    const cfg = await apiHandlers.assistantConfig({ homey });
+    check('13f. non-array allowedNumbers coerced to []', Array.isArray(cfg.allowedNumbers) && cfg.allowedNumbers.length === 0);
+    check('13g. non-number rateLimit/dailyCap fall back to 10 / 50', cfg.rateLimitSeconds === 10 && cfg.dailyCap === 50);
+    check('13h. truthy-but-not-true enabled is NOT treated as enabled', cfg.enabled === false);
+    check('13h2. invalid language falls back to "both"', cfg.language === 'both');
+  }
+
+  // ── migration: assistant default is written, idempotently, on every install ─
+  {
+    const mkApp = (homey) => {
+      const app = Object.create(App.prototype);
+      app.homey = homey;
+      app.logger = { log() {}, debug() {}, warn() {}, error() {} };
+      return app;
+    };
+    // Fresh install with NO v1 keys — proves the default is NOT gated by the v1 early-return.
+    const homey = createMockHomey({ settings: {} });
+    mkApp(homey)._migrateSettings();
+    const a = homey.settings.get('assistant');
+    check('13l. migration writes assistant default on a fresh install (no v1 keys)',
+      !!a && a.enabled === false && a.model === 'claude-sonnet-4-6' &&
+      a.rateLimitSeconds === 10 && a.dailyCap === 50 && a.language === 'both' && a.translit === false &&
+      a.anthropicKey === '' && Array.isArray(a.allowedNumbers) && a.allowedNumbers.length === 0);
+    const lib = homey.settings.get('promptLibrary');
+    check('13l2. migration seeds the prompt library on a fresh install',
+      Array.isArray(lib) && lib.length >= 1 && lib.every(p => p.id && p.name && p.prompt));
+
+    // Existing config must NOT be overwritten on a later run.
+    homey.settings.set('assistant', { enabled: true, model: 'custom-model', dailyCap: 999 });
+    homey.settings.set('promptLibrary', [{ id: 'mine', name: 'Mine', prompt: 'do x' }]);
+    mkApp(homey)._migrateSettings();
+    const a2 = homey.settings.get('assistant');
+    const lib2 = homey.settings.get('promptLibrary');
+    check('13m. migration does NOT overwrite an existing assistant config',
+      a2.enabled === true && a2.model === 'custom-model' && a2.dailyCap === 999);
+    // The user's own preset is preserved; the new dua presets are topped up once.
+    check('13m2. migration preserves the user preset and does not overwrite it',
+      lib2[0].id === 'mine');
+    check('13m3. migration tops up the new dua presets into an existing library',
+      lib2.some(p => p.id === 'travel_dua') && lib2.length > 1);
+    // A second run is idempotent — the top-up flag prevents re-adding.
+    const lenAfterFirst = lib2.length;
+    mkApp(homey)._migrateSettings();
+    check('13m4. dua top-up is idempotent (flag-guarded, no duplicates)',
+      homey.settings.get('promptLibrary').length === lenAfterFirst);
+  }
+
+  // ── no impact: writing assistant settings must not arm a reschedule ─────────
+  await withFrozenNow(localMidnight() + 60 * 1000, async () => {
+    const env = makeEnv({ settings: {} });
+    await env.scheduler.init();
+    env.scheduler._onSettingChanged('assistant');
+    check('13n. an "assistant" settings change does NOT trigger a prayer reschedule',
+      env.scheduler._debounce === null);
+  });
+}
+
+// ============================================================================
+section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content');
+// ============================================================================
+{
+  const IslamicAssistantCard = require(path.join(LIB, 'IslamicAssistantCard'));
+  const ContentTools         = require(path.join(LIB, 'ContentTools'));
+  const { splitForTelegram, TG_MAX_CHARS } = require(path.join(LIB, 'TelegramBotListener'));
+
+  // ── Telegram message splitter (verbatim blocks can exceed the 4096 limit) ────
+  {
+    const short = splitForTelegram('hello world');
+    check('14ab. short text is a single part', short.length === 1 && short[0] === 'hello world');
+
+    const big = Array.from({ length: 30 }, (_, i) => ('Paragraph ' + i + ' ').repeat(40).trim()).join('\n\n');
+    const parts = splitForTelegram(big);
+    const norm = s => s.replace(/\s+/g, ' ').trim();
+    check('14ac. long text splits into parts that each fit the limit, preserving content',
+      parts.length > 1 && parts.every(p => p.length <= TG_MAX_CHARS) && norm(parts.join(' ')) === norm(big));
+
+    const line = 'x'.repeat(9000);
+    const hard = splitForTelegram(line);
+    check('14ad. a single oversized line is hard-split with no loss',
+      hard.length === 3 && hard.every(p => p.length <= TG_MAX_CHARS) && hard.join('') === line);
+  }
+
+  // ── tafsir preserves source HTML structure (headings + paragraphs) ───────────
+  {
+    const out = ContentTools.formatTafsir({
+      text: ContentTools.htmlToTelegram('<h2>The Heading</h2><p>First para with a `quote` and [note].</p><p>Second para.</p>'),
+      surahNum: 2, ayahNum: 255, edition: 'en-ibn-kathir',
+    });
+    const stars = (out.match(/\*/g) || []).length;
+    check('14af. htmlToTelegram keeps headings (bold) + paragraph breaks, strips stray markup',
+      /\*The Heading\*/.test(out) && /First para with a quote and note\./.test(out)
+      && /\n\nSecond para\./.test(out) && !/[`[\]]/.test(out) && stars % 2 === 0);
+  }
+
+  // ── formatFatwa sanitizes external Markdown so Telegram doesn't break ─────────
+  {
+    const block = ContentTools.formatFatwa({
+      title: 'T`x', question: 'Q [a] *b*', answer: 'A `code` _u_ [link] text',
+      source: 'https://islamqa.info/ar/answers/1', arabic: true,
+    });
+    const stray = (block.match(/[`[\]]/g) || []).length;
+    const starsBalanced = (block.match(/\*/g) || []).length % 2 === 0;
+    check('14ae. formatFatwa strips stray markdown chars and keeps our labels balanced',
+      stray === 0 && starsBalanced && /الجواب/.test(block) && /A code u link text/.test(block));
+  }
+
+  const mkCard = (settings, deps) => {
+    const homey = createMockHomey({ settings });
+    return { card: new IslamicAssistantCard(homey, deps), homey };
+  };
+  const echoComplete = async ({ messages }) => 'REPLY:' + messages[0].content;
+  const baseCfg = (over = {}) => ({ assistant: Object.assign({
+    enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 10, dailyCap: 50,
+  }, over) });
+
+  // ── schedule mode ──────────────────────────────────────────────────────────
+  {
+    const { card } = mkCard(
+      Object.assign(baseCfg(), { promptLibrary: [{ id: 'p1', name: 'P1', prompt: 'PRESET_PROMPT' }] }),
+      { claudeComplete: echoComplete });
+    const r = await card.run({ mode: 'schedule', preset: { id: 'p1', name: 'P1', prompt: 'PRESET_PROMPT' } });
+    check('14a. schedule mode uses the preset prompt', r.assistant_reply === 'REPLY:PRESET_PROMPT' && r.assistant_success === true);
+
+    const r2 = await card.run({ mode: 'schedule', preset: { id: 'p1', prompt: 'PRESET_PROMPT' }, custom: 'CUSTOM_OVERRIDE' });
+    check('14b. custom prompt overrides the preset', r2.assistant_reply === 'REPLY:CUSTOM_OVERRIDE');
+  }
+  {
+    const { card } = mkCard(Object.assign(baseCfg(), { promptLibrary: [] }), { claudeComplete: echoComplete });
+    const r = await card.run({ mode: 'schedule', preset: { id: 'gone', name: 'Gone' } });
+    check('14c. deleted/unknown preset returns a fallback (no throw)',
+      r.assistant_success === false && /not found/i.test(r.assistant_reply));
+  }
+  {
+    let called = false;
+    const { card } = mkCard(baseCfg({ enabled: false, fallbackMessage: 'OFF' }),
+      { claudeComplete: async () => { called = true; return 'x'; } });
+    const r = await card.run({ mode: 'schedule', custom: 'hi' });
+    check('14d. schedule mode respects enabled:false (no Claude call)',
+      r.assistant_success === false && r.assistant_reply === 'OFF' && called === false);
+  }
+
+  // ── schedule fast-path: pure-relay presets bypass the Claude tool-loop ───────
+  {
+    const PromptLib = require(path.join(LIB, 'PromptLibrary'));
+    const canon = PromptLib.DEFAULT_PRESETS.find(p => p.id === 'fatwa_random');
+    let claudeCalled = false;
+    const contentTools = { getFatwa: async () => ({ block: 'FATWA_BLOCK' }) };
+    const { card } = mkCard(baseCfg(),
+      { claudeComplete: async () => { claudeCalled = true; return 'CLAUDE'; }, contentTools });
+    const r = await card.run({ mode: 'schedule', preset: { id: 'fatwa_random', name: canon.name, prompt: canon.prompt } });
+    check('14a2. canonical pure-relay preset bypasses Claude and relays the tool block directly',
+      r.assistant_reply === 'FATWA_BLOCK' && r.assistant_success === true && claudeCalled === false);
+  }
+  {
+    let claudeCalled = false;
+    const contentTools = { getFatwa: async () => ({ block: 'FATWA_BLOCK' }) };
+    const { card } = mkCard(baseCfg(),
+      { claudeComplete: async ({ messages }) => { claudeCalled = true; return 'REPLY:' + messages[0].content; }, contentTools });
+    const r = await card.run({ mode: 'schedule', preset: { id: 'fatwa_random', name: 'F', prompt: 'do something custom' } });
+    check('14a3. a customised pure-relay preset still goes through Claude (no bypass)',
+      claudeCalled === true && r.assistant_reply === 'REPLY:do something custom');
+  }
+  {
+    // Direct fetch failure must fall through to the normal Claude path, not error.
+    const PromptLib = require(path.join(LIB, 'PromptLibrary'));
+    const canon = PromptLib.DEFAULT_PRESETS.find(p => p.id === 'fatwa_random');
+    let claudeCalled = false;
+    const contentTools = { getFatwa: async () => ({ block: '' }), getHadith: async () => ({ block: '' }) };
+    const { card } = mkCard(baseCfg(),
+      { claudeComplete: async () => { claudeCalled = true; return 'CLAUDE_FALLBACK'; }, contentTools });
+    const r = await card.run({ mode: 'schedule', preset: { id: 'fatwa_random', name: canon.name, prompt: canon.prompt } });
+    check('14a4. failed direct fetch falls through to Claude',
+      claudeCalled === true && r.assistant_reply === 'CLAUDE_FALLBACK');
+  }
+
+  // ── reply mode guards ──────────────────────────────────────────────────────
+  {
+    let called = false;
+    const { card } = mkCard(baseCfg({ allowedNumbers: ['+111'] }),
+      { claudeComplete: async () => { called = true; return 'x'; } });
+    const r = await card.run({ mode: 'reply', sender: '+999', text: 'hi' });
+    check('14e. reply: non-whitelisted sender → silent exit (empty reply, no Claude)',
+      r.assistant_reply === '' && r.assistant_success === false && called === false);
+  }
+  {
+    const today = new Date().toISOString().slice(0, 10);
+    const { card } = mkCard(Object.assign(baseCfg({ allowedNumbers: ['+111'] }),
+      { assistantState: { ['last_111']: Date.now() } }),
+      { claudeComplete: echoComplete });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'hi' });
+    check('14f. reply: within rate-limit window → silent exit', r.assistant_reply === '' && r.assistant_success === false);
+    void today;
+  }
+  {
+    const today = new Date().toISOString().slice(0, 10);
+    const { card } = mkCard(Object.assign(baseCfg(), { assistantState: { ['daily_' + today]: 50 } }),
+      { claudeComplete: echoComplete });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'hi' });
+    check('14g. reply: daily cap reached → fallback, success false', r.assistant_success === false);
+  }
+  {
+    // Old-date counter must not block today (lazy date-keyed reset).
+    const { card, homey } = mkCard(Object.assign(baseCfg(), { assistantState: { 'daily_2020-01-01': 999 } }),
+      { claudeComplete: echoComplete });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'hi' });
+    const today = new Date().toISOString().slice(0, 10);
+    const st = homey.settings.get('assistantState');
+    check('14h. lazy reset: a prior-day counter does NOT block today',
+      r.assistant_success === true && st['daily_' + today] === 1);
+  }
+  {
+    let seenLen = -1;
+    const { card } = mkCard(baseCfg(), { claudeComplete: async ({ messages }) => { seenLen = messages[0].content.length; return 'ok'; } });
+    await card.run({ mode: 'reply', sender: '+111', text: 'x'.repeat(3000) });
+    check('14i. reply: input is truncated to 2000 chars before the Claude call', seenLen === 2000);
+  }
+  {
+    const { card } = mkCard(baseCfg(), { claudeComplete: echoComplete });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: '' });
+    check('14j. reply: empty text → config-error reply, success false',
+      r.assistant_success === false && /configuration error/i.test(r.assistant_reply));
+  }
+
+  // ── tool routing + failure handling (all stubbed, no network) ───────────────
+  {
+    const contentTools = { getHadith: async () => ({ block: 'HADITH_BLOCK', meta: { id: 7 } }), getQuran: async () => ({ block: 'Q' }) };
+    let toolResult = null;
+    const claudeComplete = async ({ runTool }) => { toolResult = await runTool('get_hadith', {}); return 'INTRO'; };
+    const { card } = mkCard(baseCfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'a hadith please' });
+    check('14k. get_hadith routes; model receives a placeholder (not the block); an omitted token → block appended',
+      toolResult && toolResult.block === undefined && toolResult.placeholder === '{{BLOCK1}}'
+      && toolResult.meta && toolResult.meta.id === 7
+      && r.assistant_reply === 'INTRO\n\nHADITH_BLOCK' && r.assistant_success === true);
+  }
+  {
+    // Model positions placeholders → blocks substituted in place, with an OUTRO after.
+    const contentTools = {
+      getQuran:  async () => ({ block: 'VERSE_BLOCK', meta: { surahNum: 2, ayahNum: 255 } }),
+      getTafsir: async () => ({ block: 'TAFSIR_BLOCK' }),
+    };
+    const claudeComplete = async ({ runTool }) => {
+      const a = (await runTool('get_quran', { query: 'mercy' })).placeholder;
+      const b = (await runTool('get_tafsir', { surah: 2, ayah: 255 })).placeholder;
+      return `Reflect:\n\n${a}\n\n${b}\n\nLesson: be merciful.`;
+    };
+    const { card } = mkCard(baseCfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'a verse and tafsir' });
+    check('14k2. model positions placeholders → blocks substituted in place, intro AND outro preserved',
+      r.assistant_reply === 'Reflect:\n\nVERSE_BLOCK\n\nTAFSIR_BLOCK\n\nLesson: be merciful.' && r.assistant_success === true);
+  }
+  {
+    // Fatwa: model outputs only the placeholder → reply is exactly the block.
+    const contentTools = { getFatwa: async () => ({ block: 'FATWA_BLOCK' }) };
+    const claudeComplete = async ({ runTool }) => (await runTool('get_fatwa', { query: 'x' })).placeholder;
+    const { card } = mkCard(baseCfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'is x permissible' });
+    check('14k3. fatwa: model emits only the placeholder → reply is exactly the block',
+      r.assistant_reply === 'FATWA_BLOCK' && r.assistant_success === true);
+  }
+  {
+    // Robustness: an omitted placeholder is appended at the end; a stray/invented
+    // token is stripped — content is never lost.
+    const contentTools = { getQuran: async () => ({ block: 'VERSE_BLOCK' }), getTafsir: async () => ({ block: 'TAFSIR_BLOCK' }) };
+    const claudeComplete = async ({ runTool }) => {
+      const a = (await runTool('get_quran', {})).placeholder;
+      await runTool('get_tafsir', { surah: 2, ayah: 255 }); // placeholder deliberately omitted
+      return `See: ${a} and also {{BLOCK9}} extra`;          // {{BLOCK9}} is invented
+    };
+    const { card } = mkCard(baseCfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'x' });
+    check('14k5. omitted placeholder appended at end; invented token stripped (no content lost)',
+      r.assistant_reply === 'See: VERSE_BLOCK and also  extra\n\nTAFSIR_BLOCK' && r.assistant_success === true);
+  }
+  {
+    const { card } = mkCard(baseCfg({ fallbackMessage: 'FB' }),
+      { claudeComplete: async () => { throw new Error('boom'); } });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'hi' });
+    check('14l. Claude error → fallback message, success false', r.assistant_reply === 'FB' && r.assistant_success === false);
+  }
+
+  // ── ContentTools direct (injected fetch + rng) ──────────────────────────────
+  {
+    const urls = [];
+    const fakeFetch = async (url) => { urls.push(url); return {
+      ok: true, status: 200,
+      json: async () => ({ hadiths: [{ text: url.includes('/ara-') ? 'ARABIC_TEXT' : 'ENGLISH_TEXT', hadithnumber: 1, grades: [] }] }),
+    }; };
+    const out = await ContentTools.getHadith({ language: 'both', fetchImpl: fakeFetch, rng: () => 0 });
+    check('14m. ContentTools.getHadith language=both fetches ara+eng and includes both',
+      urls.some(u => u.includes('/ara-bukhari/')) && urls.some(u => u.includes('/eng-bukhari/')) &&
+      out.block.includes('ARABIC_TEXT') && out.block.includes('ENGLISH_TEXT'));
+  }
+  {
+    const fakeFetch = async () => ({ ok: true, status: 200, json: async () => ({ data: [
+      { edition: { identifier: 'quran-uthmani' },     text: 'ARABIC_AYAH',  surah: { englishName: 'Al-Baqara' }, numberInSurah: 255 },
+      { edition: { identifier: 'en.sahih' },          text: 'ENGLISH_AYAH', surah: { englishName: 'Al-Baqara' }, numberInSurah: 255 },
+      { edition: { identifier: 'en.transliteration' },text: 'TRANSLIT_AYAH',surah: { englishName: 'Al-Baqara' }, numberInSurah: 255 },
+    ] }) });
+    const on  = await ContentTools.getQuran({ surah: 2, ayah: 255, language: 'both', translit: true,  fetchImpl: fakeFetch });
+    const off = await ContentTools.getQuran({ surah: 2, ayah: 255, language: 'both', translit: false, fetchImpl: fakeFetch });
+    check('14n. ContentTools.getQuran includes transliteration only when enabled',
+      on.block.includes('TRANSLIT_AYAH') && !off.block.includes('TRANSLIT_AYAH') &&
+      on.block.includes('Al-Baqara 2:255'));
+    const bad = await ContentTools.getQuran({ surah: 999, ayah: 1, fetchImpl: fakeFetch });
+    check('14o. ContentTools.getQuran rejects an out-of-range surah', bad.block === '' && /Invalid/.test(bad.meta.error));
+  }
+
+  // ── validateAssistantKey: bad key short-circuits without network ────────────
+  {
+    const res = await apiHandlers.validateAssistantKey({ homey: createMockHomey({ settings: {} }), body: { key: 'bad-key' } });
+    check('14p. validateAssistantKey rejects a non-sk- key (no network call)', res.ok === false && /sk-/.test(res.error));
+  }
+
+  // ── get_dua routing (stubbed contentTools, no network) ──────────────────────
+  {
+    let seenCategory = null;
+    const contentTools = {
+      getHadith: async () => ({ block: 'H' }),
+      getQuran:  async () => ({ block: 'Q' }),
+      getDua:    async ({ category }) => { seenCategory = category; return { block: 'DUA_BLOCK[' + category + ']' }; },
+    };
+    const claudeComplete = async ({ runTool }) => { await runTool('get_dua', { category: 'travel' }); return ''; };
+    const { card } = mkCard(baseCfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+111', text: 'dua for travel' });
+    check('14q. get_dua routed to ContentTools with the category arg; block appended to the reply',
+      r.assistant_reply === 'DUA_BLOCK[travel]' && seenCategory === 'travel' && r.assistant_success === true);
+  }
+
+  // ── ContentTools.getDua direct (bundled data, no network) ───────────────────
+  {
+    const out = await ContentTools.getDua({ category: 'morning-evening', language: 'both' });
+    check('14r. getDua returns a verbatim Hisn al-Muslim block for a known category',
+      out.block.includes('Hisn al-Muslim') && out.meta.count > 0 && out.block.length > 0);
+
+    const alias = await ContentTools.getDua({ category: 'sleep' });
+    check('14s. getDua resolves a natural-language alias (sleep → before-sleep)',
+      alias.meta.category === 'before-sleep' && alias.meta.count > 0);
+
+    const en = await ContentTools.getDua({ category: 'travel', language: 'english' });
+    check('14t. getDua language=english omits the Arabic-only italic underscores correctly',
+      en.block.length > 0 && en.meta.category === 'travel');
+
+    const bad = await ContentTools.getDua({ category: 'no-such-category' });
+    check('14u. getDua rejects an unknown category and lists available ones',
+      bad.block === '' && /Unknown dua category/.test(bad.meta.error) && Array.isArray(bad.meta.available));
+  }
+
+  // ── new dua presets are seeded in the default library ───────────────────────
+  {
+    const PromptLibrary = require(path.join(LIB, 'PromptLibrary'));
+    const ids = PromptLibrary.DEFAULT_PRESETS.map(p => p.id);
+    check('14v. default prompt library includes the new dua presets',
+      ids.includes('morning_evening_adhkar') && ids.includes('before_sleep_adhkar') && ids.includes('travel_dua'));
+  }
+
+  // ── full Hisn al-Muslim + free-text query retrieval ─────────────────────────
+  {
+    check('14w. full Hisn al-Muslim book is loaded (≥130 chapters)',
+      ContentTools.DUA_CATEGORIES.length >= 130);
+
+    const anger = await ContentTools.getDua({ query: 'anger' });
+    check('14x. free-text query resolves to a chapter ("anger")',
+      anger.meta.category === 'anger' && anger.meta.count > 0 && anger.block.includes('Hisn al-Muslim'));
+
+    const rain = await ContentTools.getDua({ query: 'rain' });
+    check('14y. free-text query resolves a situational chapter ("rain")',
+      rain.meta.category === 'rain' && rain.block.length > 0);
+
+    const home = await ContentTools.getDua({ query: 'entering the home' });
+    check('14z. multi-word query matches by keyword ("entering the home")',
+      home.meta.category === 'entering-home' && home.meta.count > 0);
+
+    const miss = await ContentTools.getDua({ query: 'xyzzy nonsense gibberish' });
+    check('14aa. gibberish query stays unresolved (does not false-match)',
+      miss.block === '' && /Unknown dua category/.test(miss.meta.error));
+  }
+}
+
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
   console.log(`\x1b[1mRESULTS:\x1b[0m \x1b[32m${pass} passed\x1b[0m, ` +

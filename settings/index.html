@@ -316,6 +316,7 @@
     .info-bar.error   { background: var(--danger-lt);  color: var(--danger-txt); }
     .info-bar.info    { background: var(--blue-lt);    color: var(--blue-dk);    }
     .info-bar.warning { background: #FEF9C3;           color: #713F12;           }
+    .preset-menu-item:hover { background: var(--bg); }
 
     /* ── Google Places autocomplete styling ── */
     .pac-container {
@@ -392,6 +393,33 @@
     .divider { height: 1px; background: var(--border); margin: 12px 0; }
     .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-group .btn { flex: 1; min-width: 90px; }
+    /* ── Assistant tab — code inline hints ── */
+    #tab-assistant details[open] > summary span[id^="det-arrow"] { transform: rotate(90deg); }
+    #tab-assistant details > summary { user-select: none; }
+    #tab-assistant details > summary::-webkit-details-marker { display: none; }
+    #tab-assistant code {
+      font-family: monospace;
+      font-size: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--text2);
+    }
+    /* ── Accordion ── */
+    .acc-section { border: 1px solid var(--border2); border-radius: var(--radius); margin-bottom: 6px; overflow: hidden; background: var(--card); }
+    .acc-header { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; background: none; border: none; text-align: left; }
+    .acc-header:hover { background: var(--hover); }
+    .acc-header:active { opacity: .8; }
+    .acc-chevron { font-size: 10px; color: var(--text3); transition: transform .2s; flex-shrink: 0; line-height: 1; }
+    .acc-section[data-open="true"] .acc-chevron { transform: rotate(90deg); }
+    .acc-info { flex: 1; min-width: 0; }
+    .acc-title { display: block; font-size: 14px; font-weight: 500; color: var(--text); }
+    .acc-status { display: block; font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .acc-status .sdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .sdot-ok { background: #16a34a; }
+    .sdot-warn { background: #d97706; }
+    .acc-body { padding: 0 14px 14px; }
   </style>
 </head>
 <body>
@@ -406,6 +434,7 @@
         <button class="tab-btn" data-tab="location">Location</button>
         <button class="tab-btn" data-tab="calculation">Calculation</button>
         <button class="tab-btn" data-tab="zones">Audio</button>
+        <button class="tab-btn" data-tab="assistant">Assistant</button>
         <button class="tab-btn" data-tab="advanced">Advanced</button>
       </div>
     </div>
@@ -757,9 +786,321 @@
     <button class="btn btn-primary btn-full" id="btn-save-advanced">Save advanced settings</button>
     <div id="advanced-status" class="info-bar" style="margin-top:10px"></div>
   </div>
+
+  <!-- ========== TAB: ASSISTANT ========== -->
+  <div class="tab-panel" id="tab-assistant">
+
+    <!-- Accordion: Enable & API key (open by default) -->
+    <div class="acc-section" id="acc-setup" data-open="true">
+      <button class="acc-header" data-acc="setup" aria-expanded="true">
+        <span class="acc-chevron">&#9654;</span>
+        <div class="acc-info">
+          <span class="acc-title">Enable &amp; API key</span>
+          <span class="acc-status" id="acc-st-setup"></span>
+        </div>
+      </button>
+      <div class="acc-body" id="acc-body-setup">
+        <div class="toggle-row">
+          <span>Enable assistant</span>
+          <label class="toggle">
+            <input type="checkbox" id="ast-enabled" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <p class="hint" style="margin-top:8px">When enabled, the <strong>Islamic assistant</strong> Flow action card answers Telegram messages from allowed chats and sends scheduled briefings.</p>
+        <div class="field" style="margin-top:10px">
+          <label>Anthropic API key</label>
+          <input type="password" id="ast-key" placeholder="sk-ant-..." autocomplete="off" spellcheck="false" />
+        </div>
+        <p class="hint">Your <code>sk-ant-…</code> key from <strong>console.anthropic.com</strong>. Stored in app settings — never returned to the page or any Flow.</p>
+        <button class="btn" id="btn-validate-key" style="margin-top:8px">Validate key</button>
+        <div id="ast-key-status" class="info-bar" style="margin-top:8px;display:none"></div>
+        <div class="field" style="margin-top:16px">
+          <label>Telegram bot token <span style="font-weight:400;color:var(--text-muted)">(optional — enables built-in listener)</span></label>
+          <input type="password" id="ast-tg-token" placeholder="123456789:AAF..." autocomplete="off" spellcheck="false" />
+        </div>
+        <p class="hint">Paste your bot token from <strong>@BotFather</strong>. When set and the assistant is enabled, the app listens for Telegram messages directly — no Flow required. Leave blank to use the Telegram app + Flow instead.</p>
+        <div class="field" style="margin-top:10px">
+          <label>Default Telegram chat ID <span style="font-weight:400;color:var(--text-muted)">(for scheduled sends)</span></label>
+          <input type="text" id="ast-default-chat" placeholder="e.g. 123456789" autocomplete="off" spellcheck="false" />
+        </div>
+        <p class="hint">Used by the <strong>"Generate &amp; send"</strong> action card so you don't need to enter a chat ID in every Flow. Find your chat ID by messaging your bot — it appears in the app log as the sender ID.</p>
+      </div>
+    </div>
+
+    <!-- Accordion: Allowed chats -->
+    <div class="acc-section" id="acc-numbers" data-open="false">
+      <button class="acc-header" data-acc="numbers" aria-expanded="false">
+        <span class="acc-chevron">&#9654;</span>
+        <div class="acc-info">
+          <span class="acc-title">Allowed chats</span>
+          <span class="acc-status" id="acc-st-numbers"></span>
+        </div>
+      </button>
+      <div class="acc-body" id="acc-body-numbers" style="display:none">
+        <p class="hint">One Telegram chat ID per line. The bot ignores messages from any other chat. Your chat ID is shown in the Telegram app once you send <code>/start</code> to your bot.</p>
+        <div class="field">
+          <label>Chat IDs</label>
+          <textarea id="ast-numbers" rows="3"
+            placeholder="123456789&#10;987654321"
+            style="width:100%;padding:11px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:15px;resize:vertical;font-family:monospace;background:var(--card);color:var(--text);line-height:1.5"></textarea>
+        </div>
+        <div class="field">
+          <label>Fallback message</label>
+          <input type="text" id="ast-fallback" placeholder="Prayer Assistant is currently unavailable." />
+        </div>
+        <p class="hint">Sent when the assistant is disabled, the chat is not in the list, or the daily cap is reached.</p>
+      </div>
+    </div>
+
+    <!-- Accordion: Behavior -->
+    <div class="acc-section" id="acc-behavior" data-open="false">
+      <button class="acc-header" data-acc="behavior" aria-expanded="false">
+        <span class="acc-chevron">&#9654;</span>
+        <div class="acc-info">
+          <span class="acc-title">Behavior</span>
+          <span class="acc-status" id="acc-st-behavior"></span>
+        </div>
+      </button>
+      <div class="acc-body" id="acc-body-behavior" style="display:none">
+        <div class="field">
+          <label>Model</label>
+          <select id="ast-model">
+            <option value="claude-haiku-4-5-20251001">Claude Haiku (fastest)</option>
+            <option value="claude-sonnet-4-6" selected>Claude Sonnet (recommended)</option>
+            <option value="claude-opus-4-8">Claude Opus (most capable)</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Rate limit (seconds)</label>
+            <input type="number" id="ast-ratelimit" min="1" max="300" placeholder="10" />
+          </div>
+          <div class="field">
+            <label>Daily cap (messages)</label>
+            <input type="number" id="ast-dailycap" min="1" max="500" placeholder="50" />
+          </div>
+        </div>
+        <p class="hint">Rate limit prevents rapid-fire replies. Daily cap limits total API calls across all senders.</p>
+        <div class="field" style="margin-top:10px">
+          <label>Max response length (tokens)</label>
+          <input type="number" id="ast-maxtokens" min="256" max="8000" step="256" placeholder="2000" />
+        </div>
+        <p class="hint">Caps how long each reply can be (~1 token ≈ 0.75 words). Higher allows fuller duas and briefings but costs more. Default 2000.</p>
+      </div>
+    </div>
+
+    <!-- Accordion: Content -->
+    <div class="acc-section" id="acc-content" data-open="false">
+      <button class="acc-header" data-acc="content" aria-expanded="false">
+        <span class="acc-chevron">&#9654;</span>
+        <div class="acc-info">
+          <span class="acc-title">Content</span>
+          <span class="acc-status" id="acc-st-content"></span>
+        </div>
+      </button>
+      <div class="acc-body" id="acc-body-content" style="display:none">
+        <div class="field">
+          <label>Language</label>
+          <select id="ast-language">
+            <option value="arabic">Arabic only</option>
+            <option value="english">English only</option>
+            <option value="both" selected>Arabic + English</option>
+          </select>
+        </div>
+        <p class="hint">Language used for hadith and Quran verses.</p>
+        <div class="toggle-row" style="margin-top:10px">
+          <span>Add transliteration to Quran verses</span>
+          <label class="toggle">
+            <input type="checkbox" id="ast-translit" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>Assistant instructions</label>
+          <textarea id="ast-instructions" rows="9"
+            style="width:100%;padding:11px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;resize:vertical;font-family:monospace;line-height:1.6;background:var(--card);color:var(--text)"></textarea>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
+            <span id="ast-char-count" style="font-size:11px;color:var(--text3)">0 chars</span>
+            <button class="btn" id="btn-reset-instructions" style="padding:4px 10px;font-size:12px">Reset to default</button>
+          </div>
+        </div>
+        <p class="hint">Defines the assistant's persona, scope, and tone. Tool instructions (prayer data, hadith, duas) are always appended automatically — only edit the persona here.</p>
+      </div>
+    </div>
+
+    <!-- Accordion: Prompt library -->
+    <div class="acc-section" id="acc-presets" data-open="false">
+      <button class="acc-header" data-acc="presets" aria-expanded="false">
+        <span class="acc-chevron">&#9654;</span>
+        <div class="acc-info">
+          <span class="acc-title">Prompt library</span>
+          <span class="acc-status" id="acc-st-presets"></span>
+        </div>
+      </button>
+      <div class="acc-body" id="acc-body-presets" style="display:none">
+        <p class="hint">Saved prompts for the assistant card in <strong>Schedule</strong> mode. Pick one in the Flow's Preset field. Edit the text here without touching your Flows.</p>
+        <!-- List view -->
+        <div id="preset-list-view">
+          <div id="ast-presets"></div>
+          <button class="btn" id="btn-add-preset" style="margin-top:8px">+ Add preset</button>
+        </div>
+        <!-- Focused editor view -->
+        <div id="preset-editor-view" style="display:none">
+          <h2 id="preset-editor-title" style="margin-bottom:10px">Edit preset</h2>
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="preset-edit-name" placeholder="e.g. Morning briefing" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label>Prompt</label>
+            <textarea id="preset-edit-prompt" rows="4"
+              style="width:100%;padding:11px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;resize:none;overflow:hidden;font-family:monospace;line-height:1.55;background:var(--card);color:var(--text)"
+              placeholder="Describe what the assistant should generate…"></textarea>
+          </div>
+          <p class="hint" style="margin-bottom:10px">Plain instructions to Claude. Tip: say what to include (prayer times, a hadith, the Hijri date) and the tone. Press <strong>Save assistant settings</strong> at the bottom to store your changes.</p>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" id="btn-preset-done">Done</button>
+            <button class="btn btn-ghost" id="btn-preset-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save -->
+    <button class="btn btn-primary btn-full" id="btn-save-assistant" style="margin-top:8px">Save assistant settings</button>
+    <div id="assistant-status" class="info-bar" style="margin-top:10px"></div>
+
+    <!-- Guide -->
+    <div class="card" style="margin-top:14px;border:1px dashed var(--border2)">
+      <h2>How to use the Islamic assistant</h2>
+      <p class="hint" style="margin-bottom:12px">
+        The <strong>Islamic assistant</strong> is powered by Claude AI (your own API key) and communicates
+        over Telegram. It answers Islamic questions in real time and sends scheduled briefings at prayer
+        times or Hijri events — no HomeyScript, no Logic variables, no Advanced Flow required for most setups.
+      </p>
+
+      <!-- Prerequisites -->
+      <details style="margin-bottom:8px">
+        <summary style="cursor:pointer;font-weight:500;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px">
+          <span id="det-arrow-prereq" style="font-size:11px;transition:transform .2s">&#9654;</span>
+          Setup checklist
+        </summary>
+        <div style="margin-top:8px;padding-left:18px;font-size:13px;color:var(--text2);line-height:1.7">
+          <p style="margin:0 0 5px 0"><strong>1. Create a Telegram bot</strong> — message <strong>@BotFather</strong> on Telegram → <code>/newbot</code> → copy the token it gives you.</p>
+          <p style="margin:0 0 5px 0"><strong>2. Paste the bot token here</strong> — <em>Enable &amp; API key → Telegram bot token</em>. The app will start listening for messages automatically.</p>
+          <p style="margin:0 0 5px 0"><strong>3. Add your Anthropic key</strong> — sign up at <strong>console.anthropic.com</strong>, create a key (<code>sk-ant-…</code>), paste it in <em>Anthropic API key</em>, and press <em>Validate key</em>.</p>
+          <p style="margin:0 0 5px 0"><strong>4. Toggle Enable ON</strong> and press <em>Save assistant settings</em>.</p>
+          <p style="margin:0 0 5px 0"><strong>5. Find your chat ID</strong> — message your new bot anything. The app log shows the sender ID. Copy it into <em>Default Telegram chat ID</em> (for scheduled sends) and optionally into <em>Allowed chats</em> (to restrict replies to known chats only).</p>
+          <p style="margin:0"><strong>6. Message your bot</strong> — it should reply within a few seconds. No Flow needed for Q&amp;A.</p>
+        </div>
+      </details>
+
+      <!-- Q&A -->
+      <details style="margin-bottom:8px">
+        <summary style="cursor:pointer;font-weight:500;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px">
+          <span id="det-arrow-flow1" style="font-size:11px;transition:transform .2s">&#9654;</span>
+          Q&amp;A — answering messages (no Flow needed)
+        </summary>
+        <div style="margin-top:8px;padding-left:18px;font-size:13px;color:var(--text2);line-height:1.7">
+          <p style="margin:0 0 6px 0">Once the bot token is set and Enable is ON, the app listens directly — no Flow required. Just message your bot:</p>
+          <table style="font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px">
+            <thead><tr style="border-bottom:1px solid var(--border2)">
+              <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text)">Message you send</th>
+              <th style="text-align:left;padding:4px 8px;font-weight:600;color:var(--text)">What it does</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:4px 8px"><code>When is Asr today?</code></td><td style="padding:4px 8px">Calls get_prayer_data, returns your calculated Asr time</td></tr>
+              <tr style="background:var(--card)"><td style="padding:4px 8px"><code>Give me a hadith</code></td><td style="padding:4px 8px">Fetches an authenticated hadith from 7 collections</td></tr>
+              <tr><td style="padding:4px 8px"><code>Dua for anxiety</code></td><td style="padding:4px 8px">Retrieves the matching Hisn al-Muslim chapter verbatim</td></tr>
+              <tr style="background:var(--card)"><td style="padding:4px 8px"><code>Morning adhkar</code></td><td style="padding:4px 8px">Returns the full morning &amp; evening adhkar block</td></tr>
+              <tr><td style="padding:4px 8px"><code>How many rakats in Dhuhr?</code></td><td style="padding:4px 8px">Answers from general Islamic knowledge</td></tr>
+              <tr style="background:var(--card)"><td style="padding:4px 8px"><code>Quran verse on patience</code></td><td style="padding:4px 8px">Fetches 2:153 with Arabic + English translation</td></tr>
+              <tr><td style="padding:4px 8px"><code>What is the Hijri date?</code></td><td style="padding:4px 8px">Calls get_prayer_data, returns today's Hijri date</td></tr>
+              <tr style="background:var(--card)"><td style="padding:4px 8px"><code>How long until Maghrib?</code></td><td style="padding:4px 8px">Calls prayer data + current time, computes the countdown</td></tr>
+            </tbody>
+          </table>
+          <p style="margin:0">Rate limit (default 10 s) and daily cap (default 50) apply per sender. Adjust in <em>Behavior</em>.</p>
+        </div>
+      </details>
+
+      <!-- Scheduled — Basic Flow -->
+      <details style="margin-bottom:8px">
+        <summary style="cursor:pointer;font-weight:500;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px">
+          <span id="det-arrow-flow2" style="font-size:11px;transition:transform .2s">&#9654;</span>
+          Scheduled messages — Basic Flow (recommended)
+        </summary>
+        <div style="margin-top:8px;padding-left:18px;font-size:13px;color:var(--text2);line-height:1.7">
+          <p style="margin:0 0 6px 0">Use the <strong>"Islamic Assistant: generate &amp; send"</strong> card — it generates the message <em>and</em> sends it via the built-in bot in one step. Requires <em>Default Telegram chat ID</em> to be set above.</p>
+          <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 8px 0;line-height:1.7">WHEN  Prayers Alert → A prayer time has passed
+AND   Prayers Alert → Prayer is → Fajr
+THEN  Prayers Alert → Islamic Assistant: generate &amp; send
+        Preset: Morning briefing</pre>
+          <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 8px 0;line-height:1.7">WHEN  Prayers Alert → A prayer time has passed
+AND   Prayers Alert → Prayer is → Maghrib
+THEN  Prayers Alert → Islamic Assistant: generate &amp; send
+        Preset: Evening adhkar reminder</pre>
+          <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 6px 0;line-height:1.7">WHEN  Homey → Every day at 07:00
+THEN  Prayers Alert → Islamic Assistant: generate &amp; send
+        Preset: Daily hadith</pre>
+          <p style="margin:0">Presets available: <em>Morning briefing, Daily hadith, Quran verse, Friday Jumu'ah reminder, Ramadan schedule, Next prayer countdown, Morning &amp; evening adhkar, After-prayer adhkar, Before-sleep adhkar, Travel duas, Evening adhkar reminder</em>. Edit any preset text in the <em>Prompt library</em> above.</p>
+        </div>
+      </details>
+
+      <!-- Hijri / occasion triggers -->
+      <details style="margin-bottom:8px">
+        <summary style="cursor:pointer;font-weight:500;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px">
+          <span id="det-arrow-flow3" style="font-size:11px;transition:transform .2s">&#9654;</span>
+          Hijri calendar &amp; occasion triggers
+        </summary>
+        <div style="margin-top:8px;padding-left:18px;font-size:13px;color:var(--text2);line-height:1.7">
+          <p style="margin:0 0 6px 0">Trigger on Islamic events without knowing the Gregorian date:</p>
+          <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 8px 0;line-height:1.7">WHEN  Prayers Alert → A Hijri month event → Ramadan starts
+THEN  Prayers Alert → Islamic Assistant: generate &amp; send
+        Custom: Ramadan Mubarak! Get today's Suhoor (Fajr) and
+                Iftar (Maghrib) times and send a warm greeting.</pre>
+          <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 6px 0;line-height:1.7">WHEN  Prayers Alert → An Islamic occasion → Eid al-Fitr
+THEN  Prayers Alert → Islamic Assistant: generate &amp; send
+        Preset: Islamic occasion greeting</pre>
+          <p style="margin:0">Available occasions: Eid al-Fitr, Eid al-Adha, Arafah, Ashura, Laylah al-Qadr, Mawlid. The <em>Hijri date offset</em> trigger lets you fire X days before/after an occasion.</p>
+        </div>
+      </details>
+
+      <!-- Advanced Flow fallback -->
+      <details>
+        <summary style="cursor:pointer;font-weight:500;font-size:14px;color:var(--text);list-style:none;display:flex;align-items:center;gap:6px">
+          <span id="det-arrow-flow4" style="font-size:11px;transition:transform .2s">&#9654;</span>
+          Advanced Flow — when you need token output
+        </summary>
+        <div style="margin-top:8px;padding-left:18px;font-size:13px;color:var(--text2);line-height:1.7">
+          <p style="margin:0 0 6px 0">Use <strong>"Islamic Assistant: scheduled message"</strong> (returns <code>{{assistant_reply}}</code> token) if you need to branch on the reply, send to multiple chats, or chain with other cards:</p>
+          <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 6px 0;line-height:1.7">WHEN  Prayers Alert → A prayer time has passed → Fajr
+THEN  Prayers Alert → Islamic Assistant: scheduled message
+        Preset: Morning briefing
+AND   Logic → {{assistant_reply}} is not empty
+THEN  Telegram → Send a message  (To: chat A, Body: {{assistant_reply}})
+THEN  Telegram → Send a message  (To: chat B, Body: {{assistant_reply}})</pre>
+          <p style="margin:0">For inbound Q&amp;A via the spkes Telegram app (instead of the built-in listener), use the <strong>"Islamic Assistant: reply to a message"</strong> card with <code>{{message}}</code> and <code>{{chat id}}</code> tokens piped from the Telegram trigger.</p>
+        </div>
+      </details>
+    </div>
+
+  </div>
 </div>
 
 <script>
+// ─── Accordion toggle ─────────────────────────────────────────────────────────
+document.querySelectorAll('.acc-header').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sec  = btn.closest('.acc-section');
+    const body = sec.querySelector('.acc-body');
+    const isOpen = sec.dataset.open === 'true';
+    sec.dataset.open = isOpen ? 'false' : 'true';
+    body.style.display = isOpen ? 'none' : 'block';
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+});
+
 // ─── Tab navigation + scroll arrows ──────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1257,6 +1598,301 @@ document.getElementById('btn-save-advanced').addEventListener('click', () => {
   });
 });
 
+// ─── Assistant tab ────────────────────────────────────────────────────────────
+const DEFAULT_INSTRUCTIONS = [
+  'You are an Islamic assistant for a Muslim household, reached over Telegram.',
+  'Scope: prayer times and countdowns, Hijri dates and Islamic occasions, supplications',
+  "(adhkar/duas), and general Islamic knowledge (wudu, rak’ahs, fasting rules, sunnah",
+  'practices). Politely decline topics outside this scope.',
+  '',
+  'Tone: warm, conversational, family-friendly. Always match the language the user wrote in.',
+  '',
+  'For any fiqh question or ruling, use get_fatwa. The published answer comes back as a placeholder you',
+  'position — do not add your own ruling, opinion, or general principle before or after it. For a',
+  'personal situation you may add at most one short line: “For your specific situation, please',
+  'consult a qualified scholar or your local imam.”',
+].join('\n');
+
+document.getElementById('btn-reset-instructions')?.addEventListener('click', () => {
+  const ta = document.getElementById('ast-instructions');
+  if (ta) { ta.value = DEFAULT_INSTRUCTIONS; ta.dispatchEvent(new Event('input')); }
+});
+
+// Character counter for instructions textarea
+(function() {
+  const ta = document.getElementById('ast-instructions');
+  const counter = document.getElementById('ast-char-count');
+  if (!ta || !counter) return;
+  function updateCounter() {
+    counter.textContent = ta.value.length + ' chars';
+  }
+  ta.addEventListener('input', updateCounter);
+  updateCounter();
+})();
+// Keep the saved API key so we can re-save it untouched when the field is masked.
+let _astKey = '';
+// In-memory prompt library: list view (#ast-presets) + focused editor (#preset-editor-view).
+let _presets = [];
+let _editingIndex = null; // null = list; -1 = new preset; >=0 = editing that index
+
+function slugify(s) {
+  return (s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || ('preset_' + Date.now());
+}
+
+function _autoGrow(ta) {
+  if (!ta) return;
+  ta.style.height = 'auto';
+  ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── List view (compact rows with a ⋮ overflow menu) ──
+function _closePresetMenus() {
+  document.querySelectorAll('.preset-menu').forEach(m => { m.style.display = 'none'; });
+}
+
+function renderPresetList() {
+  const box = document.getElementById('ast-presets');
+  if (!box) return;
+  box.innerHTML = '';
+  if (_presets.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'hint';
+    empty.style.cssText = 'padding:6px 0';
+    empty.textContent = 'No presets yet — add one to use in Schedule mode.';
+    box.appendChild(empty);
+    return;
+  }
+  _presets.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'position:relative;display:flex;align-items:center;gap:8px;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px';
+
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1;min-width:0';
+    const name = document.createElement('div');
+    name.style.cssText = 'font-weight:600;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+    name.textContent = p.name || '(untitled)';
+    const preview = document.createElement('div');
+    preview.style.cssText = 'font-size:12px;color:var(--text3);line-height:1.45;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden';
+    preview.textContent = p.prompt || 'No prompt text';
+    info.appendChild(name);
+    info.appendChild(preview);
+
+    const kebab = document.createElement('button');
+    kebab.setAttribute('aria-label', 'More actions');
+    kebab.style.cssText = 'width:32px;height:32px;min-height:32px;padding:0;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:18px;line-height:1;color:var(--text2);cursor:pointer';
+    kebab.textContent = '⋮';
+
+    const menu = document.createElement('div');
+    menu.className = 'preset-menu';
+    menu.style.cssText = 'position:absolute;top:44px;right:8px;width:150px;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;z-index:5;display:none;box-shadow:0 4px 14px rgba(0,0,0,.12)';
+
+    const editItem = document.createElement('div');
+    editItem.className = 'preset-menu-item';
+    editItem.textContent = 'Edit';
+    editItem.style.cssText = 'padding:10px 13px;font-size:14px;cursor:pointer;color:var(--text)';
+    editItem.addEventListener('click', (e) => { e.stopPropagation(); _closePresetMenus(); openPresetEditor(i); });
+
+    const delItem = document.createElement('div');
+    delItem.className = 'preset-menu-item';
+    delItem.textContent = 'Delete';
+    delItem.style.cssText = 'padding:10px 13px;font-size:14px;cursor:pointer;color:var(--danger-txt);border-top:1px solid var(--border)';
+    delItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _closePresetMenus();
+      _presets.splice(i, 1);
+      renderPresetList();
+      _updateAccStatus();
+      showStatus('assistant-status', 'Preset removed — press "Save assistant settings" to store.', 'info');
+    });
+
+    menu.appendChild(editItem);
+    menu.appendChild(delItem);
+
+    kebab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = menu.style.display === 'block';
+      _closePresetMenus();
+      menu.style.display = isOpen ? 'none' : 'block';
+    });
+
+    row.appendChild(info);
+    row.appendChild(kebab);
+    row.appendChild(menu);
+    box.appendChild(row);
+  });
+}
+
+// Close any open preset menu when clicking elsewhere (registered once).
+document.addEventListener('click', _closePresetMenus);
+
+// ── Focused editor ──
+function openPresetEditor(index) {
+  _editingIndex = index;
+  const isNew = index === -1;
+  const p = isNew ? { name: '', prompt: '' } : _presets[index];
+  document.getElementById('preset-editor-title').textContent = isNew ? 'New preset' : 'Edit preset';
+  setVal('preset-edit-name', p.name || '');
+  const ta = document.getElementById('preset-edit-prompt');
+  ta.value = p.prompt || '';
+  document.getElementById('preset-list-view').style.display = 'none';
+  document.getElementById('preset-editor-view').style.display = 'block';
+  setTimeout(() => { _autoGrow(ta); }, 0);
+}
+
+function closePresetEditor() {
+  _editingIndex = null;
+  document.getElementById('preset-editor-view').style.display = 'none';
+  document.getElementById('preset-list-view').style.display = 'block';
+}
+
+document.getElementById('btn-add-preset')?.addEventListener('click', () => openPresetEditor(-1));
+document.getElementById('preset-edit-prompt')?.addEventListener('input', (e) => _autoGrow(e.target));
+document.getElementById('btn-preset-cancel')?.addEventListener('click', closePresetEditor);
+
+document.getElementById('btn-preset-done')?.addEventListener('click', () => {
+  const name   = val('preset-edit-name').trim();
+  const prompt = val('preset-edit-prompt').trim();
+  if (!name || !prompt) {
+    showStatus('assistant-status', 'A preset needs both a name and prompt text.', 'error');
+    return;
+  }
+  if (_editingIndex === -1) {
+    _presets.push({ id: slugify(name), name, prompt });
+  } else {
+    const existing = _presets[_editingIndex];
+    existing.name = name;
+    existing.prompt = prompt;
+    if (!existing.id) existing.id = slugify(name); // keep existing id stable so Flow references don't break
+  }
+  closePresetEditor();
+  renderPresetList();
+  _updateAccStatus();
+  showStatus('assistant-status', 'Preset saved to list — press "Save assistant settings" to store.', 'info');
+});
+
+function initPresets(library) {
+  _presets = Array.isArray(library) ? library.map(p => ({ id: p.id, name: p.name, prompt: p.prompt })) : [];
+  closePresetEditor();
+  renderPresetList();
+  _updateAccStatus();
+}
+
+// Validate the API key server-side (the page cannot call Anthropic directly).
+document.getElementById('btn-validate-key')?.addEventListener('click', () => {
+  const key = val('ast-key').trim() || _astKey;
+  const box = document.getElementById('ast-key-status');
+  box.style.display = 'block';
+  box.className = 'info-bar';
+  box.textContent = 'Validating…';
+  Homey.api('POST', '/validateAssistantKey', { key }, (err, res) => {
+    if (err)        { box.className = 'info-bar error';   box.textContent = 'Error: ' + err.message; return; }
+    if (res && res.ok) { box.className = 'info-bar success'; box.textContent = 'Key is valid ✓'; }
+    else            { box.className = 'info-bar error';   box.textContent = 'Invalid: ' + ((res && res.error) || 'unknown'); }
+  });
+});
+
+// Load assistant settings on init
+function initAssistant(cfg) {
+  cfg = cfg || {};
+  _astKey = cfg.anthropicKey || '';
+  setChecked('ast-enabled',     cfg.enabled === true);
+  setVal('ast-key',             _astKey);
+  setVal('ast-model',           cfg.model              || 'claude-sonnet-4-6');
+  setVal('ast-fallback',        cfg.fallbackMessage    || '');
+  setVal('ast-ratelimit',       cfg.rateLimitSeconds   != null ? cfg.rateLimitSeconds : 10);
+  setVal('ast-dailycap',        cfg.dailyCap           != null ? cfg.dailyCap         : 50);
+  setVal('ast-maxtokens',       cfg.maxTokens          != null ? cfg.maxTokens        : 2000);
+  setVal('ast-language',        ['arabic','english','both'].includes(cfg.language) ? cfg.language : 'both');
+  setChecked('ast-translit',    cfg.translit === true);
+  setVal('ast-instructions',    cfg.customInstructions  || DEFAULT_INSTRUCTIONS);
+  setVal('ast-tg-token',        cfg.telegramBotToken    || '');
+  setVal('ast-default-chat',    cfg.defaultChatId       || '');
+  const nums = Array.isArray(cfg.allowedNumbers) ? cfg.allowedNumbers : [];
+  setVal('ast-numbers', nums.join('\n'));
+  document.getElementById('ast-instructions')?.dispatchEvent(new Event('input'));
+  _updateAccStatus();
+}
+
+function _updateAccStatus() {
+  const enabled  = document.getElementById('ast-enabled')?.checked;
+  const hasKey   = (val('ast-key') || _astKey || '').trim().length > 0;
+  const nums     = val('ast-numbers').split('\n').filter(l => l.trim()).length;
+  const fallback = val('ast-fallback').trim();
+  const model    = val('ast-model') || 'claude-sonnet-4-6';
+  const rl       = val('ast-ratelimit') || '10';
+  const cap      = val('ast-dailycap')  || '50';
+  const lang     = val('ast-language')  || 'both';
+  const translit = document.getElementById('ast-translit')?.checked;
+  const instr    = val('ast-instructions').trim();
+  const modelShort = model.includes('haiku') ? 'Haiku' : model.includes('opus') ? 'Opus' : 'Sonnet';
+  const langShort  = lang === 'arabic' ? 'Arabic' : lang === 'english' ? 'English' : 'Ar+En';
+  function _st(id, ok, text) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '<span class="sdot ' + (ok ? 'sdot-ok' : 'sdot-warn') + '"></span>' + text;
+  }
+  _st('acc-st-setup',    hasKey, (enabled ? 'Enabled' : 'Disabled') + ' · ' + (hasKey ? 'key set' : 'no key'));
+  _st('acc-st-numbers',  nums > 0, nums + ' number' + (nums !== 1 ? 's' : '') + (fallback ? ' · fallback set' : ''));
+  const maxTok = val('ast-maxtokens') || '2000';
+  _st('acc-st-behavior', true, modelShort + ' · ' + rl + 's · ' + cap + '/day · ' + maxTok + ' tok');
+  _st('acc-st-content',  true, langShort + (translit ? ' · transliteration' : '') + (instr ? ' · instructions set' : ''));
+  _st('acc-st-presets',  true, _presets.length + ' preset' + (_presets.length !== 1 ? 's' : ''));
+}
+
+// Save assistant settings + prompt library
+document.getElementById('btn-save-assistant')?.addEventListener('click', () => {
+  const allowedNumbers = val('ast-numbers')
+    .split('\n').map(n => n.trim()).filter(n => n.length > 0);
+
+  const rateLimitSeconds = parseInt(val('ast-ratelimit'), 10);
+  const dailyCap         = parseInt(val('ast-dailycap'),  10);
+  if (isNaN(rateLimitSeconds) || rateLimitSeconds < 1) {
+    showStatus('assistant-status', 'Rate limit must be at least 1 second', 'error'); return;
+  }
+  if (isNaN(dailyCap) || dailyCap < 1) {
+    showStatus('assistant-status', 'Daily cap must be at least 1', 'error'); return;
+  }
+  const maxTokens = parseInt(val('ast-maxtokens'), 10);
+  if (isNaN(maxTokens) || maxTokens < 256 || maxTokens > 8000) {
+    showStatus('assistant-status', 'Max response length must be between 256 and 8000 tokens', 'error'); return;
+  }
+  const key = val('ast-key').trim() || _astKey;
+  if (key && !key.startsWith('sk-')) {
+    showStatus('assistant-status', 'API key must start with sk-', 'error'); return;
+  }
+
+  const data = {
+    enabled:            checked('ast-enabled'),
+    anthropicKey:       key,
+    telegramBotToken:   val('ast-tg-token').trim(),
+    defaultChatId:      val('ast-default-chat').trim(),
+    allowedNumbers,
+    fallbackMessage:    val('ast-fallback')      || 'Prayer Assistant is currently unavailable.',
+    model:              val('ast-model')          || 'claude-sonnet-4-6',
+    customInstructions: val('ast-instructions')  || '',
+    rateLimitSeconds,
+    dailyCap,
+    maxTokens,
+    language:           val('ast-language')       || 'both',
+    translit:           checked('ast-translit'),
+  };
+
+  // Serialize prompt library: drop blank rows, ensure stable ids.
+  const library = _presets
+    .filter(p => (p.name || '').trim() && (p.prompt || '').trim())
+    .map(p => ({ id: p.id || slugify(p.name), name: p.name.trim(), prompt: p.prompt.trim() }));
+
+  Homey.set('assistant', data, (err) => {
+    if (err) return showStatus('assistant-status', 'Error: ' + err.message, 'error');
+    Homey.set('promptLibrary', library, (err2) => {
+      if (err2) return showStatus('assistant-status', 'Error: ' + err2.message, 'error');
+      _astKey = key;
+      showStatus('assistant-status', 'Assistant settings saved', 'success');
+      _updateAccStatus();
+    });
+  });
+});
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 function onHomeyReady(Homey) {
   initAudio();
@@ -1311,6 +1947,9 @@ function onHomeyReady(Homey) {
     setVal('ap-custom3',       ap.customUrl3       || '');
     volLoad(ap.volumes || {});
   });
+
+  Homey.get('assistant', (err, cfg) => { if (!err) initAssistant(cfg); });
+  Homey.get('promptLibrary', (err, lib) => { initPresets(!err && lib ? lib : []); });
 
   Homey.get('advanced', (err, adv) => {
     adv = adv || {};

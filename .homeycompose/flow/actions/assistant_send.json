@@ -1,0 +1,21 @@
+{
+  "id": "assistant_send",
+  "title": { "en": "Islamic Assistant: generate & send" },
+  "titleFormatted": { "en": "Generate & send: [[preset]] [[custom]]" },
+  "hint": { "en": "Generates an Islamic message from a saved preset (or a custom prompt) and sends it directly to the default Telegram chat set in app settings. Works in a Basic Flow — no Advanced Flow or separate send card needed." },
+  "args": [
+    {
+      "name": "preset",
+      "type": "autocomplete",
+      "title": { "en": "Preset" },
+      "placeholder": { "en": "Search presets…" }
+    },
+    {
+      "name": "custom",
+      "type": "text",
+      "title": { "en": "Custom prompt (overrides preset)" },
+      "required": false,
+      "placeholder": { "en": "Leave empty to use the selected preset" }
+    }
+  ]
+}

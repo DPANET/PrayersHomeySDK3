@@ -1,0 +1,34 @@
+{
+  "id": "assistant_scheduled",
+  "title": { "en": "Islamic Assistant: scheduled message" },
+  "titleFormatted": { "en": "Islamic Assistant: [[preset]] [[custom]]" },
+  "hint": { "en": "Generates an Islamic message from a saved preset (or a custom prompt) and returns the reply token. Use in a timed or prayer Flow, then send the reply via Telegram." },
+  "args": [
+    {
+      "name": "preset",
+      "type": "autocomplete",
+      "title": { "en": "Preset" },
+      "placeholder": { "en": "Search presets…" }
+    },
+    {
+      "name": "custom",
+      "type": "text",
+      "title": { "en": "Custom prompt (overrides preset)" },
+      "placeholder": { "en": "Leave empty to use the selected preset" }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "assistant_reply",
+      "type": "string",
+      "title": { "en": "Reply" },
+      "example": { "en": "Asr prayer is at 15:46." }
+    },
+    {
+      "name": "assistant_success",
+      "type": "boolean",
+      "title": { "en": "Success" },
+      "example": true
+    }
+  ]
+}

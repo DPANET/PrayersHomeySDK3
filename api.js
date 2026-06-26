@@ -204,4 +204,59 @@ module.exports = {
       })),
     };
   },
+
+  // GET /assistantConfig
+  // Returns the assistant settings for the settings UI. NEVER returns the
+  // Anthropic API key — it is read directly by the in-app card, never exposed.
+  async assistantConfig({ homey }) {
+    const a = homey.settings.get('assistant') || {};
+    return {
+      // Strict boolean: true only when explicitly enabled. (`a.enabled` is
+      // undefined before the migration default runs — return false, not undefined.)
+      enabled:            a.enabled === true,
+      allowedNumbers:     Array.isArray(a.allowedNumbers) ? a.allowedNumbers : [],
+      fallbackMessage:    a.fallbackMessage    || 'Prayer Assistant is currently unavailable.',
+      model:              a.model              || 'claude-sonnet-4-6',
+      customInstructions: a.customInstructions || '',
+      rateLimitSeconds:   typeof a.rateLimitSeconds === 'number' ? a.rateLimitSeconds : 10,
+      dailyCap:           typeof a.dailyCap         === 'number' ? a.dailyCap         : 50,
+      language:           ['arabic', 'english', 'both'].includes(a.language) ? a.language : 'both',
+      translit:           a.translit === true,
+      hasKey:             typeof a.anthropicKey === 'string' && a.anthropicKey.startsWith('sk-'),
+    };
+  },
+
+  // POST /validateAssistantKey  { key }
+  // Server-side ping to the Anthropic API so the settings page (a browser
+  // context that cannot call Anthropic directly) can verify a key on save.
+  async validateAssistantKey({ homey, body }) {
+    const key = (body && body.key) || (homey.settings.get('assistant') || {}).anthropicKey || '';
+    if (!key || !key.startsWith('sk-')) return { ok: false, error: 'Key must start with sk-' };
+
+    const model = (homey.settings.get('assistant') || {}).model || 'claude-sonnet-4-6';
+    return new Promise((resolve) => {
+      const payload = JSON.stringify({ model, max_tokens: 1, messages: [{ role: 'user', content: 'hi' }] });
+      const req = https.request('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type':      'application/json',
+          'x-api-key':         key,
+          'anthropic-version': '2023-06-01',
+          'Content-Length':    Buffer.byteLength(payload),
+        },
+      }, (res) => {
+        let data = '';
+        res.on('data', c => { data += c; });
+        res.on('end', () => {
+          if (res.statusCode === 200) return resolve({ ok: true });
+          let msg = 'HTTP ' + res.statusCode;
+          try { const j = JSON.parse(data); if (j.error && j.error.message) msg = j.error.message; } catch (_) { /* ignore */ }
+          resolve({ ok: false, error: msg });
+        });
+      });
+      req.on('error', e => resolve({ ok: false, error: e.message }));
+      req.setTimeout(10000, () => { req.destroy(); resolve({ ok: false, error: 'Timed out' }); });
+      req.end(payload);
+    });
+  },
 };

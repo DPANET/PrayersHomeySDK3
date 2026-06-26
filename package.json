@@ -1,6 +1,6 @@
 {
   "name": "com.prayerssapp",
-  "version": "2.4.5",
+  "version": "3.0.0",
   "description": "Islamic audio hub with prayer times and Flow triggers for Homey Pro",
   "main": "app.js",
   "scripts": {

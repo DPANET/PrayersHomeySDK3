@@ -1,0 +1,34 @@
+{
+  "id": "assistant_reply",
+  "title": { "en": "Islamic Assistant: reply to a message" },
+  "titleFormatted": { "en": "Islamic Assistant: reply to [[sender]] [[text]]" },
+  "hint": { "en": "Answers an incoming message and returns the reply token. Pipe the message and sender tokens from your Telegram trigger, then send the reply back." },
+  "args": [
+    {
+      "name": "text",
+      "type": "text",
+      "title": { "en": "Message" },
+      "placeholder": { "en": "Pipe the Telegram message token here" }
+    },
+    {
+      "name": "sender",
+      "type": "text",
+      "title": { "en": "Sender chat ID (optional)" },
+      "placeholder": { "en": "Pipe the chat ID token here" }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "assistant_reply",
+      "type": "string",
+      "title": { "en": "Reply" },
+      "example": { "en": "Asr prayer is at 15:46." }
+    },
+    {
+      "name": "assistant_success",
+      "type": "boolean",
+      "title": { "en": "Success" },
+      "example": true
+    }
+  ]
+}

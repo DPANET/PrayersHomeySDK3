@@ -1,15 +1,15 @@
 # Prayers Alert
 
-> Islamic prayer times, adhan audio, Quran recitation, Hijri calendar and Flow automation for Homey Pro
+> Islamic prayer times, adhan audio, Quran recitation, Hijri calendar, Flow automation and AI Islamic assistant for Homey Pro
 
 [![Homey SDK](https://img.shields.io/badge/Homey_SDK-3-blue?style=flat-square)](https://apps.developer.homey.app)
 [![Platform](https://img.shields.io/badge/platform-local-informational?style=flat-square)](https://homey.app)
-[![Version](https://img.shields.io/badge/version-2.2.0-brightgreen?style=flat-square)](https://github.com/DPANET/PrayersHomeySDK3)
+[![Version](https://img.shields.io/badge/version-3.0.0-brightgreen?style=flat-square)](https://github.com/DPANET/PrayersHomeySDK3)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
 Prayers Alert calculates accurate Islamic prayer times for your location and delivers audio URLs, volume, and Hijri calendar data directly into your Homey Flows. Cast adhan, Quran recitation, or adhkar to any Chromecast, Sonos, or smart speaker — all wired in Flow without a single line of code.
 
-> **v2.x** is a full rewrite to Homey SDK 3. Existing Flow cards built against v1.x are fully preserved — all card IDs and argument names are unchanged.
+**v3.0** adds an AI Islamic assistant powered by Claude: schedule daily Islamic content, answer fiqh questions, fetch Quranic verses and tafsir, and deliver everything to Telegram — automatically.
 
 ---
 
@@ -55,7 +55,54 @@ Add the **Prayer Times** widget to any Homey dashboard:
 - **Right panel** — full day schedule with passed / next / upcoming states
 - Location city and Hijri date displayed
 - Overnight handling: shows tomorrow's Fajr after all today's prayers have passed
+- Timezone-aware: correctly handles midnight rollover for locations where the Homey container's UTC date differs from the local calendar day
 - Auto-refreshes every 60 seconds
+
+### 🤖 Islamic AI Assistant (v3.0)
+A Claude-powered action card that delivers Islamic content on demand or on a schedule, with results sent to Telegram.
+
+**Two modes:**
+
+**Schedule mode** — pick a preset from the library and run it automatically via Flow:
+- *Morning briefing* — prayer times, Hijri date, and a random morning content (hadith, verse, or adhkar)
+- *Daily surprise* — random pick from hadith with explanation, verse + tafsir, adhkar, or fatwa
+- *Verse + reflection* — random life theme → matching Quran verse → tafsir → one-line reflection
+- *Sunnah of the day* — hadith with a short practical application
+- *Dua of the day* — thematic dua with context
+- *Next prayer countdown* — one-line time-until-next-prayer
+- *Fatwa of the day* — random published fatwa from IslamQA.info
+- *Morning & evening adhkar*, *After-prayer adhkar*, *Before-sleep adhkar*, *Adhkar: random*
+
+**Ask mode** — free-text prompt forwarded to Claude with full tool access.
+
+**Content tools (via MCP):**
+
+| Tool | Source |
+|------|--------|
+| `get_prayer_data` | Local adhan calculation |
+| `get_quran` | quran.com — semantic verse search or direct surah:ayah lookup |
+| `get_tafsir` | quran.com — Ibn Kathir tafsir |
+| `get_hadith` | quran.com MCP — authenticated hadith with grade |
+| `get_hadith_explained` | quran.com MCP — hadith + scholarly commentary |
+| `get_dua` | quran.com MCP — thematic adhkar / dua |
+| `get_fatwa` | IslamQA.info — published fatwa, Arabic or bilingual |
+
+**Performance features:**
+- MCP session caching with 30-second TTL — subsequent tool calls within a session reuse the same connection (e.g. `get_tafsir` after `get_quran`: ~185 ms instead of ~1,500 ms)
+- Parallel bilingual Quran fetch (Arabic + translation in one round)
+- Prompt caching on the system block (~1,500 tokens cached across calls)
+- Pure-relay schedule presets bypass Claude entirely for zero-overhead delivery
+- Placeholder layout-delegation: Claude positions verbatim scripture blocks without re-emitting them, cutting response time from ~26 s to ~5 s for content-heavy presets
+
+**Telegram delivery:**
+- Configured bot token + chat ID in Settings → AI Assistant
+- Long messages automatically split at paragraph boundaries (Telegram 4,096-char limit)
+- Arabic fatwa answers preferred when language is set to Arabic or Bilingual
+- Markdown sanitization prevents parse failures from special characters in source text
+- Tafsir HTML (headings, paragraphs) converted to Telegram-compatible bold + line breaks
+- Telegram formatting rule enforced: no tables, headings, or blockquotes — prayer times and lists rendered as plain lines
+
+---
 
 ### ⚡ Homey Flow Cards
 
@@ -79,6 +126,13 @@ Add the **Prayer Times** widget to any Homey dashboard:
 |------|-------------|
 | **Prayer name is** | True if the current prayer matches the selected name. Use with "At any prayer time" to branch per-prayer. |
 | **Islamic occasion is / is not** | True if today falls on a named Islamic occasion (Ramadan, Eid, Arafah, Ashura, Mawlid, Laylah Al-Qadr, Last 10 nights). |
+
+#### Actions
+
+| Card | Description |
+|------|-------------|
+| **Ask Islamic assistant** | Free-text prompt sent to Claude with full content-tool access. Result delivered to Telegram. |
+| **Run Islamic assistant preset** | Pick a preset from the library. Claude (or direct relay for pure-content presets) assembles and sends the bulletin to Telegram. |
 
 ---
 
@@ -110,6 +164,13 @@ Set custom URLs for any audio category. Leave blank to use the built-in default.
 ### Hijri tab
 - **Calculation method** — choose the Hijri calendar convention for your region
 - **Day offset** — fine-tune ±1 day for local moon sighting
+
+### AI Assistant tab
+- **Anthropic API key** — required for the Islamic assistant cards
+- **Telegram Bot Token** and **Chat ID** — where assistant replies are sent
+- **Language** — Arabic, English, or Bilingual (affects fatwa language)
+- **Persona instructions** — optional custom personality prompt appended to the system message
+- **Prompt library** — view, add, edit, and reorder schedule presets
 
 ### Advanced tab
 - **App enabled** toggle — pause all scheduling without uninstalling
@@ -163,6 +224,18 @@ WHEN   On day of each Hijri month — day 13
 THEN   Send notification "White days begin today"
 ```
 
+### Send morning briefing to Telegram every day after Fajr
+```
+WHEN   Before / After prayer — 10 minutes After Fajr
+THEN   Run Islamic assistant preset — Morning briefing
+```
+
+### Answer an Islamic question from a Homey virtual button
+```
+WHEN   Virtual button pressed
+THEN   Ask Islamic assistant — "What is the ruling on praying Witr?"
+```
+
 ---
 
 ## Requirements
@@ -170,6 +243,8 @@ THEN   Send notification "White days begin today"
 - **Homey Pro** running Homey firmware ≥ 12.1.0
 - A Homey-compatible smart speaker or Chromecast device (for audio playback)
 - Internet access for audio CDN and city search
+- **Anthropic API key** (for the AI assistant cards — free-tier sufficient for personal use)
+- **Telegram Bot Token + Chat ID** (for AI assistant delivery)
 
 ---
 
@@ -204,13 +279,15 @@ Both keys are optional. Without them, city search uses OpenStreetMap Nominatim (
 npm test
 ```
 
-The suite (`test/run-tests.js`) runs 104 checks against the real library code using a mocked Homey environment with a mutable clock, in-memory settings store, and Flow trigger simulation. It covers prayer time math, scheduler correctness, Hijri calendar logic, audio token model, and Islamic occasion detection.
+The suite (`test/run-tests.js`) runs checks against the real library code using a mocked Homey environment with a mutable clock, in-memory settings store, and Flow trigger simulation. It covers prayer time math, scheduler correctness, Hijri calendar logic, audio token model, Islamic occasion detection, AI assistant tool dispatch, schedule bypass, Telegram message splitting, and content sanitization.
 
 ---
 
-## Upgrading from v1.x
+## Upgrading from v1.x / v2.x
 
-No action required. On first launch `_migrateSettings()` automatically converts `prayerConfig` → `calculation` and `locationConfig` → `location`. All existing v1.x Flow cards continue to work unchanged.
+**From v1.x:** No action required. On first launch `_migrateSettings()` automatically converts `prayerConfig` → `calculation` and `locationConfig` → `location`. All existing v1.x Flow cards continue to work unchanged.
+
+**From v2.x:** Settings are migrated automatically (migrations V1–V13 + persona migrations). The AI assistant prompt library and persona are refreshed to the v3 contract on first launch.
 
 ---
 
