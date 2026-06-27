@@ -1396,6 +1396,61 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
   }
 }
 
+// ============================================================================
+section('16. Book-scoped hadith search — resolveBooks + tool routing');
+// ============================================================================
+{
+  const ContentTools         = require(path.join(LIB, 'ContentTools'));
+  const IslamicAssistantCard = require(path.join(LIB, 'IslamicAssistantCard'));
+  const { resolveBooks } = ContentTools;
+  const setEq = (s, arr) => s instanceof Set && s.size === arr.length && arr.every(x => s.has(x));
+
+  check('16a. a single Latin name resolves to its slug', setEq(resolveBooks('Bukhari'), ['bukhari']));
+  check('16b. an array of names resolves to multiple slugs',
+    setEq(resolveBooks(['Bukhari', 'Muslim']), ['bukhari', 'muslim']));
+  check('16c. "Sahih al-Bukhari" normalises (al- + spaces stripped) to bukhari',
+    setEq(resolveBooks('Sahih al-Bukhari'), ['bukhari']));
+  check('16d. an Arabic name resolves (صحيح مسلم → muslim)', setEq(resolveBooks('صحيح مسلم'), ['muslim']));
+  check('16e. a comma/"and" string splits into multiple slugs',
+    setEq(resolveBooks('Bukhari and Muslim'), ['bukhari', 'muslim']));
+  check('16f. group shorthand "sahihayn" expands to Bukhari + Muslim',
+    setEq(resolveBooks('sahihayn'), ['bukhari', 'muslim']));
+  check('16g. group shorthand "the six books" expands to the six Sunan',
+    setEq(resolveBooks('the six books'), ['bukhari', 'muslim', 'abudawud', 'tirmidhi', 'nasai', 'ibnmajah']));
+  check('16h. no books argument → null (caller uses the full allowlist)', resolveBooks(null) === null);
+  check('16i. an unrecognised book → empty Set (caller surfaces an error)',
+    resolveBooks('Nonexistent').size === 0);
+  check('16j. Abu Dawud aliases (spacing/article variants) resolve to abudawud',
+    setEq(resolveBooks('Sunan Abi Dawud'), ['abudawud']) && setEq(resolveBooks('abu dawud'), ['abudawud']));
+
+  // Routing: the card forwards the books arg to ContentTools.searchHadith / getHadith.
+  {
+    const homey = createMockHomey({ settings: { assistant: {
+      enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50,
+    } } });
+    let seenSearch = null, seenGet = null;
+    const contentTools = {
+      searchHadith: async (a) => { seenSearch = a; return { type: 'hadith', query: a.query, offset: 0, total: 1,
+        results: [{ n: 1, ref: 'Bukhari #1', selector: { id: 1 } }] }; },
+      getHadith:    async (a) => { seenGet = a; return { block: 'HADITH_BLOCK', meta: { collection: 'Bukhari' } }; },
+    };
+    const card = new IslamicAssistantCard(homey, {
+      contentTools,
+      claudeComplete: async ({ runTool, messages }) => {
+        const t = messages[messages.length - 1].content;
+        if (/search/.test(t)) { await runTool('search_hadith', { query: 'patience', books: ['Bukhari'] }); return 'MENU'; }
+        await runTool('get_hadith', { query: 'patience', books: ['Bukhari'] }); return 'INTRO {{BLOCK1}}';
+      },
+    });
+    await card.run({ mode: 'reply', sender: '+777', text: 'search patience in bukhari' });
+    await card.run({ mode: 'reply', sender: '+778', text: 'a hadith about patience in bukhari' });
+    check('16k. search_hadith forwards the books scope to ContentTools.searchHadith',
+      seenSearch && Array.isArray(seenSearch.books) && seenSearch.books[0] === 'Bukhari');
+    check('16l. get_hadith forwards the books scope to ContentTools.getHadith',
+      seenGet && Array.isArray(seenGet.books) && seenGet.books[0] === 'Bukhari');
+  }
+}
+
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
   console.log(`\x1b[1mRESULTS:\x1b[0m \x1b[32m${pass} passed\x1b[0m, ` +
