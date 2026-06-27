@@ -104,18 +104,27 @@ class App extends Homey.App {
 
     const hijri = new HijriCalendar(this.homey.settings.get('hijriConfig') || {});
 
+    const prayers = todayPrayers.map((p, i) => ({
+      name:   p.name,
+      time:   fmt(p.time),
+      timeMs: p.time ? p.time.getTime() : null,
+      passed: p.time ? p.time.getTime() <= nowMs : false,
+      isNext: i === nextIdx,
+    }));
+
+    // Pre-compute the countdown so Claude never needs to do ms arithmetic.
+    const nextP = prayers.find(p => p.isNext) || overrideNext;
+    const nextMs = nextP && nextP.timeMs ? nextP.timeMs : null;
+    const minutesUntilNext = nextMs ? Math.round((nextMs - nowMs) / 60000) : null;
+
     const result = {
       city:        loc.city    || null,
       country:     loc.country || null,
       hijriDate:   hijri.todayInfo(),
       overrideNext,
-      prayers: todayPrayers.map((p, i) => ({
-        name:   p.name,
-        time:   fmt(p.time),
-        timeMs: p.time ? p.time.getTime() : null,
-        passed: p.time ? p.time.getTime() <= nowMs : false,
-        isNext: i === nextIdx,
-      })),
+      prayers,
+      nextPrayer:      nextP ? { name: nextP.name, time: nextP.time } : null,
+      minutesUntilNext,
     };
     const nextPrayer = result.prayers.find(p => p.isNext);
     this.logger.log(`Widget: returning ${result.prayers.length} prayers, next=${nextPrayer ? nextPrayer.name + '@' + nextPrayer.time : 'none'}, city=${result.city}`);
@@ -311,7 +320,7 @@ class App extends Homey.App {
       // Overwrite prompt text of presets that were revised after initial seeding.
       // Seeding only adds new entries; it never updates existing ones — this fixes that.
       const revisedIds = ['daily_surprise', 'morning_briefing', 'morning_evening_adhkar',
-        'after_prayer_adhkar', 'before_sleep_adhkar', 'travel_dua',
+        'after_prayer_adhkar', 'before_sleep_adhkar',
         'adhkar_random', 'dua_of_the_day', 'verse_reflection', 'sunnah_of_the_day'];
       const promptMap = new Map(PromptLibrary.DEFAULT_PRESETS.map(p => [p.id, p.prompt]));
       const lib = (this.homey.settings.get('promptLibrary') || []).map(p => {

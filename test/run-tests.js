@@ -963,7 +963,7 @@ section('13. Assistant config endpoint + migration (settings contract)');
     check('13m2. migration preserves the user preset and does not overwrite it',
       lib2[0].id === 'mine');
     check('13m3. migration tops up the new dua presets into an existing library',
-      lib2.some(p => p.id === 'travel_dua') && lib2.length > 1);
+      lib2.some(p => p.id === 'before_sleep_adhkar') && lib2.length > 1);
     // A second run is idempotent — the top-up flag prevents re-adding.
     const lenAfterFirst = lib2.length;
     mkApp(homey)._migrateSettings();
@@ -1013,9 +1013,13 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
       surahNum: 2, ayahNum: 255, edition: 'en-ibn-kathir',
     });
     const stars = (out.match(/\*/g) || []).length;
+    // The footer carries an intentional Markdown link [quran.com](…); strip it
+    // before asserting the CONTENT has no stray brackets/backticks.
+    const body = out.replace(/\[quran\.com\]\([^)]*\)/, '');
     check('14af. htmlToTelegram keeps headings (bold) + paragraph breaks, strips stray markup',
       /\*The Heading\*/.test(out) && /First para with a quote and note\./.test(out)
-      && /\n\nSecond para\./.test(out) && !/[`[\]]/.test(out) && stars % 2 === 0);
+      && /\n\nSecond para\./.test(out) && /\[quran\.com\]\(https:\/\/quran\.com\/2\/255\)/.test(out)
+      && !/[`[\]]/.test(body) && stars % 2 === 0);
   }
 
   // ── formatFatwa sanitizes external Markdown so Telegram doesn't break ─────────
@@ -1277,7 +1281,7 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
     const PromptLibrary = require(path.join(LIB, 'PromptLibrary'));
     const ids = PromptLibrary.DEFAULT_PRESETS.map(p => p.id);
     check('14v. default prompt library includes the new dua presets',
-      ids.includes('morning_evening_adhkar') && ids.includes('before_sleep_adhkar') && ids.includes('travel_dua'));
+      ids.includes('morning_evening_adhkar') && ids.includes('before_sleep_adhkar') && ids.includes('after_prayer_adhkar'));
   }
 
   // ── full Hisn al-Muslim + free-text query retrieval ─────────────────────────
