@@ -1307,6 +1307,95 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
   }
 }
 
+// ============================================================================
+section('15. Assistant follow-ups — recall last content + "more results" hint');
+// ============================================================================
+{
+  const IslamicAssistantCard = require(path.join(LIB, 'IslamicAssistantCard'));
+  const mkCard = (settings, deps) => {
+    const homey = createMockHomey({ settings });
+    return { card: new IslamicAssistantCard(homey, deps), homey };
+  };
+  // rateLimitSeconds:0 so a same-sender follow-up turn is not silently dropped.
+  const cfg = (over = {}) => ({ assistant: Object.assign({
+    enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50,
+  }, over) });
+
+  // 15a. A verse shown one turn is recalled (text + typed meta) the next turn,
+  //      so "explain the above" acts on the SAME item.
+  {
+    const contentTools = {
+      getQuran:  async () => ({ block: 'VERSE_BLOCK', meta: { surahNum: 2, ayahNum: 255 } }),
+      getTafsir: async () => ({ block: 'TAFSIR_BLOCK', meta: { surahNum: 2, ayahNum: 255 } }),
+    };
+    let recalled = null;
+    const claudeComplete = async ({ runTool, messages }) => {
+      const last = messages[messages.length - 1].content;
+      if (/explain the above/.test(last)) { recalled = await runTool('recall_last_content', {}); return 'OK'; }
+      return (await runTool('get_quran', { query: 'mercy' })).placeholder; // turn 1 shows the verse
+    };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    const r1 = await card.run({ mode: 'reply', sender: '+222', text: 'a verse about mercy' });
+    await card.run({ mode: 'reply', sender: '+222', text: 'explain the above' });
+    check('15a. recall_last_content returns the SAME item (text + typed meta) shown last turn',
+      r1.assistant_reply === 'VERSE_BLOCK'
+      && recalled && Array.isArray(recalled.items) && recalled.items.length === 1
+      && recalled.items[0].text === 'VERSE_BLOCK'
+      && recalled.items[0].meta.surahNum === 2 && recalled.items[0].meta.ayahNum === 255);
+  }
+
+  // 15b. With no prior content (fresh sender) recall reports an error, so the model
+  //      tells the user instead of fetching a new random item.
+  {
+    let recalled = null;
+    const claudeComplete = async ({ runTool }) => { recalled = await runTool('recall_last_content', {}); return 'NONE'; };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools: {} });
+    await card.run({ mode: 'reply', sender: '+333', text: 'explain the above' });
+    check('15b. recall_last_content reports an error when nothing was shown recently',
+      recalled && typeof recalled.error === 'string' && /expired|no recent/i.test(recalled.error));
+  }
+
+  // 15c. A search that shows fewer results than its total gets a "more" hint appended.
+  {
+    const contentTools = { searchHadith: async () => ({
+      type: 'hadith', query: 'patience', offset: 0, total: 12,
+      results: Array.from({ length: 5 }, (_, i) => ({ n: i + 1, ref: 'H' + i, selector: { id: i } })),
+    }) };
+    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'patience' }); return 'Here are some hadiths:'; };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+444', text: 'show me hadiths about patience' });
+    check('15c. "more results" hint is appended when total exceeds the shown page',
+      /7 more result/.test(r.assistant_reply) && /المزيد/.test(r.assistant_reply));
+  }
+
+  // 15d. When the search returned everything, no hint is appended.
+  {
+    const contentTools = { searchHadith: async () => ({
+      type: 'hadith', query: 'x', offset: 0, total: 3,
+      results: Array.from({ length: 3 }, (_, i) => ({ n: i + 1, ref: 'H' + i, selector: { id: i } })),
+    }) };
+    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return 'MENU'; };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+555', text: 'show me hadiths' });
+    check('15d. no "more" hint when the search showed all of its results',
+      r.assistant_reply === 'MENU');
+  }
+
+  // 15e. If the model already told the user about more results, the hint is not duplicated.
+  {
+    const contentTools = { searchHadith: async () => ({
+      type: 'hadith', query: 'x', offset: 0, total: 12,
+      results: Array.from({ length: 5 }, (_, i) => ({ n: i + 1, ref: 'H' + i, selector: { id: i } })),
+    }) };
+    const reply = 'Here are 5 — reply more for others.';
+    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return reply; };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    const r = await card.run({ mode: 'reply', sender: '+666', text: 'show me hadiths' });
+    check('15e. no duplicate hint when the model already mentioned "more"',
+      r.assistant_reply === reply);
+  }
+}
+
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
   console.log(`\x1b[1mRESULTS:\x1b[0m \x1b[32m${pass} passed\x1b[0m, ` +
