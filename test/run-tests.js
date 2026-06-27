@@ -1129,6 +1129,37 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
     check('14a4. failed direct fetch falls through to Claude',
       claudeCalled === true && r.assistant_reply === 'CLAUDE_FALLBACK');
   }
+  {
+    // Token saving: a canonical (non-bypassed) scheduled preset sends ONLY the
+    // tool schemas it can use, not all 16.
+    const PromptLib = require(path.join(LIB, 'PromptLibrary'));
+    const canon = PromptLib.DEFAULT_PRESETS.find(p => p.id === 'sunnah_of_the_day');
+    let seenTools = null;
+    const contentTools = { getHadith: async () => ({ block: 'H', meta: {} }) };
+    const { card } = mkCard(baseCfg(),
+      { claudeComplete: async ({ tools }) => { seenTools = (tools || []).map(t => t.name); return 'ok'; }, contentTools });
+    await card.run({ mode: 'schedule', preset: { id: 'sunnah_of_the_day', name: canon.name, prompt: canon.prompt } });
+    check('14a5. canonical scheduled preset sends only its whitelisted tool schemas',
+      Array.isArray(seenTools) && seenTools.length === 1 && seenTools[0] === 'get_hadith');
+  }
+  {
+    // A customised scheduled preset may call anything → keep the full toolset.
+    let seenTools = null;
+    const { card } = mkCard(baseCfg(),
+      { claudeComplete: async ({ tools }) => { seenTools = (tools || []).map(t => t.name); return 'ok'; } });
+    await card.run({ mode: 'schedule', preset: { id: 'sunnah_of_the_day', name: 'S', prompt: 'a totally custom instruction' } });
+    check('14a6. a customised scheduled preset keeps the full toolset',
+      Array.isArray(seenTools) && seenTools.length === IslamicAssistantCard.TOOLS.length);
+  }
+  {
+    // Reply mode is open-ended → always the full toolset.
+    let seenTools = null;
+    const { card } = mkCard(baseCfg(),
+      { claudeComplete: async ({ tools }) => { seenTools = (tools || []).map(t => t.name); return 'ok'; } });
+    await card.run({ mode: 'reply', sender: '+5551', text: 'a hadith about patience' });
+    check('14a7. reply mode always sends the full toolset',
+      Array.isArray(seenTools) && seenTools.length === IslamicAssistantCard.TOOLS.length);
+  }
 
   // ── reply mode guards ──────────────────────────────────────────────────────
   {
@@ -1313,6 +1344,35 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
     const ids = PromptLibrary.DEFAULT_PRESETS.map(p => p.id);
     check('14v. default prompt library includes the new dua presets',
       ids.includes('morning_evening_adhkar') && ids.includes('before_sleep_adhkar') && ids.includes('after_prayer_adhkar'));
+  }
+
+  // ── ClaudeClient prompt-cache TTL (token cost control) ──────────────────────
+  {
+    const ClaudeClient = require(path.join(LIB, 'ClaudeClient'));
+    const capture = () => {
+      const seen = {};
+      const fetchImpl = async (url, opts) => {
+        seen.headers = opts.headers;
+        seen.body = JSON.parse(opts.body);
+        return { ok: true, status: 200, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'hi' }], usage: {} }) };
+      };
+      return { seen, fetchImpl };
+    };
+
+    const a = capture();
+    await new ClaudeClient({ apiKey: 'sk', cacheTtl: '1h', fetchImpl: a.fetchImpl })
+      .complete({ messages: [{ role: 'user', content: 'x' }], system: 'SYS' });
+    check('14v2. cacheTtl 1h sets the system cache_control ttl to 1h and the beta header',
+      a.seen.body.system[0].cache_control.ttl === '1h'
+      && a.seen.headers['anthropic-beta'] === 'extended-cache-ttl-2025-04-11');
+
+    const b = capture();
+    await new ClaudeClient({ apiKey: 'sk', fetchImpl: b.fetchImpl })
+      .complete({ messages: [{ role: 'user', content: 'x' }], system: 'SYS' });
+    check('14v3. default cache is plain 5-min ephemeral with no beta header',
+      b.seen.body.system[0].cache_control.type === 'ephemeral'
+      && b.seen.body.system[0].cache_control.ttl === undefined
+      && b.seen.headers['anthropic-beta'] === undefined);
   }
 
   // ── full Hisn al-Muslim + free-text query retrieval ─────────────────────────
