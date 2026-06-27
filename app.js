@@ -404,6 +404,18 @@ class App extends Homey.App {
       this.logger.log('Settings migration: refreshed presets for placeholder-positioned content');
       this.homey.settings.set('promptLibraryV13Seeded', true);
     }
+    if (!this.homey.settings.get('promptLibraryV14Seeded')) {
+      // daily_surprise rewritten for true per-run randomness: the prompt now carries
+      // a {{RANDOM4}} selector (substituted with a fresh 0–3 roll at run time) and an
+      // explicit mod-4 mapping, with every option calling its tool with NO input so the
+      // tools self-randomise. Refresh the stored copy so the new text actually ships.
+      const promptMap = new Map(PromptLibrary.DEFAULT_PRESETS.map(p => [p.id, p.prompt]));
+      const lib = (this.homey.settings.get('promptLibrary') || []).map(p =>
+        (p && p.id === 'daily_surprise' && promptMap.has(p.id)) ? { ...p, prompt: promptMap.get(p.id) } : p);
+      this.homey.settings.set('promptLibrary', lib);
+      this.logger.log('Settings migration: refreshed daily_surprise preset for per-run randomness');
+      this.homey.settings.set('promptLibraryV14Seeded', true);
+    }
     if (!this.homey.settings.get('assistantPersonaV4Seeded')) {
       // Prior default persona said the fatwa answer is "appended automatically"; it is
       // now positioned via a placeholder. Clear that stale default so the corrected
