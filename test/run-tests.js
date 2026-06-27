@@ -990,7 +990,7 @@ section('13. Assistant config endpoint + migration (settings contract)');
     check('13m2. migration preserves the user preset and does not overwrite it',
       lib2[0].id === 'mine');
     check('13m3. migration tops up the new dua presets into an existing library',
-      lib2.some(p => p.id === 'before_sleep_adhkar') && lib2.length > 1);
+      lib2.some(p => p.id === 'morning_evening_adhkar') && lib2.length > 1);
     // A second run is idempotent — the top-up flag prevents re-adding.
     const lenAfterFirst = lib2.length;
     mkApp(homey)._migrateSettings();
@@ -1311,8 +1311,8 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
   {
     const PromptLibrary = require(path.join(LIB, 'PromptLibrary'));
     const ids = PromptLibrary.DEFAULT_PRESETS.map(p => p.id);
-    check('14v. default prompt library includes the new dua presets',
-      ids.includes('morning_evening_adhkar') && ids.includes('before_sleep_adhkar') && ids.includes('after_prayer_adhkar'));
+    check('14v. default prompt library includes the morning & evening adhkar preset',
+      ids.includes('morning_evening_adhkar'));
   }
 
   // ── full Hisn al-Muslim + free-text query retrieval ─────────────────────────

@@ -416,6 +416,21 @@ class App extends Homey.App {
       this.logger.log('Settings migration: refreshed daily_surprise preset for per-run randomness');
       this.homey.settings.set('promptLibraryV14Seeded', true);
     }
+    if (!this.homey.settings.get('promptLibraryV15Seeded')) {
+      // Removed presets: morning_briefing, after_prayer_adhkar, before_sleep_adhkar,
+      // adhkar_random. Refreshed for per-run randomness ({{RANDOM:N}} selector):
+      // dua_of_the_day, verse_reflection. Drop the retired rows from the stored copy
+      // and overwrite the two refreshed prompts with the current defaults.
+      const retired   = ['morning_briefing', 'after_prayer_adhkar', 'before_sleep_adhkar', 'adhkar_random'];
+      const refreshed = ['dua_of_the_day', 'verse_reflection'];
+      const promptMap = new Map(PromptLibrary.DEFAULT_PRESETS.map(p => [p.id, p.prompt]));
+      const lib = (this.homey.settings.get('promptLibrary') || [])
+        .filter(p => p && !retired.includes(p.id))
+        .map(p => (refreshed.includes(p.id) && promptMap.has(p.id)) ? { ...p, prompt: promptMap.get(p.id) } : p);
+      this.homey.settings.set('promptLibrary', lib);
+      this.logger.log('Settings migration: removed 4 presets, refreshed dua_of_the_day + verse_reflection');
+      this.homey.settings.set('promptLibraryV15Seeded', true);
+    }
     if (!this.homey.settings.get('assistantPersonaV4Seeded')) {
       // Prior default persona said the fatwa answer is "appended automatically"; it is
       // now positioned via a placeholder. Clear that stale default so the corrected

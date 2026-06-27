@@ -1035,15 +1035,15 @@
           <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 8px 0;line-height:1.7">WHEN  Prayers Alert → A prayer time has passed
 AND   Prayers Alert → Prayer is → Fajr
 THEN  Prayers Alert → Islamic Assistant: generate &amp; send
-        Preset: Morning briefing</pre>
+        Preset: Sunnah of the day</pre>
           <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 8px 0;line-height:1.7">WHEN  Prayers Alert → A prayer time has passed
 AND   Prayers Alert → Prayer is → Maghrib
 THEN  Prayers Alert → Islamic Assistant: generate &amp; send
-        Preset: Evening adhkar reminder</pre>
+        Preset: Morning &amp; evening adhkar</pre>
           <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 6px 0;line-height:1.7">WHEN  Homey → Every day at 07:00
 THEN  Prayers Alert → Islamic Assistant: generate &amp; send
-        Preset: Daily hadith</pre>
-          <p style="margin:0">Presets available: <em>Morning briefing, Daily hadith, Quran verse, Friday Jumu'ah reminder, Ramadan schedule, Next prayer countdown, Morning &amp; evening adhkar, After-prayer adhkar, Before-sleep adhkar, Travel duas, Evening adhkar reminder</em>. Edit any preset text in the <em>Prompt library</em> above.</p>
+        Preset: Daily surprise (random content)</pre>
+          <p style="margin:0">Presets available: <em>Daily surprise (random content), Verse + reflection, Sunnah of the day, Dua of the day, Next prayer countdown, Fatwa of the day, Morning &amp; evening adhkar</em>. Edit any preset text in the <em>Prompt library</em> above.</p>
         </div>
       </details>
 
@@ -1076,7 +1076,7 @@ THEN  Prayers Alert → Islamic Assistant: generate &amp; send
           <p style="margin:0 0 6px 0">Use <strong>"Islamic Assistant: scheduled message"</strong> (returns <code>{{assistant_reply}}</code> token) if you need to branch on the reply, send to multiple chats, or chain with other cards:</p>
           <pre style="background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:10px;font-size:12px;overflow-x:auto;margin:0 0 6px 0;line-height:1.7">WHEN  Prayers Alert → A prayer time has passed → Fajr
 THEN  Prayers Alert → Islamic Assistant: scheduled message
-        Preset: Morning briefing
+        Preset: Daily surprise (random content)
 AND   Logic → {{assistant_reply}} is not empty
 THEN  Telegram → Send a message  (To: chat A, Body: {{assistant_reply}})
 THEN  Telegram → Send a message  (To: chat B, Body: {{assistant_reply}})</pre>
