@@ -75,6 +75,33 @@ const castUrls = t => (t.triggerCards['prayer_trigger_all']?.triggerCalls || [])
 const onDay   = (s, arr, off) => arr.filter(x => x.dayEpoch === s._dayEpoch(off));
 const findOcc = (arr, prayer, dayEpoch) => arr.find(a => a.prayer === prayer && a.dayEpoch === dayEpoch);
 
+// Fake MCP transport for ContentTools (hadith-mcp.org / mcp.quran.ai). Speaks the
+// JSON-RPC-over-SSE handshake (initialize → notifications/initialized → tools/call)
+// the real client expects, dispatching tools/call to `handlers[toolName](args)`.
+// An unhandled tool (e.g. fetch_grounding_rules) drains harmlessly. Lets the suite
+// exercise the REAL getHadith/getQuran/searchHadith logic with no network.
+function makeMcpFetch(handlers) {
+  const sse = (id, payload) => 'data: ' + JSON.stringify({
+    jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(payload) }] },
+  }) + '\n';
+  return async (url, opts) => {
+    const body = JSON.parse(opts.body);
+    if (body.method === 'initialize') {
+      return { ok: true, status: 200,
+        headers: { get: (k) => (k.toLowerCase() === 'mcp-session-id' ? 'sid-test' : null) },
+        text: async () => '' };
+    }
+    if (body.method === 'notifications/initialized') return { ok: true, status: 200, text: async () => '' };
+    if (body.method === 'tools/call') {
+      const h = handlers[body.params.name];
+      if (!h) return { ok: true, status: 200, text: async () => '' }; // unhandled → drain
+      const payload = await h(body.params.arguments || {});
+      return { ok: true, status: 200, text: async () => sse(body.id, payload) };
+    }
+    return { ok: false, status: 404, text: async () => '' };
+  };
+}
+
 async function main() {
 
 // ============================================================================
@@ -1209,30 +1236,34 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
     check('14l. Claude error → fallback message, success false', r.assistant_reply === 'FB' && r.assistant_success === false);
   }
 
-  // ── ContentTools direct (injected fetch + rng) ──────────────────────────────
+  // ── ContentTools direct (faked MCP transport — exercises the real logic) ─────
   {
-    const urls = [];
-    const fakeFetch = async (url) => { urls.push(url); return {
-      ok: true, status: 200,
-      json: async () => ({ hadiths: [{ text: url.includes('/ara-') ? 'ARABIC_TEXT' : 'ENGLISH_TEXT', hadithnumber: 1, grades: [] }] }),
-    }; };
-    const out = await ContentTools.getHadith({ language: 'both', fetchImpl: fakeFetch, rng: () => 0 });
-    check('14m. ContentTools.getHadith language=both fetches ara+eng and includes both',
-      urls.some(u => u.includes('/ara-bukhari/')) && urls.some(u => u.includes('/eng-bukhari/')) &&
-      out.block.includes('ARABIC_TEXT') && out.block.includes('ENGLISH_TEXT'));
+    // getHadith pulls ONE record carrying both Arabic and English from hadith-mcp.org.
+    const fetchImpl = makeMcpFetch({
+      fetch_hadith: () => ({ hadith: {
+        arabic: 'ARABICTEXT', english: 'ENGLISHTEXT', narrator: 'A Narrator',
+        collection_name_english: 'Sahih al-Bukhari', collection_slug: 'bukhari',
+      } }),
+    });
+    const out = await ContentTools.getHadith({ language: 'both', fetchImpl, rng: () => 0 });
+    check('14m. ContentTools.getHadith language=both includes both Arabic and English',
+      out.block.includes('ARABICTEXT') && out.block.includes('ENGLISHTEXT'));
   }
   {
-    const fakeFetch = async () => ({ ok: true, status: 200, json: async () => ({ data: [
-      { edition: { identifier: 'quran-uthmani' },     text: 'ARABIC_AYAH',  surah: { englishName: 'Al-Baqara' }, numberInSurah: 255 },
-      { edition: { identifier: 'en.sahih' },          text: 'ENGLISH_AYAH', surah: { englishName: 'Al-Baqara' }, numberInSurah: 255 },
-      { edition: { identifier: 'en.transliteration' },text: 'TRANSLIT_AYAH',surah: { englishName: 'Al-Baqara' }, numberInSurah: 255 },
-    ] }) });
-    const on  = await ContentTools.getQuran({ surah: 2, ayah: 255, language: 'both', translit: true,  fetchImpl: fakeFetch });
-    const off = await ContentTools.getQuran({ surah: 2, ayah: 255, language: 'both', translit: false, fetchImpl: fakeFetch });
-    check('14n. ContentTools.getQuran includes transliteration only when enabled',
-      on.block.includes('TRANSLIT_AYAH') && !off.block.includes('TRANSLIT_AYAH') &&
-      on.block.includes('Al-Baqara 2:255'));
-    const bad = await ContentTools.getQuran({ surah: 999, ayah: 1, fetchImpl: fakeFetch });
+    // getQuran fetches Arabic (fetch_quran) and the translation (fetch_translation)
+    // from mcp.quran.ai per the language setting, keyed by the requested edition.
+    // (Tokens are underscore-free — sanitizeMd strips Markdown control chars.)
+    const fetchImpl = makeMcpFetch({
+      fetch_quran:       (a) => ({ results: { [a.editions[0]]: [{ text: 'ARABICAYAH'  }] } }),
+      fetch_translation: (a) => ({ results: { [a.editions[0]]: [{ text: 'ENGLISHAYAH' }] } }),
+    });
+    const both = await ContentTools.getQuran({ surah: 2, ayah: 255, language: 'both',   fetchImpl });
+    const ar   = await ContentTools.getQuran({ surah: 2, ayah: 255, language: 'arabic', fetchImpl });
+    check('14n. ContentTools.getQuran returns Arabic+English with citation; language filter honored',
+      both.block.includes('ARABICAYAH') && both.block.includes('ENGLISHAYAH') &&
+      both.block.includes('Al-Baqarah 2:255') &&
+      ar.block.includes('ARABICAYAH') && !ar.block.includes('ENGLISHAYAH'));
+    const bad = await ContentTools.getQuran({ surah: 999, ayah: 1, fetchImpl });
     check('14o. ContentTools.getQuran rejects an out-of-range surah', bad.block === '' && /Invalid/.test(bad.meta.error));
   }
 
@@ -1422,6 +1453,56 @@ section('16. Book-scoped hadith search — resolveBooks + tool routing');
     resolveBooks('Nonexistent').size === 0);
   check('16j. Abu Dawud aliases (spacing/article variants) resolve to abudawud',
     setEq(resolveBooks('Sunan Abi Dawud'), ['abudawud']) && setEq(resolveBooks('abu dawud'), ['abudawud']));
+
+  // Typo tolerance (#4) — fuzzy fallback resolves common misspellings to a slug.
+  check('16m. typo "bukhary" resolves to bukhari', setEq(resolveBooks('bukhary'), ['bukhari']));
+  check('16n. typo "tirmizi" resolves to tirmidhi', setEq(resolveBooks('tirmizi'), ['tirmidhi']));
+  check('16o. typo "sahih bukari" resolves to bukhari', setEq(resolveBooks('sahih bukari'), ['bukhari']));
+  check('16p. a too-short/garbage token does NOT false-match',
+    resolveBooks('m').size === 0 && resolveBooks('xyz123').size === 0);
+
+  // Arabic conjunction splitting (#6) — "البخاري ومسلم" → both books.
+  check('16q. Arabic "X ومسلم" (attached waw) splits into two books',
+    setEq(resolveBooks('البخاري ومسلم'), ['bukhari', 'muslim']));
+  check('16r. Arabic "X و Y" (spaced waw) splits into two books',
+    setEq(resolveBooks('البخاري و مسلم'), ['bukhari', 'muslim']));
+  check('16s. a stray leading waw in an array element is stripped ("ومسلم" → muslim)',
+    setEq(resolveBooks(['ومسلم']), ['muslim']));
+
+  // Real filter logic (#1) — drive getHadith / searchHadith through a faked MCP so
+  // the actual collection filtering (not just routing) is regression-protected.
+  {
+    const CORPUS = [
+      { collection_slug: 'bukhari',  hadith_id: 101, similarity: 0.99, collection_name_english: 'Sahih al-Bukhari', english: 'Bukhari narration', arabic: 'نص البخاري' },
+      { collection_slug: 'muslim',   hadith_id: 202, similarity: 0.95, collection_name_english: 'Sahih Muslim',     english: 'Muslim narration',  arabic: 'نص مسلم' },
+      { collection_slug: 'tirmidhi', hadith_id: 303, similarity: 0.90, collection_name_english: 'Jami at-Tirmidhi', english: 'Tirmidhi narration',arabic: 'نص الترمذي' },
+      { collection_slug: 'minorbook',hadith_id: 404, similarity: 0.97, collection_name_english: 'Minor',            english: 'Excluded minor',    arabic: 'مستبعد' },
+    ];
+    const fetchImpl = makeMcpFetch({
+      search_hadith: () => ({ results: CORPUS }),
+      fetch_hadith:  (a) => ({ hadith: CORPUS.find(r => r.hadith_id === a.hadith_id) || {} }),
+    });
+
+    const sB = await ContentTools.searchHadith({ query: 'patience', books: ['Bukhari'], fetchImpl });
+    check('16t. searchHadith books:[Bukhari] returns only Bukhari (minor compilation excluded)',
+      sB.results.length === 1 && /Bukhari/.test(sB.results[0].ref) && sB.total === 1);
+
+    const sAll = await ContentTools.searchHadith({ query: 'patience', fetchImpl });
+    check('16u. searchHadith with no scope keeps the allowlist and drops the minor compilation',
+      sAll.total === 3 && !sAll.results.some(r => /Minor/.test(r.ref)));
+
+    const sBad = await ContentTools.searchHadith({ query: 'patience', books: ['Nonexistent'], fetchImpl });
+    check('16v. searchHadith unrecognised book → badBook error, no results',
+      sBad.badBook === true && sBad.results.length === 0);
+
+    const gM = await ContentTools.getHadith({ query: 'patience', books: ['Muslim'], fetchImpl });
+    check('16w. getHadith books:[Muslim] picks Muslim even though Bukhari scores higher',
+      /Muslim narration/.test(gM.block) && gM.meta.error == null);
+
+    const gNone = await ContentTools.getHadith({ query: 'patience', books: ['Darimi'], fetchImpl });
+    check('16x. getHadith book with no topical match → noMatch error naming the book',
+      gNone.block === '' && gNone.meta.noMatch === true && /darimi/i.test(gNone.meta.error));
+  }
 
   // Routing: the card forwards the books arg to ContentTools.searchHadith / getHadith.
   {
