@@ -1502,6 +1502,27 @@ section('16. Book-scoped hadith search — resolveBooks + tool routing');
     const gNone = await ContentTools.getHadith({ query: 'patience', books: ['Darimi'], fetchImpl });
     check('16x. getHadith book with no topical match → noMatch error naming the book',
       gNone.block === '' && gNone.meta.noMatch === true && /darimi/i.test(gNone.meta.error));
+
+    // Random WITHIN a book ("random hadith from Bukhari", no query): must draw from
+    // the requested collection only — the old global-id path ignored the filter and
+    // returned a wrong-collection hadith or nothing, so the card sent no reply.
+    let randOk = true;
+    for (let i = 0; i < 20 && randOk; i++) {
+      const g = await ContentTools.getHadith({ books: ['Bukhari'], fetchImpl });
+      randOk = /Bukhari narration/.test(g.block) && g.meta.error == null && g.meta.collectionSlug === 'bukhari';
+    }
+    check('16y. getHadith random + books:[Bukhari] always yields a Bukhari hadith (20 draws)', randOk);
+
+    let randSet = true;
+    for (let i = 0; i < 20 && randSet; i++) {
+      const g = await ContentTools.getHadith({ books: ['Bukhari', 'Muslim'], fetchImpl });
+      randSet = g.meta.error == null && (g.meta.collectionSlug === 'bukhari' || g.meta.collectionSlug === 'muslim');
+    }
+    check('16z. getHadith random + books:[Bukhari,Muslim] stays within the two (20 draws)', randSet);
+
+    const gRandNone = await ContentTools.getHadith({ books: ['Darimi'], fetchImpl });
+    check('16aa. getHadith random + book with no rows → noMatch error, never silent',
+      gRandNone.block === '' && gRandNone.meta.noMatch === true && /darimi/i.test(gRandNone.meta.error));
   }
 
   // Routing: the card forwards the books arg to ContentTools.searchHadith / getHadith.
