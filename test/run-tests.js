@@ -1868,8 +1868,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'hadith', url: 'https://sunnah.com/bukhari:1' });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20c. hadith markup has ex|h and mr (More) and source URL',
-      rm && cbData.includes('ex|h') && cbData.includes('mr') && cbData.includes('https://sunnah.com/bukhari:1'));
+    check('20c. hadith markup has ex|h and mr (More)',
+      rm && cbData.includes('ex|h') && cbData.includes('mr') && !cbData.includes('https://sunnah.com/bukhari:1'));
   }
 
   // ── 20d. buildReplyMarkup: dua with more entries → shows "Rest of set" ──────
@@ -1898,8 +1898,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       categories: ['Prayer'] });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20f. fatwa markup has source URL and more button',
-      rm && cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data === 'nf|Prayer'));
+    check('20f. fatwa markup has more button, no source URL',
+      rm && !cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data === 'nf|Prayer'));
   }
 
   // ── 20g. buildReplyMarkup: menu type shows grid ──────────────────────────────
