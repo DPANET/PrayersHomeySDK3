@@ -2002,6 +2002,43 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       r.assistant_success && r.assistant_meta && r.assistant_meta.type === 'hadith'
       && r.assistant_meta.id === 999 && r.assistant_meta.collection === 'Muslim');
   }
+
+  // ── 20m. buildReplyMarkup: search pick-list gets a More page button ──────────
+  {
+    const withMore = buildReplyMarkup({ type: 'search', searchType: 'hadith', hasMore: true });
+    const flat = withMore && withMore.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    const noMore = buildReplyMarkup({ type: 'search', searchType: 'hadith', hasMore: false });
+    check('20m. search menu shows mr (More) only when more results remain',
+      withMore && cbData.includes('mr') && noMore === null);
+  }
+
+  // ── 20n. card.run() emits search meta (with hasMore) for a numbered pick-list ─
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => {
+        await runTool('search_hadith', { query: 'patience' });
+        return '1. *Bukhari #1*\n2. *Muslim #2*\nPick a number.';
+      },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'patience', offset: 0, total: 13,
+          results: [
+            { n: 1, ref: 'Bukhari #1', title: 'Faith', snippet: 'a', selector: { id: 1 } },
+            { n: 2, ref: 'Muslim #2',  title: 'Faith', snippet: 'b', selector: { id: 2 } },
+          ],
+        }),
+      },
+    });
+    const r = await card.run({ text: 'hadiths about patience', sender: '222', mode: 'reply' });
+    check('20n. card.run() returns search meta with hasMore for a pick-list',
+      r.assistant_success && r.assistant_meta && r.assistant_meta.type === 'search'
+      && r.assistant_meta.searchType === 'hadith' && r.assistant_meta.hasMore === true);
+  }
 }
 
   // ── summary ──────────────────────────────────────────────────────────────────
