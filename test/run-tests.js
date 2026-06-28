@@ -1697,6 +1697,60 @@ section('17. Pagination guard — "more" offset only honoured after a real menu'
   }
 }
 
+// ============================================================================
+section('18. Asbab al-Nuzul mode — get_tafsir leads with Ibn Kathir when asbab:true');
+// ============================================================================
+{
+  const ContentTools = require(path.join(LIB, 'ContentTools'));
+
+  // Record which edition was passed to fetch_tafsir on the FIRST successful call.
+  function makeTafsirFetch(respondTo) {
+    let firstEdition = null;
+    const fetch = makeMcpFetch({
+      fetch_tafsir: (a) => {
+        const ed = (a.editions || [])[0];
+        if (!firstEdition) firstEdition = ed;
+        if (respondTo === ed) return { results: { [ed]: [{ text: '<p>Commentary text</p>' }] } };
+        return { results: {} }; // no text for other editions
+      },
+      fetch_grounding_rules: () => ({}),
+    });
+    return { fetch, getFirstEdition: () => firstEdition };
+  }
+
+  // 18a. asbab:true (English) → Ibn Kathir is the first edition attempted.
+  {
+    const { fetch, getFirstEdition } = makeTafsirFetch('en-ibn-kathir');
+    const out = await ContentTools.getTafsir({ surah: 2, ayah: 255, asbab: true, fetchImpl: fetch });
+    check('18a. getTafsir with asbab:true leads with en-ibn-kathir (English)',
+      getFirstEdition() === 'en-ibn-kathir' && out.block.length > 0);
+  }
+
+  // 18b. asbab:true + language:arabic → ar-ibn-kathir is attempted first.
+  {
+    const { fetch, getFirstEdition } = makeTafsirFetch('ar-ibn-kathir');
+    const out = await ContentTools.getTafsir({ surah: 2, ayah: 255, asbab: true, language: 'arabic', fetchImpl: fetch });
+    check('18b. getTafsir with asbab:true + Arabic leads with ar-ibn-kathir',
+      getFirstEdition() === 'ar-ibn-kathir' && out.block.length > 0);
+  }
+
+  // 18c. Default (no asbab) → concise chain first (Tazkirul for English).
+  {
+    const { fetch, getFirstEdition } = makeTafsirFetch('en-tazkirul-quran');
+    const out = await ContentTools.getTafsir({ surah: 2, ayah: 255, fetchImpl: fetch });
+    check('18c. getTafsir without asbab leads with en-tazkirul-quran (normal chain unchanged)',
+      getFirstEdition() === 'en-tazkirul-quran' && out.block.length > 0);
+  }
+
+  // 18d. asbab:true falls through to Ma'arif when Ibn Kathir has no entry for the ayah.
+  {
+    const { fetch, getFirstEdition } = makeTafsirFetch('en-maarif-ul-quran');
+    const out = await ContentTools.getTafsir({ surah: 2, ayah: 255, asbab: true, fetchImpl: fetch });
+    check('18d. asbab mode falls through to en-maarif-ul-quran when Ibn Kathir has no entry',
+      getFirstEdition() === 'en-ibn-kathir' && out.block.length > 0 && out.meta.edition === 'en-maarif-ul-quran');
+  }
+}
+
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
   console.log(`\x1b[1mRESULTS:\x1b[0m \x1b[32m${pass} passed\x1b[0m, ` +
