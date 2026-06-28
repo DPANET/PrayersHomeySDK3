@@ -1145,7 +1145,8 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
       { assistantState: { ['last_111']: Date.now() } }),
       { claudeComplete: echoComplete });
     const r = await card.run({ mode: 'reply', sender: '+111', text: 'hi' });
-    check('14f. reply: within rate-limit window → silent exit', r.assistant_reply === '' && r.assistant_success === false);
+    check('14f. reply: within rate-limit window → informative wait message (not silent)',
+      r.assistant_success === false && /wait|انتظار/i.test(r.assistant_reply || ''));
     void today;
   }
   {
