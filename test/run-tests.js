@@ -1544,9 +1544,9 @@ section('16. Book-scoped hadith search — resolveBooks + tool routing');
     check('16w. getHadith books:[Muslim] picks Muslim even though Bukhari scores higher',
       /Muslim narration/.test(gM.block) && gM.meta.error == null);
 
-    const gNone = await ContentTools.getHadith({ query: 'patience', books: ['Darimi'], fetchImpl });
+    const gNone = await ContentTools.getHadith({ query: 'patience', books: ['Nasai'], fetchImpl });
     check('16x. getHadith book with no topical match → noMatch error naming the book',
-      gNone.block === '' && gNone.meta.noMatch === true && /darimi/i.test(gNone.meta.error));
+      gNone.block === '' && gNone.meta.noMatch === true && /nasai/i.test(gNone.meta.error));
 
     // Random WITHIN a book ("random hadith from Bukhari", no query): must draw from
     // the requested collection only — the old global-id path ignored the filter and
@@ -1565,9 +1565,9 @@ section('16. Book-scoped hadith search — resolveBooks + tool routing');
     }
     check('16z. getHadith random + books:[Bukhari,Muslim] stays within the two (20 draws)', randSet);
 
-    const gRandNone = await ContentTools.getHadith({ books: ['Darimi'], fetchImpl });
+    const gRandNone = await ContentTools.getHadith({ books: ['Nasai'], fetchImpl });
     check('16aa. getHadith random + book with no rows → noMatch error, never silent',
-      gRandNone.block === '' && gRandNone.meta.noMatch === true && /darimi/i.test(gRandNone.meta.error));
+      gRandNone.block === '' && gRandNone.meta.noMatch === true && /nasai/i.test(gRandNone.meta.error));
 
     // Pool stability — first call returns a pool, second call served from cache skips MCP.
     let searchCalls = 0;
@@ -1625,6 +1625,75 @@ section('16. Book-scoped hadith search — resolveBooks + tool routing');
       seenSearch && Array.isArray(seenSearch.books) && seenSearch.books[0] === 'Bukhari');
     check('16l. get_hadith forwards the books scope to ContentTools.getHadith',
       seenGet && Array.isArray(seenGet.books) && seenGet.books[0] === 'Bukhari');
+  }
+}
+
+// ============================================================================
+section('17. Pagination guard — "more" offset only honoured after a real menu');
+// ============================================================================
+{
+  const IslamicAssistantCard = require(path.join(LIB, 'IslamicAssistantCard'));
+  const mkCard = (settings, deps) => {
+    const homey = createMockHomey({ settings });
+    return { card: new IslamicAssistantCard(homey, deps), homey };
+  };
+  const cfg = (over = {}) => ({ assistant: Object.assign({
+    enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50,
+  }, over) });
+  const mkSearchFatwa = (sink) => async (a) => {
+    sink.offset = a.offset;
+    return { type: 'fatwa', query: a.query, offset: a.offset, total: 12,
+      results: Array.from({ length: 5 }, (_, i) => ({ n: a.offset + i + 1, ref: 'F' + i, selector: { id: i } })) };
+  };
+
+  // 17a. "more" after a SINGLE direct get_fatwa (no menu shown) → the model's
+  //      invented offset:5 is reset to 0, so the list starts at item 1, not 6.
+  {
+    const sink = {};
+    const contentTools = { getFatwa: async () => ({ block: 'FATWA_BLOCK', meta: { id: 271695 } }),
+      searchFatwa: mkSearchFatwa(sink) };
+    const claudeComplete = async ({ runTool, messages }) => {
+      const last = messages[messages.length - 1].content;
+      if (/more|المزيد/.test(last)) { await runTool('search_fatwa', { query: 'sahw', offset: 5 }); return 'MENU'; }
+      return (await runTool('get_fatwa', { query: 'sahw' })).placeholder;
+    };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    await card.run({ mode: 'reply', sender: '+901', text: 'ruling on sujood as-sahw' });
+    await card.run({ mode: 'reply', sender: '+901', text: 'more' });
+    check('17a. "more" after a direct get_fatwa resets the invented offset to 0 (page 1)',
+      sink.offset === 0);
+  }
+
+  // 17b. "more" after a REAL search menu of the same type+query → offset 5 honoured.
+  {
+    const sink = {};
+    const contentTools = { searchFatwa: mkSearchFatwa(sink) };
+    const claudeComplete = async ({ runTool, messages }) => {
+      const last = messages[messages.length - 1].content;
+      if (/more|المزيد/.test(last)) { await runTool('search_fatwa', { query: 'sahw', offset: 5 }); return 'MENU2'; }
+      await runTool('search_fatwa', { query: 'sahw', offset: 0 }); return 'MENU1';
+    };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    await card.run({ mode: 'reply', sender: '+902', text: 'show me fatwas about sahw' });
+    await card.run({ mode: 'reply', sender: '+902', text: 'more' });
+    check('17b. "more" after a real menu (same type+query) honours offset 5 (page 2)',
+      sink.offset === 5);
+  }
+
+  // 17c. A different query after a menu is a fresh search → offset reset to 0.
+  {
+    const sink = {};
+    const contentTools = { searchFatwa: mkSearchFatwa(sink) };
+    const claudeComplete = async ({ runTool, messages }) => {
+      const last = messages[messages.length - 1].content;
+      if (/zakat/.test(last)) { await runTool('search_fatwa', { query: 'zakat', offset: 5 }); return 'MENU2'; }
+      await runTool('search_fatwa', { query: 'sahw', offset: 0 }); return 'MENU1';
+    };
+    const { card } = mkCard(cfg(), { claudeComplete, contentTools });
+    await card.run({ mode: 'reply', sender: '+903', text: 'show me fatwas about sahw' });
+    await card.run({ mode: 'reply', sender: '+903', text: 'now show fatwas about zakat' });
+    check('17c. a different query after a menu starts fresh at offset 0, not 5',
+      sink.offset === 0);
   }
 }
 
