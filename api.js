@@ -191,7 +191,7 @@ module.exports = {
     const hijri = new HijriCalendar(homey.settings.get('hijriConfig') || {});
 
     return {
-      city:        loc.city    || null,
+      city:        loc.city || tz.split('/').pop().replace(/_/g, ' ') || null,
       country:     loc.country || null,
       hijriDate:   hijri.todayInfo(),
       overrideNext,

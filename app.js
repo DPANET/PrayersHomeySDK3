@@ -120,7 +120,7 @@ class App extends Homey.App {
     const minutesUntilNext = nextMs ? Math.round((nextMs - nowMs) / 60000) : null;
 
     const result = {
-      city:        loc.city    || null,
+      city:        loc.city || tz.split('/').pop().replace(/_/g, ' ') || null,
       country:     loc.country || null,
       hijriDate:   hijri.todayInfo(),
       overrideNext,
