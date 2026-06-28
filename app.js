@@ -238,28 +238,14 @@ class App extends Homey.App {
             if (!res.block) return null;
             return { text: res.block, meta: { type: 'verse', ...res.meta } };
           }
-          if (cmd === 'nx') {
-            const sub = parts[1];
-            if (sub === 'q') {
-              const res = await tools.getQuran({ language });
-              if (!res.block) return null;
-              return { text: res.block, meta: { type: 'verse', ...res.meta } };
-            }
-            if (sub === 'h') {
-              const res = await tools.getHadith({ language });
-              if (!res.block) return null;
-              return { text: res.block, meta: { type: 'hadith', ...res.meta } };
-            }
-            if (sub === 'd') {
-              const res = await tools.getDua({ language });
-              if (!res.block) return null;
-              return { text: res.block, meta: { type: 'dua', ...res.meta } };
-            }
-            if (sub === 'he') {
-              const res = await tools.getHadithExplained({ language });
-              if (!res.block) return null;
-              return { text: res.block, meta: { type: 'hadith_explained', ...res.meta } };
-            }
+          if (cmd === 'mr') {
+            // "More on this topic" — synthetic "more" routed through Claude.
+            // Claude reads per-sender history, recognises the previous content,
+            // and calls the right search_* tool with the same topic at offset 0.
+            const synth = language === 'arabic' ? 'المزيد' : 'more';
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply' });
+            if (!result || !result.assistant_success) return null;
+            return { text: result.assistant_reply, meta: result.assistant_meta };
           }
           if (cmd === 'dm') {
             const category  = parts[1];

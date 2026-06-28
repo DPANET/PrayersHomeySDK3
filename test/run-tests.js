@@ -1850,8 +1850,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'verse', surahNum: 2, ayahNum: 255 });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20a. verse markup has tf|2:255 and ab|2:255 and nx|q',
-      rm && cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.includes('nx|q'));
+    check('20a. verse markup has tf|2:255 and ab|2:255 and mr (More)',
+      rm && cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.includes('mr'));
   }
 
   // ── 20b. buildReplyMarkup: tafsir buttons ───────────────────────────────────
@@ -1868,8 +1868,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'hadith', url: 'https://sunnah.com/bukhari:1' });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20c. hadith markup has ex|h and nx|h and source URL',
-      rm && cbData.includes('ex|h') && cbData.includes('nx|h') && cbData.includes('https://sunnah.com/bukhari:1'));
+    check('20c. hadith markup has ex|h and mr (More) and source URL',
+      rm && cbData.includes('ex|h') && cbData.includes('mr') && cbData.includes('https://sunnah.com/bukhari:1'));
   }
 
   // ── 20d. buildReplyMarkup: dua with more entries → shows "Rest of set" ──────
@@ -1877,17 +1877,19 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'dua', category: 'anger', count: 2, total: 5, nextOffset: 2 });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20d. dua markup shows "➕ Rest of set" when nextOffset < total',
+    check('20d. dua markup shows "➕ Rest of set" when nextOffset < total, and mr (More)',
       rm && flat.some(b => b.callback_data && b.callback_data.startsWith('dm|anger|2'))
-      && cbData.includes('nx|d'));
+      && cbData.includes('mr'));
   }
 
-  // ── 20e. buildReplyMarkup: dua fully shown → no "Rest of set" ───────────────
+  // ── 20e. buildReplyMarkup: dua fully shown → no "Rest of set", still has More ─
   {
     const rm = buildReplyMarkup({ type: 'dua', category: 'anger', count: 5, total: 5, nextOffset: 5 });
     const flat = rm && rm.inline_keyboard.flat();
-    check('20e. dua markup hides "Rest of set" when all entries shown',
-      rm && !flat.some(b => b.callback_data && b.callback_data.startsWith('dm|')));
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20e. dua markup hides "Rest of set" when all entries shown, still has mr (More)',
+      rm && !flat.some(b => b.callback_data && b.callback_data.startsWith('dm|'))
+      && cbData.includes('mr'));
   }
 
   // ── 20f. buildReplyMarkup: fatwa with URL ───────────────────────────────────
@@ -1921,7 +1923,7 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
   {
     const allTokens = [
       'tf|2:255', 'ab|114:7', 'qa|18:110',
-      'nx|q', 'nx|h', 'nx|d', 'nx|he',
+      'mr',
       'ex|h', 'dm|morning-and-evening|25', 'nf|' + 'A'.repeat(40),
       'px', 'mc', 'mi|hadith', 'mi|quran', 'mi|dua', 'mi|fatwa',
     ];
