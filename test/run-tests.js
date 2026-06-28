@@ -1568,6 +1568,36 @@ section('16. Book-scoped hadith search — resolveBooks + tool routing');
     const gRandNone = await ContentTools.getHadith({ books: ['Darimi'], fetchImpl });
     check('16aa. getHadith random + book with no rows → noMatch error, never silent',
       gRandNone.block === '' && gRandNone.meta.noMatch === true && /darimi/i.test(gRandNone.meta.error));
+
+    // Pool stability — first call returns a pool, second call served from cache skips MCP.
+    let searchCalls = 0;
+    const trackingFetch = makeMcpFetch({
+      search_hadith: () => { searchCalls++; return { results: CORPUS }; },
+      fetch_hadith:  (a) => ({ hadith: CORPUS.find(r => r.hadith_id === a.hadith_id) || {} }),
+    });
+    const r1 = await ContentTools.searchHadith({ query: 'patience', fetchImpl: trackingFetch });
+    check('16ab. searchHadith returns a pool array in the result',
+      Array.isArray(r1.pool) && r1.pool.length === r1.total);
+    const r2 = await ContentTools.searchHadith({ query: 'patience', offset: 5, pool: r1.pool, fetchImpl: trackingFetch });
+    check('16ac. searchHadith with cached pool skips MCP search (search_hadith not called again)',
+      searchCalls === 1 && r2.total === r1.total);
+
+    // Collection balancing — multi-book scope interleaves results so both collections appear.
+    const MIXED_CORPUS = [
+      { collection_slug: 'bukhari', hadith_id: 1, similarity: 0.99, collection_name_english: 'Sahih al-Bukhari', english: 'B1', arabic: '' },
+      { collection_slug: 'bukhari', hadith_id: 2, similarity: 0.98, collection_name_english: 'Sahih al-Bukhari', english: 'B2', arabic: '' },
+      { collection_slug: 'bukhari', hadith_id: 3, similarity: 0.97, collection_name_english: 'Sahih al-Bukhari', english: 'B3', arabic: '' },
+      { collection_slug: 'muslim',  hadith_id: 4, similarity: 0.60, collection_name_english: 'Sahih Muslim',     english: 'M1', arabic: '' },
+      { collection_slug: 'muslim',  hadith_id: 5, similarity: 0.55, collection_name_english: 'Sahih Muslim',     english: 'M2', arabic: '' },
+    ];
+    const balanceFetch = makeMcpFetch({
+      search_hadith: () => ({ results: MIXED_CORPUS }),
+      fetch_hadith:  (a) => ({ hadith: MIXED_CORPUS.find(r => r.hadith_id === a.hadith_id) || {} }),
+    });
+    const rBal = await ContentTools.searchHadith({ query: 'patience', books: ['Bukhari', 'Muslim'], fetchImpl: balanceFetch });
+    const slugs = rBal.pool.slice(0, 4).map(r => r.collection_slug);
+    check('16ad. multi-book scope interleaves results so both collections appear in first 4 rows',
+      slugs.includes('bukhari') && slugs.includes('muslim') && slugs[0] !== slugs[1]);
   }
 
   // Routing: the card forwards the books arg to ContentTools.searchHadith / getHadith.
