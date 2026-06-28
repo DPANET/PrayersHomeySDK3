@@ -1837,6 +1837,171 @@ section('19. Dua-of-the-day theme fix — resolution, false-match guard, migrati
   }
 }
 
+// ============================================================================
+section('20. Inline button system — buildReplyMarkup, getDua offset, _extractMeta');
+// ============================================================================
+{
+  const { buildReplyMarkup } = require(path.join(LIB, 'TelegramBotListener'));
+  const ContentTools          = require(path.join(LIB, 'ContentTools'));
+  const IslamicAssistantCard  = require(path.join(LIB, 'IslamicAssistantCard'));
+
+  // ── 20a. buildReplyMarkup: verse buttons ────────────────────────────────────
+  {
+    const rm = buildReplyMarkup({ type: 'verse', surahNum: 2, ayahNum: 255 });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20a. verse markup has tf|2:255 and ab|2:255 and nx|q',
+      rm && cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.includes('nx|q'));
+  }
+
+  // ── 20b. buildReplyMarkup: tafsir buttons ───────────────────────────────────
+  {
+    const rm = buildReplyMarkup({ type: 'tafsir', surahNum: 2, ayahNum: 255 });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20b. tafsir markup has ab|2:255 and qa|2:255',
+      rm && cbData.includes('ab|2:255') && cbData.includes('qa|2:255'));
+  }
+
+  // ── 20c. buildReplyMarkup: hadith buttons ───────────────────────────────────
+  {
+    const rm = buildReplyMarkup({ type: 'hadith', url: 'https://sunnah.com/bukhari:1' });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20c. hadith markup has ex|h and nx|h and source URL',
+      rm && cbData.includes('ex|h') && cbData.includes('nx|h') && cbData.includes('https://sunnah.com/bukhari:1'));
+  }
+
+  // ── 20d. buildReplyMarkup: dua with more entries → shows "Rest of set" ──────
+  {
+    const rm = buildReplyMarkup({ type: 'dua', category: 'anger', count: 2, total: 5, nextOffset: 2 });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20d. dua markup shows "➕ Rest of set" when nextOffset < total',
+      rm && flat.some(b => b.callback_data && b.callback_data.startsWith('dm|anger|2'))
+      && cbData.includes('nx|d'));
+  }
+
+  // ── 20e. buildReplyMarkup: dua fully shown → no "Rest of set" ───────────────
+  {
+    const rm = buildReplyMarkup({ type: 'dua', category: 'anger', count: 5, total: 5, nextOffset: 5 });
+    const flat = rm && rm.inline_keyboard.flat();
+    check('20e. dua markup hides "Rest of set" when all entries shown',
+      rm && !flat.some(b => b.callback_data && b.callback_data.startsWith('dm|')));
+  }
+
+  // ── 20f. buildReplyMarkup: fatwa with URL ───────────────────────────────────
+  {
+    const rm = buildReplyMarkup({ type: 'fatwa', url: 'https://islamqa.info/ar/1',
+      categories: ['Prayer'] });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20f. fatwa markup has source URL and more button',
+      rm && cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data === 'nf|Prayer'));
+  }
+
+  // ── 20g. buildReplyMarkup: menu type shows grid ──────────────────────────────
+  {
+    const rm = buildReplyMarkup({ type: 'menu' });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data || b.url);
+    check('20g. menu markup has hadith/quran/dua/fatwa items and prayer button',
+      rm && cbData.includes('mi|hadith') && cbData.includes('mi|quran')
+      && cbData.includes('mi|dua') && cbData.includes('mi|fatwa') && cbData.includes('px'));
+  }
+
+  // ── 20h. buildReplyMarkup: null for unknown / no type ───────────────────────
+  {
+    check('20h. buildReplyMarkup returns null for empty/unknown meta',
+      buildReplyMarkup(null) === null && buildReplyMarkup({ type: 'unknown' }) === null
+      && buildReplyMarkup({}) === null);
+  }
+
+  // ── 20i. All callback_data tokens are ≤ 64 bytes (Telegram hard limit) ──────
+  {
+    const allTokens = [
+      'tf|2:255', 'ab|114:7', 'qa|18:110',
+      'nx|q', 'nx|h', 'nx|d', 'nx|he',
+      'ex|h', 'dm|morning-and-evening|25', 'nf|' + 'A'.repeat(40),
+      'px', 'mc', 'mi|hadith', 'mi|quran', 'mi|dua', 'mi|fatwa',
+    ];
+    const overLimit = allTokens.filter(t => Buffer.byteLength(t, 'utf8') > 64);
+    check('20i. all callback_data tokens are ≤ 64 bytes',
+      overLimit.length === 0, overLimit.join(', '));
+  }
+
+  // ── 20j. getDua with offset skips entries and reports nextOffset ─────────────
+  {
+    const full  = await ContentTools.getDua({ query: 'morning and evening', language: 'english' });
+    const totalEntries = full.meta.total;
+    const firstShown   = full.meta.count;
+    if (firstShown > 0 && totalEntries > firstShown) {
+      const rest = await ContentTools.getDua({
+        query: 'morning and evening', language: 'english', offset: firstShown,
+      });
+      check('20j. getDua with offset skips already-shown entries and advances nextOffset',
+        rest.meta.offset === firstShown
+        && rest.meta.nextOffset === firstShown + rest.meta.count
+        && rest.meta.nextOffset <= totalEntries);
+    } else {
+      note('20j. morning-and-evening chapter fits in one batch — offset test skipped');
+      check('20j. getDua offset: nextOffset = offset + count', full.meta.nextOffset === full.meta.count);
+    }
+  }
+
+  // ── 20k. _extractMeta from IslamicAssistantCard for each relay tool ──────────
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey  = createMockHomey({ settings: {} });
+    const card   = new IslamicAssistantCard(homey, {});
+    const makeDeferred = (name, meta) => [{ name, meta }];
+
+    const verse   = card._extractMeta(makeDeferred('get_quran',   { surahNum: 2, ayahNum: 255 }));
+    const tafsir  = card._extractMeta(makeDeferred('get_tafsir',  { surahNum: 2, ayahNum: 255 }));
+    const hadith  = card._extractMeta(makeDeferred('get_hadith',  { id: 100, collection: 'Bukhari' }));
+    const exp     = card._extractMeta(makeDeferred('get_hadith_explained', { id: 200, grade: 'sahih' }));
+    const dua     = card._extractMeta(makeDeferred('get_dua',     { category: 'anger', count: 3, total: 5 }));
+    const fatwa   = card._extractMeta(makeDeferred('get_fatwa',   { id: 1, url: 'https://islamqa.info/1' }));
+    const surah   = card._extractMeta(makeDeferred('get_surah_link', { surahNum: 2 }));
+    const none    = card._extractMeta([]);
+    const nully   = card._extractMeta(null);
+
+    check('20k. _extractMeta returns correct type for all relay tools',
+      verse.type === 'verse'    && verse.surahNum === 2
+      && tafsir.type === 'tafsir'   && tafsir.ayahNum === 255
+      && hadith.type === 'hadith'   && hadith.collection === 'Bukhari'
+      && exp.type === 'hadith_explained' && exp.grade === 'sahih'
+      && dua.type === 'dua'     && dua.category === 'anger'
+      && fatwa.type === 'fatwa' && fatwa.id === 1
+      && surah.type === 'surah_link'
+      && none === null && nully === null);
+  }
+
+  // ── 20l. card.run() returns assistant_meta ───────────────────────────────────
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => {
+        await runTool('get_hadith', {});
+        return 'Here is a hadith: {{BLOCK1}}';
+      },
+      contentTools: {
+        getHadith: async () => ({
+          block: '*Hadith text*',
+          meta: { id: 999, collection: 'Muslim', url: 'https://sunnah.com/x' },
+        }),
+      },
+    });
+    const r = await card.run({ text: 'give me a hadith', sender: '111', mode: 'reply' });
+    check('20l. card.run() in reply mode returns assistant_meta with correct type',
+      r.assistant_success && r.assistant_meta && r.assistant_meta.type === 'hadith'
+      && r.assistant_meta.id === 999 && r.assistant_meta.collection === 'Muslim');
+  }
+}
+
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
   console.log(`\x1b[1mRESULTS:\x1b[0m \x1b[32m${pass} passed\x1b[0m, ` +

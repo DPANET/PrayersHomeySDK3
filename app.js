@@ -12,6 +12,8 @@ const IslamicAssistantCard  = require('./lib/IslamicAssistantCard');
 const PromptLibrary         = require('./lib/PromptLibrary');
 const TelegramBotListener   = require('./lib/TelegramBotListener');
 const { sendTelegramMessage } = require('./lib/TelegramBotListener');
+let _ContentTools = null;
+function loadContentTools() { return _ContentTools || (_ContentTools = require('./lib/ContentTools')); }
 const { buildParams, resolveCoords } = require('./lib/calc');
 
 class App extends Homey.App {
@@ -205,7 +207,128 @@ class App extends Homey.App {
             + `(success=${result && result.assistant_success})`);
           return null;
         }
-        return result.assistant_reply || null;
+        const replyText = result.assistant_reply || null;
+        if (!replyText) return null;
+        return { text: replyText, meta: result.assistant_meta || null };
+      },
+      onCallback: async (data, chatId, _messageId) => {
+        const cfg      = this.homey.settings.get('assistant') || {};
+        const language = cfg.language || 'both';
+        const tools    = loadContentTools();
+        const parts    = data.split('|');
+        const cmd      = parts[0];
+
+        try {
+          // ── Direct content-tool fetches (no Claude) ───────────────────────
+          if (cmd === 'tf') {
+            const [s, a] = parts[1].split(':').map(Number);
+            const res = await tools.getTafsir({ surah: s, ayah: a, language });
+            if (!res.block) return null;
+            return { text: res.block, meta: { type: 'tafsir', ...res.meta } };
+          }
+          if (cmd === 'ab') {
+            const [s, a] = parts[1].split(':').map(Number);
+            const res = await tools.getTafsir({ surah: s, ayah: a, asbab: true, language });
+            if (!res.block) return null;
+            return { text: res.block, meta: { type: 'tafsir', ...res.meta } };
+          }
+          if (cmd === 'qa') {
+            const [s, a] = parts[1].split(':').map(Number);
+            const res = await tools.getQuran({ surah: s, ayah: a, language });
+            if (!res.block) return null;
+            return { text: res.block, meta: { type: 'verse', ...res.meta } };
+          }
+          if (cmd === 'nx') {
+            const sub = parts[1];
+            if (sub === 'q') {
+              const res = await tools.getQuran({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'verse', ...res.meta } };
+            }
+            if (sub === 'h') {
+              const res = await tools.getHadith({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'hadith', ...res.meta } };
+            }
+            if (sub === 'd') {
+              const res = await tools.getDua({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'dua', ...res.meta } };
+            }
+            if (sub === 'he') {
+              const res = await tools.getHadithExplained({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'hadith_explained', ...res.meta } };
+            }
+          }
+          if (cmd === 'dm') {
+            const category  = parts[1];
+            const offset    = parseInt(parts[2], 10) || 0;
+            const res = await tools.getDua({ category, language, offset });
+            if (!res.block) return null;
+            return { text: res.block, meta: { type: 'dua', ...res.meta } };
+          }
+          if (cmd === 'nf') {
+            const query = parts[1] && parts[1].trim() ? parts[1] : undefined;
+            const res = await tools.getFatwa({ query, language });
+            if (!res.block) return null;
+            return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
+          }
+          if (cmd === 'mi') {
+            // Menu item shortcuts — same as fast-slash but via button
+            const sub = parts[1];
+            if (sub === 'hadith') {
+              const res = await tools.getHadith({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'hadith', ...res.meta } };
+            }
+            if (sub === 'quran') {
+              const res = await tools.getQuran({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'verse', ...res.meta } };
+            }
+            if (sub === 'dua') {
+              const res = await tools.getDua({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'dua', ...res.meta } };
+            }
+            if (sub === 'fatwa') {
+              const res = await tools.getFatwa({ language });
+              if (!res.block) return null;
+              return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
+            }
+          }
+          // ── Menu grid ─────────────────────────────────────────────────────
+          if (cmd === 'mc') {
+            const menuText = language === 'arabic'
+              ? 'اختر ما تريد:'
+              : (language === 'english' ? 'Choose what you want:' : 'اختر ما تريد:\nChoose what you want:');
+            return { text: menuText, meta: { type: 'menu' } };
+          }
+          // ── Via Claude (needs context / judgment) ──────────────────────────
+          if (cmd === 'ex') {
+            // Explain the hadith Claude just showed — history has the reference.
+            const synth = language === 'arabic'
+              ? 'اشرح الحديث الذي أرسلته'
+              : 'Explain the hadith you just showed me';
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply' });
+            if (!result || !result.assistant_success) return null;
+            return { text: result.assistant_reply, meta: result.assistant_meta };
+          }
+          if (cmd === 'px') {
+            // Prayer times — Claude reads get_prayer_data
+            const synth = language === 'arabic'
+              ? 'كم الوقت المتبقي حتى الصلاة القادمة؟'
+              : 'What are the prayer times today and when is the next prayer?';
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply' });
+            if (!result || !result.assistant_success) return null;
+            return { text: result.assistant_reply, meta: result.assistant_meta };
+          }
+        } catch (e) {
+          this.logger.error('TelegramBotListener onCallback error', e);
+          return null;
+        }
+        return null;
       },
     });
     this._telegramListener.start();
