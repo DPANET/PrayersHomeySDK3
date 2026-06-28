@@ -242,8 +242,9 @@ class App extends Homey.App {
             // "More on this topic" — synthetic "more" routed through Claude.
             // Claude reads per-sender history, recognises the previous content,
             // and calls the right search_* tool with the same topic at offset 0.
+            // source:'callback' exempts button taps from the per-sender rate limiter.
             const synth = language === 'arabic' ? 'المزيد' : 'more';
-            const result = await card.run({ text: synth, sender: chatId, mode: 'reply' });
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
             if (!result || !result.assistant_success) return null;
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }
@@ -253,12 +254,6 @@ class App extends Homey.App {
             const res = await tools.getDua({ category, language, offset });
             if (!res.block) return null;
             return { text: res.block, meta: { type: 'dua', ...res.meta } };
-          }
-          if (cmd === 'nf') {
-            const query = parts[1] && parts[1].trim() ? parts[1] : undefined;
-            const res = await tools.getFatwa({ query, language });
-            if (!res.block) return null;
-            return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
           }
           if (cmd === 'mi') {
             // Menu item shortcuts — same as fast-slash but via button
@@ -297,7 +292,7 @@ class App extends Homey.App {
             const synth = language === 'arabic'
               ? 'اشرح الحديث الذي أرسلته'
               : 'Explain the hadith you just showed me';
-            const result = await card.run({ text: synth, sender: chatId, mode: 'reply' });
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
             if (!result || !result.assistant_success) return null;
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }
@@ -306,7 +301,7 @@ class App extends Homey.App {
             const synth = language === 'arabic'
               ? 'كم الوقت المتبقي حتى الصلاة القادمة؟'
               : 'What are the prayer times today and when is the next prayer?';
-            const result = await card.run({ text: synth, sender: chatId, mode: 'reply' });
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
             if (!result || !result.assistant_success) return null;
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }

@@ -1899,8 +1899,9 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       categories: ['Prayer'] });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20f. fatwa markup has more button, no source URL',
-      rm && !cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data === 'nf|Prayer'));
+    check('20f. fatwa markup has More button (mr, consistent with other tools), no source URL',
+      rm && !cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data === 'mr')
+      && !flat.some(b => b.callback_data && b.callback_data.startsWith('nf|')));
   }
 
   // ── 20g. buildReplyMarkup: menu type shows grid ──────────────────────────────
