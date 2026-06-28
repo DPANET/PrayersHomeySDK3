@@ -1425,6 +1425,51 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
     check('15e. no duplicate hint when the model already mentioned "more"',
       r.assistant_reply === reply);
   }
+
+  // 15f. Consecutive "more" pages for the same query accumulate in pending state so any
+  //      result number from any page remains resolvable.
+  {
+    const contentTools = { searchHadith: async ({ query, offset }) => ({
+      type: 'hadith', query, offset: offset || 0, total: 10,
+      results: Array.from({ length: 5 }, (_, i) => ({
+        n: (offset || 0) + i + 1, ref: 'H' + ((offset || 0) + i), selector: { id: (offset || 0) + i },
+      })),
+    }) };
+    let turn = 0;
+    const claudeComplete = async ({ runTool }) => {
+      await runTool('search_hadith', { query: 'patience', offset: turn++ === 0 ? 0 : 5 });
+      return 'MENU';
+    };
+    const { card, homey } = mkCard(cfg(), { claudeComplete, contentTools });
+    await card.run({ mode: 'reply', sender: '+701', text: 'hadiths about patience' });
+    await card.run({ mode: 'reply', sender: '+701', text: 'more' });
+    const state = homey.settings.get('assistantState') || {};
+    const pending = Object.values(state).find(v => v && v.type === 'hadith' && v.query === 'patience');
+    check('15f. two pages of same query accumulate to 10 results in pending state',
+      pending && Array.isArray(pending.results) && pending.results.length === 10);
+  }
+
+  // 15g. A new search query resets the pending list — no cross-topic bleed.
+  {
+    const contentTools = { searchHadith: async ({ query, offset }) => ({
+      type: 'hadith', query, offset: offset || 0, total: 3,
+      results: Array.from({ length: 3 }, (_, i) => ({
+        n: i + 1, ref: query[0] + i, selector: { id: i },
+      })),
+    }) };
+    let turn = 0;
+    const claudeComplete = async ({ runTool }) => {
+      await runTool('search_hadith', { query: turn++ === 0 ? 'patience' : 'anger', offset: 0 });
+      return 'MENU';
+    };
+    const { card, homey } = mkCard(cfg(), { claudeComplete, contentTools });
+    await card.run({ mode: 'reply', sender: '+702', text: 'patience' });
+    await card.run({ mode: 'reply', sender: '+702', text: 'anger' });
+    const state = homey.settings.get('assistantState') || {};
+    const pending = Object.values(state).find(v => v && v.type === 'hadith');
+    check('15g. new search query resets the pick-list (only anger results remain)',
+      pending && pending.query === 'anger' && pending.results.length === 3);
+  }
 }
 
 // ============================================================================
