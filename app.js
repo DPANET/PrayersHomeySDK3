@@ -431,6 +431,22 @@ class App extends Homey.App {
       this.logger.log('Settings migration: removed 4 presets, refreshed dua_of_the_day + verse_reflection');
       this.homey.settings.set('promptLibraryV15Seeded', true);
     }
+    if (!this.homey.settings.get('promptLibraryV16Seeded')) {
+      // dua_of_the_day previously used abstract spiritual-state themes (tawakkul,
+      // guidance, gratitude, steadfastness) that have no chapter in the situational
+      // Hisn al-Muslim, so they resolved to nothing — or, worse, "tawakkul" silently
+      // mis-resolved to istikharah. Refresh to occasion-based themes that all resolve.
+      // CONDITIONAL: only overwrite if the stored prompt still bears the broken
+      // signature, so a user's own edits to this preset are preserved.
+      const def = PromptLibrary.DEFAULT_PRESETS.find(p => p.id === 'dua_of_the_day');
+      const broken = /tawakkul|steadfastness/i;
+      const lib = (this.homey.settings.get('promptLibrary') || []).map(p =>
+        (p && p.id === 'dua_of_the_day' && def && broken.test(p.prompt || ''))
+          ? { ...p, prompt: def.prompt } : p);
+      this.homey.settings.set('promptLibrary', lib);
+      this.logger.log('Settings migration: refreshed dua_of_the_day to occasion-based themes (where unedited)');
+      this.homey.settings.set('promptLibraryV16Seeded', true);
+    }
     if (!this.homey.settings.get('assistantPersonaV4Seeded')) {
       // Prior default persona said the fatwa answer is "appended automatically"; it is
       // now positioned via a placeholder. Clear that stale default so the corrected

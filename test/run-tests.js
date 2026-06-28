@@ -1751,6 +1751,92 @@ section('18. Asbab al-Nuzul mode — get_tafsir leads with Ibn Kathir when asbab
   }
 }
 
+// ============================================================================
+section('19. Dua-of-the-day theme fix — resolution, false-match guard, migration');
+// ============================================================================
+{
+  const ContentTools  = require(path.join(LIB, 'ContentTools'));
+  const PromptLibrary  = require(path.join(LIB, 'PromptLibrary'));
+  const resolve = ContentTools.resolveCategory;
+
+  // 19a. Every theme in the rewritten dua_of_the_day preset resolves to a real chapter.
+  {
+    const themes = ['seeking forgiveness', 'protection from worry and grief', 'anger',
+      'travel', 'contentment', 'entering the home', 'morning and evening'];
+    const unresolved = themes.filter(t => !resolve(t));
+    check('19a. all 7 dua_of_the_day themes resolve to a real Hisn chapter',
+      unresolved.length === 0);
+  }
+
+  // 19b. The tawakkul false-match is dead: "reliance on Allah" no longer mis-resolves.
+  {
+    const bad = ['reliance on Allah (tawakkul)', 'tawakkul', 'trust in Allah'];
+    const anyResolved = bad.filter(t => resolve(t));
+    check('19b. "tawakkul"/"reliance on Allah" returns null (no false istikharah match)',
+      anyResolved.length === 0);
+  }
+
+  // 19c. The contentment alias maps to the honest chapter (pleases/displeases you).
+  check('19c. "contentment" resolves to the something-pleases-happens chapter',
+    resolve('contentment') === 'something-pleases-happens');
+
+  // 19d. Existing resolutions are unregressed by the new stop-words.
+  {
+    const ok = resolve('anger') === 'anger'
+      && resolve('rain') === 'rain'
+      && resolve('entering the home') === 'entering-home'
+      && resolve('istikhara') === 'istikharah-seeking-allah'   // via alias, not the index
+      && resolve('sleep') === 'before-sleep'
+      && resolve('morning and evening') === 'morning-evening';
+    check('19d. existing dua resolutions still work after adding allah/god/lord stop-words', ok);
+  }
+
+  // 19e. The shipped default no longer carries the broken spiritual-state themes.
+  {
+    const def = PromptLibrary.DEFAULT_PRESETS.find(p => p.id === 'dua_of_the_day');
+    check('19e. DEFAULT dua_of_the_day prompt drops tawakkul/guidance/steadfastness',
+      def && !/tawakkul|steadfastness|guidance/i.test(def.prompt) && /entering the home/.test(def.prompt));
+  }
+
+  // 19f/g. V16 migration: rewrites a still-broken stored preset, preserves a user edit.
+  {
+    const def = PromptLibrary.DEFAULT_PRESETS.find(p => p.id === 'dua_of_the_day');
+    const OLD_BROKEN = 'A random selector ... 1 = reliance on Allah (tawakkul) ... 6 = steadfastness.';
+    const USER_EDIT  = 'My own custom dua-of-the-day wording with no broken markers.';
+
+    // Seed every prior/later seed flag TRUE so only V16 runs; library present so the
+    // seed blocks are skipped. (No prayerConfig/locationConfig → v1 path early-returns.)
+    const seedFlags = {};
+    for (const n of ['promptLibraryDuasSeeded', 'promptLibraryV2Seeded', 'promptLibraryV3Seeded',
+      'promptLibraryV4Seeded', 'promptLibraryV5Seeded', 'promptLibraryV6Seeded', 'promptLibraryV7Seeded',
+      'promptLibraryV8Seeded', 'promptLibraryV9Seeded', 'promptLibraryV10Seeded', 'promptLibraryV11Seeded',
+      'promptLibraryV12Seeded', 'promptLibraryV13Seeded', 'promptLibraryV14Seeded', 'promptLibraryV15Seeded',
+      'assistantPersonaV2Seeded', 'assistantPersonaV3Seeded', 'assistantPersonaV4Seeded']) seedFlags[n] = true;
+
+    const mkApp = (lib) => {
+      const homey = createMockHomey({ settings: Object.assign({
+        assistant: { enabled: false }, promptLibrary: lib,
+      }, seedFlags) });
+      const app = Object.create(App.prototype);
+      app.homey = homey;
+      app.logger = { log() {}, debug() {}, warn() {}, error() {} };
+      homey.app = app;
+      app._migrateSettings();
+      return homey.settings.get('promptLibrary');
+    };
+
+    const afterBroken = mkApp([{ id: 'dua_of_the_day', name: 'Dua of the day', prompt: OLD_BROKEN }]);
+    const fixed = afterBroken.find(p => p.id === 'dua_of_the_day');
+    check('19f. V16 migration rewrites a still-broken stored dua_of_the_day to the default',
+      fixed.prompt === def.prompt && !/tawakkul|steadfastness/i.test(fixed.prompt));
+
+    const afterEdited = mkApp([{ id: 'dua_of_the_day', name: 'Dua of the day', prompt: USER_EDIT }]);
+    const preserved = afterEdited.find(p => p.id === 'dua_of_the_day');
+    check('19g. V16 migration preserves a user-edited dua_of_the_day (no broken signature)',
+      preserved.prompt === USER_EDIT);
+  }
+}
+
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
   console.log(`\x1b[1mRESULTS:\x1b[0m \x1b[32m${pass} passed\x1b[0m, ` +
