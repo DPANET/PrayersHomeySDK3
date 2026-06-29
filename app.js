@@ -225,24 +225,28 @@ class App extends Homey.App {
             const nav = tools.navigateAyah(s, a, cmd === 'vn' ? 'next' : 'prev');
             const res = await tools.getQuran({ surah: nav.surah, ayah: nav.ayah, language });
             if (!res.block) return null;
+            card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
             return { text: res.block, meta: { type: 'verse', ...res.meta } };
           }
           if (cmd === 'tf') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getTafsir({ surah: s, ayah: a, language });
             if (!res.block) return null;
+            card.updateLastContent(chatId, 'get_tafsir', res.meta, res.block);
             return { text: res.block, meta: { type: 'tafsir', ...res.meta } };
           }
           if (cmd === 'ab') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getTafsir({ surah: s, ayah: a, asbab: true, language });
             if (!res.block) return null;
+            card.updateLastContent(chatId, 'get_tafsir', res.meta, res.block);
             return { text: res.block, meta: { type: 'tafsir', ...res.meta } };
           }
           if (cmd === 'qa') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getQuran({ surah: s, ayah: a, language });
             if (!res.block) return null;
+            card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
             return { text: res.block, meta: { type: 'verse', ...res.meta } };
           }
           if (cmd === 'sp') {
@@ -275,6 +279,7 @@ class App extends Homey.App {
             const offset    = parseInt(parts[2], 10) || 0;
             const res = await tools.getDua({ category, language, offset });
             if (!res.block) return null;
+            card.updateLastContent(chatId, 'get_dua', res.meta, res.block);
             return { text: res.block, meta: { type: 'dua', ...res.meta } };
           }
           if (cmd === 'mi') {
@@ -283,21 +288,25 @@ class App extends Homey.App {
             if (sub === 'hadith') {
               const res = await tools.getHadith({ language });
               if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_hadith', res.meta, res.block);
               return { text: res.block, meta: { type: 'hadith', ...res.meta } };
             }
             if (sub === 'quran') {
               const res = await tools.getQuran({ language });
               if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
               return { text: res.block, meta: { type: 'verse', ...res.meta } };
             }
             if (sub === 'dua') {
               const res = await tools.getDua({ language });
               if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_dua', res.meta, res.block);
               return { text: res.block, meta: { type: 'dua', ...res.meta } };
             }
             if (sub === 'fatwa') {
               const res = await tools.getFatwa({ language });
               if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_fatwa', res.meta, res.block);
               return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
             }
           }
