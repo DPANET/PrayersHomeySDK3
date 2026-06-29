@@ -266,9 +266,53 @@ class App extends Homey.App {
             return { text: result.text, meta: result.meta };
           }
           if (cmd === 'mr') {
-            // "More on this topic" — synthetic "more" routed through Claude.
-            // Used for content cards (verse/hadith) and single-item follow-ups.
-            // source:'callback' exempts button taps from the per-sender rate limiter.
+            // "More" — deterministic: type is always encoded in parts[1].
+            // With query (parts[2]) → search pick menu (no Claude).
+            // Without query → random new item of that type (no Claude).
+            const type  = (parts[1] || '').toLowerCase();
+            const query = parts.slice(2).join('|').trim();  // rejoin in case query had |
+
+            if (!type) {
+              // Bare 'mr' (legacy/unknown) — keep old synthetic path as safety net.
+              const synth = language === 'arabic' ? 'المزيد' : 'more';
+              const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
+              if (!result || !result.assistant_success) return null;
+              return { text: result.assistant_reply, meta: result.assistant_meta };
+            }
+
+            if (query && (type === 'hadith' || type === 'quran' || type === 'fatwa')) {
+              const result = await card.startSearchFromQuery(chatId, type, query, language);
+              if (!result || !result.text) return null;
+              return { text: result.text, meta: result.meta };
+            }
+
+            if (type === 'hadith' || type === 'hadith_explained') {
+              const isExp = type === 'hadith_explained';
+              const res = isExp ? await tools.getHadithExplained({ language }) : await tools.getHadith({ language });
+              const toolName = isExp ? 'get_hadith_explained' : 'get_hadith';
+              if (!res.block) return null;
+              card.updateLastContent(chatId, toolName, res.meta, res.block);
+              return { text: res.block, meta: { type, ...res.meta } };
+            }
+            if (type === 'quran') {
+              const res = await tools.getQuran({ language });
+              if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
+              return { text: res.block, meta: { type: 'verse', ...res.meta } };
+            }
+            if (type === 'dua') {
+              const res = await tools.getDua({ language });
+              if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_dua', res.meta, res.block);
+              return { text: res.block, meta: { type: 'dua', ...res.meta } };
+            }
+            if (type === 'fatwa') {
+              const res = await tools.getFatwa({ language });
+              if (!res.block) return null;
+              card.updateLastContent(chatId, 'get_fatwa', res.meta, res.block);
+              return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
+            }
+            // Unknown type — synthetic fallback.
             const synth = language === 'arabic' ? 'المزيد' : 'more';
             const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
             if (!result || !result.assistant_success) return null;
@@ -317,12 +361,21 @@ class App extends Homey.App {
               : (language === 'english' ? 'Choose what you want:' : 'اختر ما تريد:\nChoose what you want:');
             return { text: menuText, meta: { type: 'menu' } };
           }
-          // ── Via Claude (needs context / judgment) ──────────────────────────
+          // ── Via Claude (needs generation) ─────────────────────────────────
           if (cmd === 'ex') {
-            // Explain the hadith Claude just showed — history has the reference.
+            // Explain the last-shown hadith. Selection is deterministic (reads
+            // lastContent directly); only the explanation generation goes to Claude.
+            const lastItem = card.getLastContent(chatId);
+            if (!lastItem) {
+              const msg = language === 'arabic'
+                ? 'انتهت صلاحية المحتوى — يرجى طلب حديث أولاً.'
+                : 'Content expired — please request a hadith first.';
+              return { text: msg, meta: null };
+            }
+            const hadithText = (lastItem.text || '').slice(0, 600);
             const synth = language === 'arabic'
-              ? 'اشرح الحديث الذي أرسلته'
-              : 'Explain the hadith you just showed me';
+              ? 'اشرح هذا الحديث:\n\n' + hadithText
+              : 'Explain this hadith:\n\n' + hadithText;
             const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
             if (!result || !result.assistant_success) return null;
             return { text: result.assistant_reply, meta: result.assistant_meta };

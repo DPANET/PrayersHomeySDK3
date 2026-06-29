@@ -1861,8 +1861,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'verse', surahNum: 2, ayahNum: 255 });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20a. verse markup has ab|2:255 and mr (More), no tf button (tafsir bundled in card)',
-      rm && !cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.includes('mr'));
+    check('20a. verse markup has ab|2:255 and mr|quran (More), no tf button (tafsir bundled in card)',
+      rm && !cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.some(d => d && d.startsWith('mr|quran')));
   }
 
   // ── 20b. buildReplyMarkup: tafsir buttons ───────────────────────────────────
@@ -1879,8 +1879,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'hadith', url: 'https://sunnah.com/bukhari:1' });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20c. hadith markup has ex|h and mr (More)',
-      rm && cbData.includes('ex|h') && cbData.includes('mr') && !cbData.includes('https://sunnah.com/bukhari:1'));
+    check('20c. hadith markup has ex|h and mr|hadith (More)',
+      rm && cbData.includes('ex|h') && cbData.some(d => d && d.startsWith('mr|hadith')) && !cbData.includes('https://sunnah.com/bukhari:1'));
   }
 
   // ── 20d. buildReplyMarkup: dua with more entries → shows "Rest of set" ──────
@@ -1888,9 +1888,9 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'dua', category: 'anger', count: 2, total: 5, nextOffset: 2 });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20d. dua markup shows "➕ Rest of set" when nextOffset < total, and mr (More)',
+    check('20d. dua markup shows "➕ Rest of set" when nextOffset < total, and mr|dua (More)',
       rm && flat.some(b => b.callback_data && b.callback_data.startsWith('dm|anger|2'))
-      && cbData.includes('mr'));
+      && cbData.some(d => d && d.startsWith('mr|dua')));
   }
 
   // ── 20e. buildReplyMarkup: dua fully shown → no "Rest of set", still has More ─
@@ -1898,9 +1898,9 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'dua', category: 'anger', count: 5, total: 5, nextOffset: 5 });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20e. dua markup hides "Rest of set" when all entries shown, still has mr (More)',
+    check('20e. dua markup hides "Rest of set" when all entries shown, still has mr|dua (More)',
       rm && !flat.some(b => b.callback_data && b.callback_data.startsWith('dm|'))
-      && cbData.includes('mr'));
+      && cbData.some(d => d && d.startsWith('mr|dua')));
   }
 
   // ── 20f. buildReplyMarkup: fatwa with URL ───────────────────────────────────
@@ -1909,8 +1909,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       categories: ['Prayer'] });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20f. fatwa markup has More button (mr, consistent with other tools), no source URL',
-      rm && !cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data === 'mr')
+    check('20f. fatwa markup has More button (mr|fatwa), no source URL',
+      rm && !cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data && b.callback_data.startsWith('mr|fatwa'))
       && !flat.some(b => b.callback_data && b.callback_data.startsWith('nf|')));
   }
 
@@ -1933,17 +1933,26 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
 
   // ── 20i. All callback_data tokens are ≤ 64 bytes (Telegram hard limit) ──────
   {
+    const { moreCallbackData: mcd } = require(path.join(LIB, 'TelegramBotListener'));
     const allTokens = [
       'tf|2:255', 'ab|114:7', 'qa|18:110',
       'pk|1', 'pk|99',
       'sp|hadith|5', 'sp|hadith_explained|10', 'sp|quran|15', 'sp|fatwa|20', 'sp|dua|25',
-      'mr',
+      'mr|hadith', 'mr|quran', 'mr|dua', 'mr|fatwa', 'mr|hadith_explained',
       'ex|h', 'dm|morning-and-evening|25',
       'px', 'mc', 'mi|hadith', 'mi|quran', 'mi|dua', 'mi|fatwa',
     ];
     const overLimit = allTokens.filter(t => Buffer.byteLength(t, 'utf8') > 64);
-    check('20i. all callback_data tokens are ≤ 64 bytes',
-      overLimit.length === 0, overLimit.join(', '));
+    // moreCallbackData must respect the 64-byte limit for long Arabic queries.
+    const longAr = 'الصبر والشكر والإيمان والتوكل على الله والإخلاص'; // ~47 Arabic chars
+    const longEn = 'a very long English query about patience and gratitude that exceeds budget';
+    const arToken = mcd ? mcd('hadith', longAr) : 'mr|hadith';
+    const enToken = mcd ? mcd('quran', longEn) : 'mr|quran';
+    check('20i. all callback_data tokens ≤ 64 bytes; moreCallbackData truncates long queries',
+      overLimit.length === 0
+      && Buffer.byteLength(arToken, 'utf8') <= 64
+      && Buffer.byteLength(enToken, 'utf8') <= 64,
+      overLimit.join(', '));
   }
 
   // ── 20j. getDua with offset skips entries and reports nextOffset ─────────────
@@ -2253,17 +2262,161 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       return r.surah === 114 && r.ayah === 6;
     })());
 
-    // Button shape: verse meta produces vp + vn row AND asbab + mr row
-    check('21g. verse meta produces 4 buttons across 2 rows (vp, vn, ab, mr)', (() => {
+    // Button shape: verse meta produces vp + vn row AND asbab + mr|quran row
+    check('21g. verse meta produces 4 buttons across 2 rows (vp, vn, ab, mr|quran)', (() => {
       const { buildReplyMarkup } = require('../lib/TelegramBotListener.js');
       const m = buildReplyMarkup({ type: 'verse', surahNum: 2, ayahNum: 255 });
       if (!m || !m.inline_keyboard) return false;
       const [row1, row2] = m.inline_keyboard;
       const r1ok = row1 && row1[0].callback_data === 'vp|2:255' && row1[1].callback_data === 'vn|2:255';
-      const r2ok = row2 && row2[0].callback_data === 'ab|2:255' && row2[1].callback_data === 'mr';
+      const r2ok = row2 && row2[0].callback_data === 'ab|2:255'
+        && row2[1].callback_data && row2[1].callback_data.startsWith('mr|quran');
       return r1ok && r2ok;
     })());
   }
+
+// ============================================================================
+section('22. Deterministic More / single-result auto-pick / explain selection');
+// ============================================================================
+{
+  const { createMockHomey } = require('./mockHomey');
+  const IslamicAssistantCard = require(path.join(LIB, 'IslamicAssistantCard'));
+
+  // ── 22a. startSearchFromQuery returns menu + sets up pending state ────────
+  {
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    let claudeCalls = 0;
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async () => { claudeCalls++; return 'stub'; },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'patience', offset: 0, total: 7,
+          results: [
+            { n: 1, ref: 'B #1', selector: { id: 1 } },
+            { n: 2, ref: 'M #2', selector: { id: 2 } },
+            { n: 3, ref: 'T #3', selector: { id: 3 } },
+          ],
+          pool: [{ id: 1 }, { id: 2 }, { id: 3 }],
+        }),
+      },
+    });
+    const r = await card.startSearchFromQuery('111', 'hadith', 'patience', 'english');
+    const picked = await card.pickSearchItem('111', 2, 'english');
+    check('22a. startSearchFromQuery returns menu, sets pending; pickSearchItem works after it',
+      r && r.text && r.text.includes('1. *B #1*') && r.meta && r.meta.type === 'search'
+      && r.meta.hasMore === true && claudeCalls === 0
+      && picked === null);  // getHadith not stubbed → returns null gracefully
+  }
+
+  // ── 22b. startSearchFromQuery with 1 result auto-resolves to content ──────
+  {
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    let claudeCalls = 0;
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async () => { claudeCalls++; return 'stub'; },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'niyyah', offset: 0, total: 1,
+          results: [{ n: 1, ref: 'B #1', selector: { id: 42 } }],
+        }),
+        getHadith: async ({ id }) => ({ block: 'HADITH_' + id, meta: { id, collection: 'Bukhari' } }),
+      },
+    });
+    const r = await card.startSearchFromQuery('222', 'hadith', 'niyyah', 'english');
+    check('22b. startSearchFromQuery auto-resolves 1 result without Claude',
+      r && r.text === 'HADITH_42' && r.meta && r.meta.type === 'hadith' && claudeCalls === 0);
+  }
+
+  // ── 22c. Single-result auto-pick inside _ask (no Claude round-trip) ──────
+  {
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    let toolCalls = [];
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => {
+        await runTool('search_hadith', { query: 'intentions' });
+        return 'Here it is: {{BLOCK1}}';
+      },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'intentions', offset: 0, total: 1,
+          results: [{ n: 1, ref: 'B #1', snippet: 'snip', selector: { id: 99 } }],
+        }),
+        getHadith: async ({ id }) => { toolCalls.push(id); return { block: 'AUTO_' + id, meta: { id, collection: 'Bukhari' } }; },
+      },
+    });
+    const r = await card.run({ text: 'a hadith about intentions', sender: '+333', mode: 'reply' });
+    check('22c. _ask auto-picks single search result and embeds block without extra Claude turn',
+      r.assistant_success && r.assistant_reply.includes('AUTO_99')
+      && toolCalls.includes(99));
+  }
+
+  // ── 22d. getLastContent returns the primary item for a sender ─────────────
+  {
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const card = new IslamicAssistantCard(homey, {});
+    card.updateLastContent('444', 'get_hadith', { id: 7, collection: 'Muslim' }, 'HADITH_TEXT');
+    const item = card.getLastContent('444');
+    check('22d. getLastContent returns the item saved by updateLastContent',
+      item && item.name === 'get_hadith' && item.meta.id === 7 && item.text === 'HADITH_TEXT');
+  }
+
+  // ── 22e. getLastContent returns null for unknown sender ───────────────────
+  {
+    const homey = createMockHomey({ settings: {} });
+    const card = new IslamicAssistantCard(homey, {});
+    check('22e. getLastContent returns null for unknown sender',
+      card.getLastContent('999') === null && card.getLastContent(null) === null);
+  }
+
+  // ── 22g. Re-selection: picking one item keeps the menu pickable for others ─
+  {
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => { await runTool('search_hadith', { query: 'charity' }); return 'Results:\n\n{{MENU}}'; },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'charity', offset: 0, total: 5,
+          results: [
+            { n: 1, ref: 'B #1', selector: { id: 301 } },
+            { n: 2, ref: 'M #2', selector: { id: 302 } },
+            { n: 3, ref: 'T #3', selector: { id: 303 } },
+          ],
+          pool: [301, 302, 303].map(id => ({ id })),
+        }),
+        getHadith: async ({ id }) => ({ block: 'HADITH_' + id, meta: { id } }),
+      },
+    });
+    await card.run({ text: 'hadiths about charity', sender: '+5151', mode: 'reply' });
+    const first  = await card.pickSearchItem('5151', 2, 'english');   // pick #2
+    const second = await card.pickSearchItem('5151', 3, 'english');   // scroll back, pick #3
+    const third  = await card.pickSearchItem('5151', 1, 'english');   // and #1
+    check('22g. picking one item keeps the menu — subsequent picks still resolve',
+      first  && first.text  === 'HADITH_302'
+      && second && second.text === 'HADITH_303'
+      && third  && third.text  === 'HADITH_301');
+  }
+
+  // ── 22f. ContentTools adds query to hadith/quran/fatwa/dua meta ──────────
+  {
+    const ContentTools = require(path.join(LIB, 'ContentTools'));
+    // getDua is synchronous for local data; test it directly.
+    const withQ  = await ContentTools.getDua({ query: 'anger', language: 'english' });
+    const noQ    = await ContentTools.getDua({ language: 'english' });
+    check('22f. getDua meta.query is set when topic given, null when random',
+      withQ.meta && withQ.meta.query === 'anger'
+      && noQ.meta && noQ.meta.query === null);
+  }
+}
 
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);
