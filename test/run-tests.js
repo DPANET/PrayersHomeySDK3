@@ -1881,6 +1881,12 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const cbData = flat && flat.map(b => b.callback_data || b.url);
     check('20c. hadith markup has ex|h and mr|hadith (More)',
       rm && cbData.includes('ex|h') && cbData.some(d => d && d.startsWith('mr|hadith')) && !cbData.includes('https://sunnah.com/bukhari:1'));
+
+    // With an id, Explain encodes it (ex|h|<id>) so an old card targets THIS hadith.
+    const rmId = buildReplyMarkup({ type: 'hadith', id: 4567 });
+    const cbId = rmId && rmId.inline_keyboard.flat().map(b => b.callback_data);
+    check('20c2. hadith markup encodes id into Explain when present (ex|h|4567)',
+      cbId && cbId.includes('ex|h|4567'));
   }
 
   // ── 20d. buildReplyMarkup: dua with more entries → shows "Rest of set" ──────
@@ -1939,7 +1945,7 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       'pk|1', 'pk|99',
       'sp|hadith|5', 'sp|hadith_explained|10', 'sp|quran|15', 'sp|fatwa|20', 'sp|dua|25',
       'mr|hadith', 'mr|quran', 'mr|dua', 'mr|fatwa', 'mr|hadith_explained',
-      'ex|h', 'dm|morning-and-evening|25',
+      'ex|h', 'ex|h|39999', 'dm|morning-and-evening|25',
       'px', 'mc', 'mi|hadith', 'mi|quran', 'mi|dua', 'mi|fatwa',
     ];
     const overLimit = allTokens.filter(t => Buffer.byteLength(t, 'utf8') > 64);

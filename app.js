@@ -11,7 +11,7 @@ const Logger           = require('./lib/Logger');
 const IslamicAssistantCard  = require('./lib/IslamicAssistantCard');
 const PromptLibrary         = require('./lib/PromptLibrary');
 const TelegramBotListener   = require('./lib/TelegramBotListener');
-const { sendTelegramMessage } = require('./lib/TelegramBotListener');
+const { sendTelegramMessage, buildReplyMarkup } = require('./lib/TelegramBotListener');
 let _ContentTools = null;
 function loadContentTools() { return _ContentTools || (_ContentTools = require('./lib/ContentTools')); }
 const { buildParams, resolveCoords } = require('./lib/calc');
@@ -164,8 +164,9 @@ class App extends Homey.App {
         } else if (!chatId) {
           this.logger.warn('assistant_send: no default chat ID in settings — cannot send');
         } else {
+          const replyMarkup = buildReplyMarkup(result.assistant_meta || null);
           const sent = await sendTelegramMessage({
-            token, chatId, text: result.assistant_reply, logger: this.logger,
+            token, chatId, text: result.assistant_reply, logger: this.logger, replyMarkup,
           });
           this.logger.log(`assistant_send: ${sent ? 'sent' : 'send failed'} to ${chatId}`);
         }
@@ -218,34 +219,51 @@ class App extends Homey.App {
         const parts    = data.split('|');
         const cmd      = parts[0];
 
+        // Localized feedback so a tap NEVER dies silently. answerCallbackQuery has
+        // already cleared the button spinner, so a bare `return null` looks like a
+        // broken button — always send a short message instead.
+        //   'expired' → the backing menu/content state is gone (search again)
+        //   'fetch'   → a transient fetch/Claude failure (try again)
+        const fail = (kind) => {
+          const ar = kind === 'expired'
+            ? '⚠️ انتهت صلاحية هذه القائمة — يرجى إجراء بحث جديد.'
+            : '⚠️ تعذّر التنفيذ الآن — يرجى المحاولة مرة أخرى.';
+          const en = kind === 'expired'
+            ? '⚠️ This list has expired — please start a new search.'
+            : '⚠️ Could not do that right now — please try again.';
+          if (language === 'arabic')  return { text: ar, meta: null };
+          if (language === 'english') return { text: en, meta: null };
+          return { text: en + '\n' + ar, meta: null };
+        };
+
         try {
           // ── Direct content-tool fetches (no Claude) ───────────────────────
           if (cmd === 'vn' || cmd === 'vp') {
             const [s, a] = parts[1].split(':').map(Number);
             const nav = tools.navigateAyah(s, a, cmd === 'vn' ? 'next' : 'prev');
             const res = await tools.getQuran({ surah: nav.surah, ayah: nav.ayah, language });
-            if (!res.block) return null;
+            if (!res.block) return fail('fetch');
             card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
             return { text: res.block, meta: { type: 'verse', ...res.meta } };
           }
           if (cmd === 'tf') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getTafsir({ surah: s, ayah: a, language });
-            if (!res.block) return null;
+            if (!res.block) return fail('fetch');
             card.updateLastContent(chatId, 'get_tafsir', res.meta, res.block);
             return { text: res.block, meta: { type: 'tafsir', ...res.meta } };
           }
           if (cmd === 'ab') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getTafsir({ surah: s, ayah: a, asbab: true, language });
-            if (!res.block) return null;
+            if (!res.block) return fail('fetch');
             card.updateLastContent(chatId, 'get_tafsir', res.meta, res.block);
             return { text: res.block, meta: { type: 'tafsir', ...res.meta } };
           }
           if (cmd === 'qa') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getQuran({ surah: s, ayah: a, language });
-            if (!res.block) return null;
+            if (!res.block) return fail('fetch');
             card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
             return { text: res.block, meta: { type: 'verse', ...res.meta } };
           }
@@ -254,15 +272,15 @@ class App extends Homey.App {
             const type      = parts[1];
             const nextOff   = parseInt(parts[2], 10) || 0;
             const result    = await card.nextSearchPage(chatId, type, nextOff, language);
-            if (!result || !result.text) return null;
+            if (!result || !result.text) return fail('expired');
             return { text: result.text, meta: result.meta };
           }
           if (cmd === 'pk') {
             // Pick a search result by number — fully deterministic, no Claude.
             const n      = parseInt(parts[1], 10);
-            if (!n) return null;
+            if (!n) return fail('expired');
             const result = await card.pickSearchItem(chatId, n, language);
-            if (!result || !result.text) return null;
+            if (!result || !result.text) return fail('expired');
             return { text: result.text, meta: result.meta };
           }
           if (cmd === 'mr') {
@@ -282,7 +300,7 @@ class App extends Homey.App {
 
             if (query && (type === 'hadith' || type === 'quran' || type === 'fatwa')) {
               const result = await card.startSearchFromQuery(chatId, type, query, language);
-              if (!result || !result.text) return null;
+              if (!result || !result.text) return fail('fetch');
               return { text: result.text, meta: result.meta };
             }
 
@@ -290,39 +308,39 @@ class App extends Homey.App {
               const isExp = type === 'hadith_explained';
               const res = isExp ? await tools.getHadithExplained({ language }) : await tools.getHadith({ language });
               const toolName = isExp ? 'get_hadith_explained' : 'get_hadith';
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, toolName, res.meta, res.block);
               return { text: res.block, meta: { type, ...res.meta } };
             }
             if (type === 'quran') {
               const res = await tools.getQuran({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
               return { text: res.block, meta: { type: 'verse', ...res.meta } };
             }
             if (type === 'dua') {
               const res = await tools.getDua({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_dua', res.meta, res.block);
               return { text: res.block, meta: { type: 'dua', ...res.meta } };
             }
             if (type === 'fatwa') {
               const res = await tools.getFatwa({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_fatwa', res.meta, res.block);
               return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
             }
             // Unknown type — synthetic fallback.
             const synth = language === 'arabic' ? 'المزيد' : 'more';
             const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
-            if (!result || !result.assistant_success) return null;
+            if (!result || !result.assistant_success) return fail('fetch');
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }
           if (cmd === 'dm') {
             const category  = parts[1];
             const offset    = parseInt(parts[2], 10) || 0;
             const res = await tools.getDua({ category, language, offset });
-            if (!res.block) return null;
+            if (!res.block) return fail('fetch');
             card.updateLastContent(chatId, 'get_dua', res.meta, res.block);
             return { text: res.block, meta: { type: 'dua', ...res.meta } };
           }
@@ -331,25 +349,25 @@ class App extends Homey.App {
             const sub = parts[1];
             if (sub === 'hadith') {
               const res = await tools.getHadith({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_hadith', res.meta, res.block);
               return { text: res.block, meta: { type: 'hadith', ...res.meta } };
             }
             if (sub === 'quran') {
               const res = await tools.getQuran({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_quran', res.meta, res.block);
               return { text: res.block, meta: { type: 'verse', ...res.meta } };
             }
             if (sub === 'dua') {
               const res = await tools.getDua({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_dua', res.meta, res.block);
               return { text: res.block, meta: { type: 'dua', ...res.meta } };
             }
             if (sub === 'fatwa') {
               const res = await tools.getFatwa({ language });
-              if (!res.block) return null;
+              if (!res.block) return fail('fetch');
               card.updateLastContent(chatId, 'get_fatwa', res.meta, res.block);
               return { text: res.block, meta: { type: 'fatwa', ...res.meta } };
             }
@@ -363,21 +381,34 @@ class App extends Homey.App {
           }
           // ── Via Claude (needs generation) ─────────────────────────────────
           if (cmd === 'ex') {
-            // Explain the last-shown hadith. Selection is deterministic (reads
-            // lastContent directly); only the explanation generation goes to Claude.
+            // Explain a SPECIFIC hadith. The id is encoded in the button (ex|h|<id>)
+            // so tapping Explain on an OLDER card still targets THAT hadith, not
+            // whatever was shown most recently. Selection is deterministic; only the
+            // explanation prose goes to Claude.
+            const id = parseInt(parts[2], 10);
             const lastItem = card.getLastContent(chatId);
-            if (!lastItem) {
-              const msg = language === 'arabic'
-                ? 'انتهت صلاحية المحتوى — يرجى طلب حديث أولاً.'
-                : 'Content expired — please request a hadith first.';
-              return { text: msg, meta: null };
+            let hadithText = '';
+            // Fast path: the last-shown item already IS this hadith (or the button
+            // carried no id — legacy message) → use its retained text, no re-fetch.
+            if (lastItem && (!(id > 0) || (lastItem.meta && lastItem.meta.id === id))) {
+              hadithText = lastItem.text || '';
             }
-            const hadithText = (lastItem.text || '').slice(0, 600);
+            // Scroll-back path: re-fetch the exact hadith by id and make it current
+            // so a following "explain it / source?" also targets this one.
+            if (!hadithText && id > 0) {
+              const res = await tools.getHadith({ id, language });
+              if (res && res.block) {
+                hadithText = res.block;
+                card.updateLastContent(chatId, 'get_hadith', res.meta, res.block);
+              }
+            }
+            if (!hadithText && lastItem) hadithText = lastItem.text || '';
+            if (!hadithText) return fail('expired');
             const synth = language === 'arabic'
-              ? 'اشرح هذا الحديث:\n\n' + hadithText
-              : 'Explain this hadith:\n\n' + hadithText;
+              ? 'اشرح هذا الحديث:\n\n' + hadithText.slice(0, 600)
+              : 'Explain this hadith:\n\n' + hadithText.slice(0, 600);
             const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
-            if (!result || !result.assistant_success) return null;
+            if (!result || !result.assistant_success) return fail('fetch');
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }
           if (cmd === 'px') {
@@ -386,12 +417,12 @@ class App extends Homey.App {
               ? 'كم الوقت المتبقي حتى الصلاة القادمة؟'
               : 'What are the prayer times today and when is the next prayer?';
             const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
-            if (!result || !result.assistant_success) return null;
+            if (!result || !result.assistant_success) return fail('fetch');
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }
         } catch (e) {
           this.logger.error('TelegramBotListener onCallback error', e);
-          return null;
+          return fail('fetch');
         }
         return null;
       },
