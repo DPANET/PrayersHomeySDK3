@@ -238,10 +238,25 @@ class App extends Homey.App {
             if (!res.block) return null;
             return { text: res.block, meta: { type: 'verse', ...res.meta } };
           }
+          if (cmd === 'sp') {
+            // Next search page — fully deterministic, no Claude.
+            const type      = parts[1];
+            const nextOff   = parseInt(parts[2], 10) || 0;
+            const result    = await card.nextSearchPage(chatId, type, nextOff, language);
+            if (!result || !result.text) return null;
+            return { text: result.text, meta: result.meta };
+          }
+          if (cmd === 'pk') {
+            // Pick a search result by number — fully deterministic, no Claude.
+            const n      = parseInt(parts[1], 10);
+            if (!n) return null;
+            const result = await card.pickSearchItem(chatId, n, language);
+            if (!result || !result.text) return null;
+            return { text: result.text, meta: result.meta };
+          }
           if (cmd === 'mr') {
             // "More on this topic" — synthetic "more" routed through Claude.
-            // Claude reads per-sender history, recognises the previous content,
-            // and calls the right search_* tool with the same topic at offset 0.
+            // Used for content cards (verse/hadith) and single-item follow-ups.
             // source:'callback' exempts button taps from the per-sender rate limiter.
             const synth = language === 'arabic' ? 'المزيد' : 'more';
             const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });

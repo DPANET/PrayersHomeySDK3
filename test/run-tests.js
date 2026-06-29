@@ -1393,7 +1393,7 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
       type: 'hadith', query: 'patience', offset: 0, total: 12,
       results: Array.from({ length: 5 }, (_, i) => ({ n: i + 1, ref: 'H' + i, selector: { id: i } })),
     }) };
-    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'patience' }); return 'Here are some hadiths:'; };
+    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'patience' }); return 'Here are some hadiths:\n\n{{MENU}}'; };
     const { card } = mkCard(cfg(), { claudeComplete, contentTools });
     const r = await card.run({ mode: 'reply', sender: '+444', text: 'show me hadiths about patience' });
     check('15c. "more results" hint is appended when total exceeds the shown page',
@@ -1406,11 +1406,11 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
       type: 'hadith', query: 'x', offset: 0, total: 3,
       results: Array.from({ length: 3 }, (_, i) => ({ n: i + 1, ref: 'H' + i, selector: { id: i } })),
     }) };
-    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return 'MENU'; };
+    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return 'Here:\n\n{{MENU}}'; };
     const { card } = mkCard(cfg(), { claudeComplete, contentTools });
     const r = await card.run({ mode: 'reply', sender: '+555', text: 'show me hadiths' });
     check('15d. no "more" hint when the search showed all of its results',
-      r.assistant_reply === 'MENU');
+      r.assistant_reply.includes('1. *H0*') && !/more result|المزيد/.test(r.assistant_reply));
   }
 
   // 15e. If the model already told the user about more results, the hint is not duplicated.
@@ -1419,12 +1419,12 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
       type: 'hadith', query: 'x', offset: 0, total: 12,
       results: Array.from({ length: 5 }, (_, i) => ({ n: i + 1, ref: 'H' + i, selector: { id: i } })),
     }) };
-    const reply = 'Here are 5 — reply more for others.';
-    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return reply; };
+    const intro = 'Here are 5 — reply more for others.';
+    const claudeComplete = async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return intro + '\n\n{{MENU}}'; };
     const { card } = mkCard(cfg(), { claudeComplete, contentTools });
     const r = await card.run({ mode: 'reply', sender: '+666', text: 'show me hadiths' });
     check('15e. no duplicate hint when the model already mentioned "more"',
-      r.assistant_reply === reply);
+      r.assistant_reply.startsWith(intro) && (r.assistant_reply.match(/more/gi) || []).length === 1);
   }
 
   // 15f. Consecutive "more" pages for the same query accumulate in pending state so any
@@ -1439,7 +1439,7 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
     let turn = 0;
     const claudeComplete = async ({ runTool }) => {
       await runTool('search_hadith', { query: 'patience', offset: turn++ === 0 ? 0 : 5 });
-      return 'MENU';
+      return 'Here:\n\n{{MENU}}';
     };
     const { card, homey } = mkCard(cfg(), { claudeComplete, contentTools });
     await card.run({ mode: 'reply', sender: '+701', text: 'hadiths about patience' });
@@ -1461,7 +1461,7 @@ section('15. Assistant follow-ups — recall last content + "more results" hint'
     let turn = 0;
     const claudeComplete = async ({ runTool }) => {
       await runTool('search_hadith', { query: turn++ === 0 ? 'patience' : 'anger', offset: 0 });
-      return 'MENU';
+      return 'Here:\n\n{{MENU}}';
     };
     const { card, homey } = mkCard(cfg(), { claudeComplete, contentTools });
     await card.run({ mode: 'reply', sender: '+702', text: 'patience' });
@@ -1851,8 +1851,8 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const rm = buildReplyMarkup({ type: 'verse', surahNum: 2, ayahNum: 255 });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20a. verse markup has tf|2:255 and ab|2:255 and mr (More)',
-      rm && cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.includes('mr'));
+    check('20a. verse markup has ab|2:255 and mr (More), no tf button (tafsir bundled in card)',
+      rm && !cbData.includes('tf|2:255') && cbData.includes('ab|2:255') && cbData.includes('mr'));
   }
 
   // ── 20b. buildReplyMarkup: tafsir buttons ───────────────────────────────────
@@ -1925,8 +1925,10 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
   {
     const allTokens = [
       'tf|2:255', 'ab|114:7', 'qa|18:110',
+      'pk|1', 'pk|99',
+      'sp|hadith|5', 'sp|hadith_explained|10', 'sp|quran|15', 'sp|fatwa|20', 'sp|dua|25',
       'mr',
-      'ex|h', 'dm|morning-and-evening|25', 'nf|' + 'A'.repeat(40),
+      'ex|h', 'dm|morning-and-evening|25',
       'px', 'mc', 'mi|hadith', 'mi|quran', 'mi|dua', 'mi|fatwa',
     ];
     const overLimit = allTokens.filter(t => Buffer.byteLength(t, 'utf8') > 64);
@@ -2005,17 +2007,26 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       && r.assistant_meta.id === 999 && r.assistant_meta.collection === 'Muslim');
   }
 
-  // ── 20m. buildReplyMarkup: search pick-list gets a More page button ──────────
+  // ── 20m. buildReplyMarkup: search pick-list renders pk buttons + sp when hasMore ─
   {
-    const withMore = buildReplyMarkup({ type: 'search', searchType: 'hadith', hasMore: true });
+    const results = [
+      { n: 1, ref: 'B #1', selector: { id: 1 } },
+      { n: 2, ref: 'M #2', selector: { id: 2 } },
+      { n: 3, ref: 'B #3', selector: { id: 3 } },
+    ];
+    const withMore = buildReplyMarkup({ type: 'search', searchType: 'hadith', hasMore: true, nextOffset: 3, results });
     const flat = withMore && withMore.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    const noMore = buildReplyMarkup({ type: 'search', searchType: 'hadith', hasMore: false });
-    check('20m. search menu shows mr (More) only when more results remain',
-      withMore && cbData.includes('mr') && noMore === null);
+    const noMore = buildReplyMarkup({ type: 'search', searchType: 'hadith', hasMore: false, nextOffset: 3, results });
+    const flatNm = noMore && noMore.inline_keyboard.flat();
+    const cbNm = flatNm && flatNm.map(b => b.callback_data);
+    check('20m. search menu has pk buttons and sp only when more remain',
+      withMore && cbData.includes('pk|1') && cbData.includes('pk|2') && cbData.includes('pk|3')
+      && cbData.includes('sp|hadith|3') && !cbData.includes('mr')
+      && noMore && cbNm.includes('pk|1') && !cbNm.includes('sp|hadith|3'));
   }
 
-  // ── 20n. card.run() emits search meta (with hasMore) for a numbered pick-list ─
+  // ── 20n. card.run() emits search meta (hasMore, results, nextOffset) ───────
   {
     const { createMockHomey } = require('./mockHomey');
     const homey = createMockHomey({ settings: {
@@ -2024,7 +2035,7 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
     const card = new IslamicAssistantCard(homey, {
       claudeComplete: async ({ runTool }) => {
         await runTool('search_hadith', { query: 'patience' });
-        return '1. *Bukhari #1*\n2. *Muslim #2*\nPick a number.';
+        return 'Here are hadiths:\n\n{{MENU}}';
       },
       contentTools: {
         searchHadith: async () => ({
@@ -2037,9 +2048,157 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       },
     });
     const r = await card.run({ text: 'hadiths about patience', sender: '222', mode: 'reply' });
-    check('20n. card.run() returns search meta with hasMore for a pick-list',
+    check('20n. card.run() returns search meta with hasMore, results, nextOffset',
       r.assistant_success && r.assistant_meta && r.assistant_meta.type === 'search'
-      && r.assistant_meta.searchType === 'hadith' && r.assistant_meta.hasMore === true);
+      && r.assistant_meta.searchType === 'hadith' && r.assistant_meta.hasMore === true
+      && Array.isArray(r.assistant_meta.results) && r.assistant_meta.results.length === 2
+      && r.assistant_meta.nextOffset === 2
+      && r.assistant_reply.includes('1. *Bukhari #1*'));
+  }
+
+  // ── 20o. _renderSearchMenu produces canonical text code-side ─────────────
+  {
+    const results = [
+      { n: 1, ref: 'B #42', title: 'Patience chapter', snippet: 'A snippet', selector: { id: 42 } },
+      { n: 2, ref: 'M #7',  title: 'M #7', snippet: 'Another', selector: { id: 7 } },
+    ];
+    const menu = IslamicAssistantCard._renderSearchMenu(results, 'hadith', 'english');
+    check('20o. _renderSearchMenu: correct n values, ref formatting, pick prompt',
+      menu.includes('1. *B #42*') && menu.includes('Patience chapter')
+      && menu.includes('2. *M #7*') && !menu.includes('M #7\nM #7')
+      && menu.includes('Pick a number:'));
+  }
+
+  // ── 20p. nextSearchPage serves next page from the SAME key _ask wrote ──────
+  //     (regression: the button path must read the key that the Claude search
+  //      path wrote — 'srch_last_<digits>', not 'srch_<chatId>'.)
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const pool = Array.from({ length: 10 }, (_, i) => ({ id: i }));
+    const searchHadith = async (a) => {
+      const all = a.pool || pool;
+      const off = a.offset || 0;
+      const page = all.slice(off, off + 5);
+      return {
+        type: 'hadith', query: a.query || 'patience', offset: off, total: all.length,
+        results: page.map((row, i) => ({ n: off + i + 1, ref: 'H' + row.id, selector: { id: row.id } })),
+        pool: all,
+      };
+    };
+    let claudeCalls = 0;
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => { claudeCalls++; await runTool('search_hadith', { query: 'patience' }); return 'Here:\n\n{{MENU}}'; },
+      contentTools: { searchHadith },
+    });
+    // Real search via the Claude path → writes pending under the production key.
+    await card.run({ text: 'hadiths about patience', sender: '+12345', mode: 'reply' });
+    const claudeAfterSearch = claudeCalls;
+    // Now page with the SAME chatId — must find pending and NOT call Claude again.
+    const result = await card.nextSearchPage('12345', 'hadith', 5, 'english');
+    check('20p. nextSearchPage finds _ask\'s pending state, pages w/o Claude',
+      result && result.text && result.text.includes('6. *H5*')
+      && result.meta && result.meta.type === 'search' && result.meta.nextOffset === 10
+      && Array.isArray(result.meta.results) && result.meta.results.length === 5
+      && claudeCalls === claudeAfterSearch);
+  }
+
+  // ── 20q. pickSearchItem resolves a pick from _ask's pending state ─────────
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    let claudeCalls = 0;
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => { claudeCalls++; await runTool('search_hadith', { query: 'patience' }); return 'Here:\n\n{{MENU}}'; },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'patience', offset: 0, total: 5,
+          results: [
+            { n: 1, ref: 'B #10', selector: { id: 10 } },
+            { n: 2, ref: 'B #11', selector: { id: 11 } },
+            { n: 3, ref: 'M #5',  selector: { id: 5 }  },
+          ],
+          pool: [{ id: 10 }, { id: 11 }, { id: 5 }],
+        }),
+        getHadith: async ({ id }) => ({ block: 'HADITH_BLOCK_' + id, meta: { id, collection: 'Bukhari' } }),
+      },
+    });
+    await card.run({ text: 'hadiths about patience', sender: '+456789', mode: 'reply' });
+    const claudeAfterSearch = claudeCalls;
+    const r = await card.pickSearchItem('456789', 2, 'english');
+    check('20q. pickSearchItem resolves n=2 from _ask pending, w/o Claude',
+      r && r.text === 'HADITH_BLOCK_11' && r.meta && r.meta.type === 'hadith' && r.meta.id === 11
+      && claudeCalls === claudeAfterSearch);
+  }
+
+  // ── 20r. End-to-end: search → pick #4 returns item #4 (the original bug) ──
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const card = new IslamicAssistantCard(homey, {
+      // The model is told NOT to render the list; it only emits {{MENU}}. Even if it
+      // tried to reorder, code rendering + selector map make pick==item guaranteed.
+      claudeComplete: async ({ runTool }) => { await runTool('search_hadith', { query: 'mercy' }); return 'Results:\n\n{{MENU}}'; },
+      contentTools: {
+        searchHadith: async () => ({
+          type: 'hadith', query: 'mercy', offset: 0, total: 5,
+          results: [
+            { n: 1, ref: 'Bukhari #1', selector: { id: 101 } },
+            { n: 2, ref: 'Muslim #2',  selector: { id: 102 } },
+            { n: 3, ref: 'Tirmidhi #3', selector: { id: 103 } },
+            { n: 4, ref: 'AbuDawud #4', selector: { id: 104 } },
+            { n: 5, ref: 'Nasai #5',   selector: { id: 105 } },
+          ],
+          pool: [101, 102, 103, 104, 105].map(id => ({ id })),
+        }),
+        getHadith: async ({ id }) => ({ block: 'HADITH_' + id, meta: { id } }),
+      },
+    });
+    const menu = await card.run({ text: 'hadiths about mercy', sender: '+99', mode: 'reply' });
+    // The menu shows all 5 items, numbered 1..5 in order.
+    const showsAll = ['1. *Bukhari #1*', '2. *Muslim #2*', '3. *Tirmidhi #3*', '4. *AbuDawud #4*', '5. *Nasai #5*']
+      .every(s => menu.assistant_reply.includes(s));
+    // Picking "4" must return item #4 (id 104), not #3.
+    const picked = await card.pickSearchItem('99', 4, 'english');
+    check('20r. e2e search→pick: menu shows all 5 in order; pick 4 → item 4 (id 104)',
+      showsAll && picked && picked.text === 'HADITH_104' && picked.meta.id === 104);
+  }
+
+  // ── 20s. Last page with a single item is still pickable (n accumulates) ────
+  //     6 total: page1 = n1..5, page2 = n6 only. pk|6 must resolve, not dead-tap.
+  {
+    const { createMockHomey } = require('./mockHomey');
+    const homey = createMockHomey({ settings: {
+      assistant: { enabled: true, anthropicKey: 'sk-ant-x', allowedNumbers: [], rateLimitSeconds: 0, dailyCap: 50 },
+    } });
+    const pool = Array.from({ length: 6 }, (_, i) => ({ id: 200 + i }));
+    const searchHadith = async (a) => {
+      const all = a.pool || pool;
+      const off = a.offset || 0;
+      const page = all.slice(off, off + 5);
+      return {
+        type: 'hadith', query: a.query || 'x', offset: off, total: all.length,
+        results: page.map((row, i) => ({ n: off + i + 1, ref: 'H' + row.id, selector: { id: row.id } })),
+        pool: all,
+      };
+    };
+    const card = new IslamicAssistantCard(homey, {
+      claudeComplete: async ({ runTool }) => { await runTool('search_hadith', { query: 'x' }); return 'Here:\n\n{{MENU}}'; },
+      contentTools: { searchHadith, getHadith: async ({ id }) => ({ block: 'HADITH_' + id, meta: { id } }) },
+    });
+    await card.run({ text: 'hadiths', sender: '+707070', mode: 'reply' });
+    const page2 = await card.nextSearchPage('707070', 'hadith', 5, 'english');
+    const onlyOne = page2 && page2.meta && page2.meta.results.length === 1 && page2.meta.results[0].n === 6;
+    const noNext  = page2 && page2.meta && page2.meta.hasMore === false;
+    const picked6 = await card.pickSearchItem('707070', 6, 'english');
+    check('20s. final single-item page accumulates so pk|6 resolves (id 205)',
+      onlyOne && noNext && picked6 && picked6.text === 'HADITH_205' && picked6.meta.id === 205);
   }
 }
 
