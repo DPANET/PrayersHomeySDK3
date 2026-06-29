@@ -1040,25 +1040,35 @@ section('14. Islamic assistant card (v3.0.0) — modes, guards, tools, content')
       surahNum: 2, ayahNum: 255, edition: 'en-ibn-kathir',
     });
     const stars = (out.match(/\*/g) || []).length;
-    // The footer carries an intentional Markdown link [quran.com](…); strip it
-    // before asserting the CONTENT has no stray brackets/backticks.
-    const body = out.replace(/\[quran\.com\]\([^)]*\)/, '');
+    // Link moved to formatQuran (verse header); tafsir block has no footer link now.
     check('14af. htmlToTelegram keeps headings (bold) + paragraph breaks, strips stray markup',
       /\*The Heading\*/.test(out) && /First para with a quote and note\./.test(out)
-      && /\n\nSecond para\./.test(out) && /\[quran\.com\]\(https:\/\/quran\.com\/2\/255\)/.test(out)
-      && !/[`[\]]/.test(body) && stars % 2 === 0);
+      && /\n\nSecond para\./.test(out) && !/[`[\]]/.test(out) && stars % 2 === 0);
   }
 
   // ── formatFatwa sanitizes external Markdown so Telegram doesn't break ─────────
   {
     const block = ContentTools.formatFatwa({
-      title: 'T`x', question: 'Q [a] *b*', answer: 'A `code` _u_ [link] text',
-      source: 'https://islamqa.info/ar/answers/1', arabic: true,
+      titleAr: 'T`x', titleEn: '',
+      questionAr: 'Q [a] *b*', questionEn: '',
+      answerAr: 'A `code` _u_ [link] text', answerEn: '',
+      sourceAr: 'https://islamqa.info/ar/answers/1', sourceEn: '',
+      language: 'arabic',
     });
     const stray = (block.match(/[`[\]]/g) || []).length;
     const starsBalanced = (block.match(/\*/g) || []).length % 2 === 0;
     check('14ae. formatFatwa strips stray markdown chars and keeps our labels balanced',
       stray === 0 && starsBalanced && /الجواب/.test(block) && /A code u link text/.test(block));
+    // both: shows Arabic + English when both sides present
+    const both = ContentTools.formatFatwa({
+      titleAr: 'عنوان', titleEn: 'Title',
+      questionAr: 'سؤال', questionEn: 'Question',
+      answerAr: 'جواب', answerEn: 'Answer',
+      sourceAr: '', sourceEn: 'https://islamqa.info/en/1',
+      language: 'both',
+    });
+    check('14ae2. formatFatwa(both) shows Arabic AND English labels',
+      /الجواب/.test(both) && /Answer/.test(both));
   }
 
   const mkCard = (settings, deps) => {
@@ -2201,6 +2211,59 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       onlyOne && noNext && picked6 && picked6.text === 'HADITH_205' && picked6.meta.id === 205);
   }
 }
+
+  // ── section 21. Verse prev/next navigation ───────────────────────────────────
+  {
+    section('21. Verse prev/next navigation — navigateAyah + button shape');
+    const { navigateAyah } = require('../lib/ContentTools.js');
+
+    // Mid-surah forward
+    check('21a. next within surah (2:1 → 2:2)', (() => {
+      const r = navigateAyah(2, 1, 'next');
+      return r.surah === 2 && r.ayah === 2;
+    })());
+
+    // Mid-surah backward
+    check('21b. prev within surah (2:5 → 2:4)', (() => {
+      const r = navigateAyah(2, 5, 'prev');
+      return r.surah === 2 && r.ayah === 4;
+    })());
+
+    // Forward wraps to next surah
+    check('21c. next at surah end wraps to next surah (1:7 → 2:1)', (() => {
+      const r = navigateAyah(1, 7, 'next');
+      return r.surah === 2 && r.ayah === 1;
+    })());
+
+    // Backward wraps to prev surah last ayah
+    check('21d. prev at surah start wraps to prev surah last ayah (2:1 → 1:7)', (() => {
+      const r = navigateAyah(2, 1, 'prev');
+      return r.surah === 1 && r.ayah === 7;
+    })());
+
+    // Forward wrap at last surah (114:6 → 1:1)
+    check('21e. next at 114:6 wraps to 1:1', (() => {
+      const r = navigateAyah(114, 6, 'next');
+      return r.surah === 1 && r.ayah === 1;
+    })());
+
+    // Backward wrap at first surah (1:1 → 114:6)
+    check('21f. prev at 1:1 wraps to 114:6', (() => {
+      const r = navigateAyah(1, 1, 'prev');
+      return r.surah === 114 && r.ayah === 6;
+    })());
+
+    // Button shape: verse meta produces vp + vn row AND asbab + mr row
+    check('21g. verse meta produces 4 buttons across 2 rows (vp, vn, ab, mr)', (() => {
+      const { buildReplyMarkup } = require('../lib/TelegramBotListener.js');
+      const m = buildReplyMarkup({ type: 'verse', surahNum: 2, ayahNum: 255 });
+      if (!m || !m.inline_keyboard) return false;
+      const [row1, row2] = m.inline_keyboard;
+      const r1ok = row1 && row1[0].callback_data === 'vp|2:255' && row1[1].callback_data === 'vn|2:255';
+      const r2ok = row2 && row2[0].callback_data === 'ab|2:255' && row2[1].callback_data === 'mr';
+      return r1ok && r2ok;
+    })());
+  }
 
   // ── summary ──────────────────────────────────────────────────────────────────
   console.log(`\n\x1b[1m${'─'.repeat(64)}\x1b[0m`);

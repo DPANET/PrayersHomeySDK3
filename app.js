@@ -220,6 +220,13 @@ class App extends Homey.App {
 
         try {
           // ── Direct content-tool fetches (no Claude) ───────────────────────
+          if (cmd === 'vn' || cmd === 'vp') {
+            const [s, a] = parts[1].split(':').map(Number);
+            const nav = tools.navigateAyah(s, a, cmd === 'vn' ? 'next' : 'prev');
+            const res = await tools.getQuran({ surah: nav.surah, ayah: nav.ayah, language });
+            if (!res.block) return null;
+            return { text: res.block, meta: { type: 'verse', ...res.meta } };
+          }
           if (cmd === 'tf') {
             const [s, a] = parts[1].split(':').map(Number);
             const res = await tools.getTafsir({ surah: s, ayah: a, language });
