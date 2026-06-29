@@ -1915,9 +1915,26 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       categories: ['Prayer'] });
     const flat = rm && rm.inline_keyboard.flat();
     const cbData = flat && flat.map(b => b.callback_data || b.url);
-    check('20f. fatwa markup has More button (mr|fatwa), no source URL',
-      rm && !cbData.includes('https://islamqa.info/ar/1') && flat.some(b => b.callback_data && b.callback_data.startsWith('mr|fatwa'))
+    check('20f. fatwa markup has Summarize (sz|fatwa) and More (mr|fatwa), no source URL',
+      rm && !cbData.includes('https://islamqa.info/ar/1')
+      && flat.some(b => b.callback_data && b.callback_data.startsWith('sz|fatwa'))
+      && flat.some(b => b.callback_data && b.callback_data.startsWith('mr|fatwa'))
       && !flat.some(b => b.callback_data && b.callback_data.startsWith('nf|')));
+
+    const rmFatwaId = buildReplyMarkup({ type: 'fatwa', id: 999, url: null, categories: [] });
+    const cbFatwaId = rmFatwaId && rmFatwaId.inline_keyboard.flat().map(b => b.callback_data);
+    check('20f2. fatwa markup encodes id into Summarize when present (sz|fatwa|999)',
+      cbFatwaId && cbFatwaId.includes('sz|fatwa|999'));
+  }
+
+  // ── 20f3. buildReplyMarkup: hadith_explained has Summarize + More ───────────
+  {
+    const rm = buildReplyMarkup({ type: 'hadith_explained', id: 777, query: 'patience' });
+    const flat = rm && rm.inline_keyboard.flat();
+    const cbData = flat && flat.map(b => b.callback_data);
+    check('20f3. hadith_explained markup has sz|he|777 (Summarize) and mr|hadith_explained (More)',
+      rm && cbData && cbData.includes('sz|he|777')
+      && cbData.some(d => d && d.startsWith('mr|hadith_explained')));
   }
 
   // ── 20g. buildReplyMarkup: menu type shows grid ──────────────────────────────
@@ -1945,7 +1962,7 @@ section('20. Inline button system — buildReplyMarkup, getDua offset, _extractM
       'pk|1', 'pk|99',
       'sp|hadith|5', 'sp|hadith_explained|10', 'sp|quran|15', 'sp|fatwa|20', 'sp|dua|25',
       'mr|hadith', 'mr|quran', 'mr|dua', 'mr|fatwa', 'mr|hadith_explained',
-      'ex|h', 'ex|h|39999', 'dm|morning-and-evening|25',
+      'ex|h', 'ex|h|39999', 'sz|fatwa|39999', 'sz|he|39999', 'dm|morning-and-evening|25',
       'px', 'mc', 'mi|hadith', 'mi|quran', 'mi|dua', 'mi|fatwa',
     ];
     const overLimit = allTokens.filter(t => Buffer.byteLength(t, 'utf8') > 64);

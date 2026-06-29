@@ -411,6 +411,43 @@ class App extends Homey.App {
             if (!result || !result.assistant_success) return fail('fetch');
             return { text: result.assistant_reply, meta: result.assistant_meta };
           }
+          if (cmd === 'sz') {
+            // Summarize a fatwa (sz|fatwa|<id>) or hadith explanation (sz|he|<id>).
+            // Re-fetches by id if the lastContent is a different item, so tapping
+            // Summarize on a scroll-back card still targets THAT content.
+            const sub = parts[1];   // 'fatwa' or 'he'
+            const id  = parseInt(parts[2], 10);
+            const lastItem = card.getLastContent(chatId);
+            let contentText = '';
+
+            if (lastItem && (!(id > 0) || (lastItem.meta && lastItem.meta.id === id))) {
+              contentText = lastItem.text || '';
+            }
+            if (!contentText && id > 0) {
+              if (sub === 'fatwa') {
+                const res = await tools.getFatwa({ id, language });
+                if (res && res.block) {
+                  contentText = res.block;
+                  card.updateLastContent(chatId, 'get_fatwa', res.meta, res.block);
+                }
+              } else if (sub === 'he') {
+                const res = await tools.getHadithExplained({ id, language });
+                if (res && res.block) {
+                  contentText = res.block;
+                  card.updateLastContent(chatId, 'get_hadith_explained', res.meta, res.block);
+                }
+              }
+            }
+            if (!contentText && lastItem) contentText = lastItem.text || '';
+            if (!contentText) return fail('expired');
+
+            const synth = language === 'arabic'
+              ? 'لخّص هذا المحتوى في جملتين أو ثلاث جمل:\n\n' + contentText.slice(0, 800)
+              : 'Summarize this in 2-3 sentences:\n\n' + contentText.slice(0, 800);
+            const result = await card.run({ text: synth, sender: chatId, mode: 'reply', source: 'callback' });
+            if (!result || !result.assistant_success) return fail('fetch');
+            return { text: result.assistant_reply, meta: result.assistant_meta };
+          }
           if (cmd === 'px') {
             // Prayer times — Claude reads get_prayer_data
             const synth = language === 'arabic'
