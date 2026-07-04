@@ -4,6 +4,36 @@ All notable changes to Prayers Alert are documented here.
 
 ---
 
+## [3.1.0] — 2026-06-30
+
+### Added
+- **Interactive Telegram buttons on every assistant message** — verse (Prev/Next, Asbab), hadith (Explain), hadith-explained (Summarize), dua (Rest of set), fatwa (Summarize), and search results (numbered pick-list, Next 5) all now carry inline buttons matched to content type
+- **Summarize button** for fatwa and hadith-explained cards — asks Claude for a 2–3 sentence summary of the exact item shown
+- **Buttons on scheduled/Flow-triggered sends** — the "generate & send" action card (used by presets like Daily Surprise) now attaches the same inline buttons as a live reply; previously scheduled sends were text-only
+- **Deterministic button handling** — More, single-result auto-pick, search-result paging, and item selection now resolve entirely in code with no Claude round-trip, for a near-instant response
+- **Id-targeted Explain / Summarize** — these buttons now carry the specific hadith/fatwa id, so tapping one on an older, scrolled-back message still acts on that exact item instead of whatever was shown most recently
+- **Re-selectable search menus** — picking one result from a search list no longer invalidates the list; subsequent picks from the same menu keep working
+
+### Fixed
+- **Silent dead-taps** — every button failure path (expired list, transient fetch error) now returns a localized (Arabic/English) message instead of the tap silently doing nothing
+
+---
+
+## [3.0.0] — 2026-06-27
+
+### Added
+- **AI Islamic assistant** powered by Claude — two Flow action cards: **Ask Islamic assistant** (free-text Q&A) and **Run Islamic assistant preset** (scheduled content from a library)
+- **Prompt library** — built-in presets (Morning briefing, Daily surprise, Verse + reflection, Sunnah of the day, Dua of the day, Next prayer countdown, Fatwa of the day, adhkar sets) plus a settings-page editor to add, edit, and reorder presets
+- **Content tools**: `get_prayer_data`, `get_quran`, `get_tafsir`, `get_hadith`, `get_hadith_explained`, `get_dua`, `get_fatwa`, plus `search_*` variants for browsing multiple results
+- **Telegram delivery** — built-in bot listener (no Flow required) or classic Flow-card delivery; long messages split at paragraph boundaries; Markdown sanitized for Telegram's formatting subset
+- **Settings → AI Assistant tab** — Anthropic API key, Telegram bot token + chat ID, allowed chats, language (Arabic/English/Bilingual), persona instructions, prompt library editor
+- **Performance**: MCP session caching (30 s TTL), parallel bilingual Quran fetch, prompt caching on the system block, pure-relay presets that bypass Claude entirely, placeholder layout-delegation so Claude never re-emits scripture text it already fetched
+
+### Changed
+- Settings migrated automatically from v2.x (migrations V1–V13 + persona migrations); HomeyScript-based setup removed in favor of the built-in assistant cards
+
+---
+
 ## [2.4.5] — 2026-06-25
 
 ### Fixed

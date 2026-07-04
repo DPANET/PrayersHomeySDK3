@@ -43,5 +43,11 @@
   },
   "2.4.5": {
     "en": "Fixed prayer-time tiles on the Settings page showing a value that didn't match the 5-day preview table; the fine-tune table now also refreshes live as you adjust."
+  },
+  "3.0.0": {
+    "en": "New: AI Islamic assistant powered by Claude. Ask questions or schedule daily content (verses, hadith, dua, fatwa) delivered straight to Telegram, with a built-in preset library."
+  },
+  "3.1.0": {
+    "en": "Assistant replies now have interactive Telegram buttons (More, Explain, Summarize, navigation) that respond instantly, including on scheduled messages. Fixed buttons that could fail silently."
   }
 }

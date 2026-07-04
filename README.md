@@ -4,12 +4,14 @@
 
 [![Homey SDK](https://img.shields.io/badge/Homey_SDK-3-blue?style=flat-square)](https://apps.developer.homey.app)
 [![Platform](https://img.shields.io/badge/platform-local-informational?style=flat-square)](https://homey.app)
-[![Version](https://img.shields.io/badge/version-3.0.0-brightgreen?style=flat-square)](https://github.com/DPANET/PrayersHomeySDK3)
+[![Version](https://img.shields.io/badge/version-3.1.0-brightgreen?style=flat-square)](https://github.com/DPANET/PrayersHomeySDK3)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
 Prayers Alert calculates accurate Islamic prayer times for your location and delivers audio URLs, volume, and Hijri calendar data directly into your Homey Flows. Cast adhan, Quran recitation, or adhkar to any Chromecast, Sonos, or smart speaker — all wired in Flow without a single line of code.
 
 **v3.0** adds an AI Islamic assistant powered by Claude: schedule daily Islamic content, answer fiqh questions, fetch Quranic verses and tafsir, and deliver everything to Telegram — automatically.
+
+**v3.1** adds interactive Telegram buttons on every assistant message — More, Explain, Summarize, verse navigation, and pick-lists — most of which resolve instantly in code with no Claude round-trip, and now also appear on scheduled/Flow-triggered sends (e.g. Daily Surprise), not just live replies.
 
 ---
 
@@ -82,9 +84,9 @@ A Claude-powered action card that delivers Islamic content on demand or on a sch
 | `get_prayer_data` | Local adhan calculation |
 | `get_quran` | quran.com — semantic verse search or direct surah:ayah lookup |
 | `get_tafsir` | quran.com — Ibn Kathir tafsir |
-| `get_hadith` | quran.com MCP — authenticated hadith with grade |
-| `get_hadith_explained` | quran.com MCP — hadith + scholarly commentary |
-| `get_dua` | quran.com MCP — thematic adhkar / dua |
+| `get_hadith` | Sunnah.com hadith collections, with authenticity grade (via hadith-mcp.org) |
+| `get_hadith_explained` | HadeethEnc.com — hadith + grade + scholarly explanation |
+| `get_dua` | Hisn al-Muslim — bundled locally, no network call |
 | `get_fatwa` | IslamQA.info — published fatwa, Arabic or bilingual |
 
 **Performance features:**
@@ -101,6 +103,21 @@ A Claude-powered action card that delivers Islamic content on demand or on a sch
 - Markdown sanitization prevents parse failures from special characters in source text
 - Tafsir HTML (headings, paragraphs) converted to Telegram-compatible bold + line breaks
 - Telegram formatting rule enforced: no tables, headings, or blockquotes — prayer times and lists rendered as plain lines
+
+**Interactive buttons (v3.1):**
+
+Every content message arrives with inline buttons matched to its type:
+
+| Content | Buttons |
+|---------|---------|
+| Verse | ⬅️ Prev / ➡️ Next, 🕋 Asbab, ➡️ More |
+| Hadith | 💡 Explain, ➡️ More |
+| Hadith (explained) | 📝 Summarize, ➡️ More |
+| Dua | ➕ Rest of set, ➡️ More |
+| Fatwa | 📝 Summarize, ➡️ More |
+| Search results | numbered pick-list, ⬇️ Next 5 |
+
+Most of these resolve **without a Claude call at all** — More, picking a search result, paging results, and auto-resolving a single search hit are handled entirely in code for a near-instant response. Explain and Summarize target the *exact* item shown on that card (by id), so tapping either one after scrolling back to an older message still acts on the right content, not whatever was shown most recently. Search pick-lists stay live after a selection, so you can tap several results from the same list. Buttons are attached on both live replies and scheduled/Flow-triggered sends (e.g. Daily Surprise). Every tap always gets a response — if a list has expired or a fetch fails, the bot replies with a localized (Arabic/English) message instead of going silent.
 
 ---
 
